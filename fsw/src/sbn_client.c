@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -44,9 +45,27 @@ int send_heartbeat(int sockfd);
 int recv_msg(int sockfd);
 ///////////////////////
 
-
 int sockfd = 0;
 struct sockaddr_in serv_addr;
+
+pthread_t heart_thread_id;
+
+
+void *heartbeatMinder(void *vargp)
+{
+    while(1) // TODO: check run state?
+    {
+        sleep(1);
+        if (sockfd != 0)
+        {
+            printf("SBN_Client: Sending heartbeat\n");
+            send_heartbeat(sockfd);
+            recv_msg(sockfd); // TODO: Needed? Deal with non-heartbeat responses
+        }
+    }
+    return NULL;
+}
+
 
 int32 SBN_ClientInit(void)
 {
@@ -58,11 +77,11 @@ int32 SBN_ClientInit(void)
     recv_msg(sockfd);
     recv_msg(sockfd);
 
-    //  while(1) {
-    send_heartbeat(sockfd);
-    recv_msg(sockfd);
-    //}
+    // Thread for watchdog?
+    pthread_create(&heart_thread_id, NULL, heartbeatMinder, NULL);
 
+    // TODO: is thread ever cleaned up?
+    // pthread_join(thread_id, NULL);
 
     // TODO: return failure?
     return OS_SUCCESS;
@@ -149,6 +168,7 @@ int send_msg(int sockfd, CFE_SB_Msg_t *msg)
 
 #define SBN_TCP_HEARTBEAT_MSG 0xA0
 
+// TODO: return value?
 int send_heartbeat(int sockfd)
 {
     printf("Sending a heartbeat\n");
