@@ -169,9 +169,47 @@ int send_heartbeat(int sockfd)
 }
 
 
+// Pipe creation / subscription
+
+int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
+{
+  printf ("CFE_SB_CreatePipe not yet implemented\n");
+  return -1;
+}
+
 int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 {
   printf ("CFE_SB_DeletePipe not yet implemented\n");
+  return -1;
+}
+
+int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
+{
+  printf ("CFE_SB_Subscribe not yet implemented\n");
+  return -1;
+}
+
+int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, CFE_SB_Qos_t Quality, uint16 MsgLim)
+{
+  printf ("CFE_SB_SubscribeEx not yet implemented\n");
+  return -1;
+}
+
+int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, uint16 MsgLim)
+{
+  printf ("CFE_SB_SubscribeLocal not yet implemented\n");
+  return -1;
+}
+
+int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
+{
+  printf ("CFE_SB_Unsubscribe not yet implemented\n");
+  return -1;
+}
+
+int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
+{
+  printf ("CFE_SB_UnsubscribeLocal not yet implemented\n");
   return -1;
 }
 
@@ -211,18 +249,19 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
   return CFE_SUCCESS;
 }
 
-// Pipe creation / subscription
-
-int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
+int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
 {
-
+    // Oh my.
+    // Need to have multiple pipes... so the subscribe thing
+    // Need to coordinate with the recv_msg thread... so locking?
+    // Also, what about messages that get split? Is that an issue?
 }
 
-int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
+int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr, CFE_SB_ZeroCopyHandle_t BufferHandle)
 {
-
+  printf ("CFE_SB_ZeroCopySend not yet implemented\n");
+  return -1;
 }
-
 // Receiving messages
 
 void *receiveMinder(void *vargp)
@@ -234,14 +273,6 @@ void *receiveMinder(void *vargp)
         // On heartbeats, need to update known liveness state of SBN
         // On other messages, need to make available for next CFE_SB_RcvMsg call
     }
-}
-
-int __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
-{
-    // Oh my.
-    // Need to have multiple pipes... so the subscribe thing
-    // Need to coordinate with the recv_msg thread... so locking?
-    // Also, what about messages that get split? Is that an issue?
 }
 
 int recv_msg(int sockfd)
