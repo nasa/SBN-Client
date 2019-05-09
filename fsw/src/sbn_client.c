@@ -48,23 +48,10 @@ int recv_msg(int sockfd);
 int sockfd = 0;
 struct sockaddr_in serv_addr;
 
+void *heartbeatMinder(void *vargp);
 pthread_t heart_thread_id;
-
-
-void *heartbeatMinder(void *vargp)
-{
-    while(1) // TODO: check run state?
-    {
-        sleep(1);
-        if (sockfd != 0)
-        {
-            printf("SBN_Client: Sending heartbeat\n");
-            send_heartbeat(sockfd);
-            recv_msg(sockfd); // TODO: Needed? Deal with non-heartbeat responses
-        }
-    }
-    return NULL;
-}
+void *receiveMinder(void *vargp);
+pthread_t receive_thread_id;
 
 
 int32 SBN_ClientInit(void)
@@ -79,6 +66,7 @@ int32 SBN_ClientInit(void)
 
     // Thread for watchdog?
     pthread_create(&heart_thread_id, NULL, heartbeatMinder, NULL);
+    pthread_create(&receive_thread_id, NULL, receiveMinder, NULL);
 
     // TODO: is thread ever cleaned up?
     // pthread_join(thread_id, NULL);
@@ -138,6 +126,44 @@ typedef struct {
     uint32_t SBN_ProcessorID;
 } SBN_Hdr_t;
 
+// Deal with sending out heartbeat messages
+#define SBN_TCP_HEARTBEAT_MSG 0xA0
+void *heartbeatMinder(void *vargp)
+{
+    while(1) // TODO: check run state?
+    {
+        sleep(1);
+        if (sockfd != 0)
+        {
+            printf("SBN_Client: Sending heartbeat\n");
+            send_heartbeat(sockfd);
+        }
+    }
+    return NULL;
+}
+
+// TODO: return value?
+int send_heartbeat(int sockfd)
+{
+    printf("Sending a heartbeat\n");
+
+    int retval = 0;
+    char sbn_header[SBN_PACKED_HDR_SZ] = {0};
+
+    Pack_t Pack;
+    Pack_Init(&Pack, sbn_header, 0 + SBN_PACKED_HDR_SZ, 0);
+
+    Pack_UInt16(&Pack, 0);
+    Pack_UInt8(&Pack, SBN_TCP_HEARTBEAT_MSG);
+    Pack_UInt32(&Pack, 2);
+
+    retval = write(sockfd, sbn_header, sizeof(sbn_header));
+
+    printf("Did the send work? %d\n", retval);
+}
+
+// Sending messages
+
 int __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg) {
     return send_msg(sockfd, msg);
 }
@@ -166,26 +192,37 @@ int send_msg(int sockfd, CFE_SB_Msg_t *msg)
     free(buffer);
 }
 
-#define SBN_TCP_HEARTBEAT_MSG 0xA0
+// Pipe creation / subscription
 
-// TODO: return value?
-int send_heartbeat(int sockfd)
+int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
-    printf("Sending a heartbeat\n");
 
-    int retval = 0;
-    char sbn_header[SBN_PACKED_HDR_SZ] = {0};
+}
 
-    Pack_t Pack;
-    Pack_Init(&Pack, sbn_header, 0 + SBN_PACKED_HDR_SZ, 0);
+int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
+{
 
-    Pack_UInt16(&Pack, 0);
-    Pack_UInt8(&Pack, SBN_TCP_HEARTBEAT_MSG);
-    Pack_UInt32(&Pack, 2);
+}
 
-    retval = write(sockfd, sbn_header, sizeof(sbn_header));
+// Receiving messages
 
-    printf("Did the send work? %d\n", retval);
+void *receiveMinder(void *vargp)
+{
+    while(1) // TODO: check run state?
+    {
+        printf("SBN_Client: Checking messages\n");
+        recv_msg(sockfd); // TODO: pass message pointer?
+        // On heartbeats, need to update known liveness state of SBN
+        // On other messages, need to make available for next CFE_SB_RcvMsg call
+    }
+}
+
+int __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
+{
+    // Oh my.
+    // Need to have multiple pipes... so the subscribe thing
+    // Need to coordinate with the recv_msg thread... so locking?
+    // Also, what about messages that get split? Is that an issue?
 }
 
 int recv_msg(int sockfd)
@@ -199,7 +236,9 @@ int recv_msg(int sockfd)
     SBN_CpuID_t CpuID;
 
     retval = read(sockfd, buffer, sizeof(buffer));
-    printf("Received: %d\n", retval);
+    printf("Received: %d\t", retval);
+
+    // TODO: error checking (-1 returned, perror)
 
     Unpack_t Unpack;
     Unpack_Init(&Unpack, buffer, SBN_MAX_PACKED_MSG_SZ);
