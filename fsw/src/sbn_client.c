@@ -46,7 +46,8 @@ int recv_msg(int sockfd);
 ///////////////////////
 
 int sockfd = 0;
-struct sockaddr_in serv_addr;
+int cpuId = 0;
+struct sockaddr_in server_address;
 
 void *heartbeatMinder(void *vargp);
 pthread_t heart_thread_id;
@@ -56,9 +57,15 @@ pthread_t receive_thread_id;
 
 int32 SBN_ClientInit(void)
 {
+    // Gets socket file descriptor
     sockfd = connect_to_server(IP_ADDR, PORT);
-
-    printf("Did that work? %d\n", sockfd);
+    cpuId = 2;
+    
+    if (sockfd < 0)
+    {
+      printf("SBN_clint failed to get sockfd, error %d\n", sockfd);
+      exit(sockfd);
+    }
 
     // Receive a message or something?
     recv_msg(sockfd);
@@ -77,8 +84,7 @@ int32 SBN_ClientInit(void)
 
 int connect_to_server(const char *server_ip, uint16_t server_port)
 {
-    int sockfd, address_converted, connection;
-    struct sockaddr_in server_address;
+    int address_converted, connection;
 
     // Create an ipv4 TCP socket
     sockfd = socket(AF_INET, SOCK_STREAM, DEFAULT_PROTOCOL);
@@ -162,34 +168,47 @@ int send_heartbeat(int sockfd)
     printf("Did the send work? %d\n", retval);
 }
 
-// Sending messages
 
-int __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg) {
-    return send_msg(sockfd, msg);
+int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
+{
+  printf ("CFE_SB_DeletePipe not yet implemented\n");
+  return -1;
 }
 
-// TODO: Error checking
-int send_msg(int sockfd, CFE_SB_Msg_t *msg)
+uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 {
-    char *buffer;
-    int retval = 0;
+  printf("Sending from client...\n");
+  char *buffer;
+  uint16 msg_size = CFE_SB_GetTotalMsgLength(msg);
+  
+  size_t write_result, total_size = msg_size + SBN_PACKED_HDR_SZ;
+  Pack_t Pack;
+  
+  if (total_size > CFE_SB_MAX_SB_MSG_SIZE)
+  {
+    return CFE_SB_MSG_TOO_BIG;
+  }
+  
+  buffer = malloc(total_size);
+  
+  Pack_Init(&Pack, buffer, total_size, 0);
 
-    buffer = malloc(SBN_PACKED_HDR_SZ + CFE_SB_GetTotalMsgLength(msg));
-
-    Pack_t Pack;
-    Pack_Init(&Pack, buffer, SBN_PACKED_HDR_SZ, 0);
-
-    Pack_UInt16(&Pack, CFE_SB_GetTotalMsgLength(msg));
-    Pack_UInt8(&Pack, SBN_APP_MSG);
-    Pack_UInt32(&Pack, 2); // CPU ID
-
-    retval = memcpy(buffer + SBN_PACKED_HDR_SZ, msg, CFE_SB_GetTotalMsgLength(msg));
-    printf("Did it copy? %d\n", retval);
-
-    retval = write(sockfd, buffer, CFE_SB_GetTotalMsgLength(msg) + SBN_PACKED_HDR_SZ);
-    printf("Did it send? %d\n", retval);
-
-    free(buffer);
+  Pack_UInt16(&Pack, msg_size);
+  Pack_UInt8(&Pack, SBN_APP_MSG);
+  Pack_UInt32(&Pack, cpuId); 
+  
+  memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
+  
+  write_result = write(sockfd, buffer, total_size);
+  
+  if (write_result != total_size)
+  {
+    return CFE_SB_BUF_ALOC_ERR;
+  }
+  
+  free(buffer);
+  
+  return CFE_SUCCESS;
 }
 
 // Pipe creation / subscription
@@ -248,7 +267,7 @@ int recv_msg(int sockfd)
 
     for (int i = 0; i < retval; i++)
     {
-        printf("0x%02X ", buffer[i]);
+        printf("0x%02X ", (unsigned char)(buffer[i]));
     }
     printf("\n");
 
