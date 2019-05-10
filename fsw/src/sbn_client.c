@@ -56,7 +56,7 @@ int32 SBN_ClientInit(void)
 
     if (sockfd < 0)
     {
-        printf("SBN_clint failed to get sockfd, error %d\n", sockfd);
+        printf("SBN_client: Failed to get sockfd, error %d\n", sockfd);
         exit(sockfd);
     }
 
@@ -144,7 +144,7 @@ void *heartbeatMinder(void *vargp)
 // TODO: return value?
 int send_heartbeat(int sockfd)
 {
-    printf("Sending a heartbeat\n");
+    printf("SBN_Client: Sending a heartbeat\n");
 
     int retval = 0;
     char sbn_header[SBN_PACKED_HDR_SZ] = {0};
@@ -158,7 +158,7 @@ int send_heartbeat(int sockfd)
 
     retval = write(sockfd, sbn_header, sizeof(sbn_header));
 
-    printf("Did the send work? %d\n", retval);
+    printf("SBN_Client: Did the send work? %d\n", retval);
 }
 
 
@@ -166,49 +166,49 @@ int send_heartbeat(int sockfd)
 
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
-    printf ("CFE_SB_CreatePipe not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_CreatePipe not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 {
-    printf ("CFE_SB_DeletePipe not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_DeletePipe not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-    printf ("CFE_SB_Subscribe not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_Subscribe not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, CFE_SB_Qos_t Quality, uint16 MsgLim)
 {
-    printf ("CFE_SB_SubscribeEx not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_SubscribeEx not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, uint16 MsgLim)
 {
-    printf ("CFE_SB_SubscribeLocal not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_SubscribeLocal not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-    printf ("CFE_SB_Unsubscribe not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_Unsubscribe not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-    printf ("CFE_SB_UnsubscribeLocal not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_UnsubscribeLocal not yet implemented\n");
     return -1;
 }
 
 uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 {
-    printf("Sending from client...\n");
+    printf("SBN_Client:Sending Message...\n");
     char *buffer;
     uint16 msg_size = CFE_SB_GetTotalMsgLength(msg);
 
@@ -253,7 +253,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
 
 int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr, CFE_SB_ZeroCopyHandle_t BufferHandle)
 {
-    printf ("CFE_SB_ZeroCopySend not yet implemented\n");
+    printf ("SBN_Client:CFE_SB_ZeroCopySend not yet implemented\n");
     return -1;
 }
 // Receiving messages
@@ -280,7 +280,7 @@ int recv_msg(int sockfd)
     SBN_CpuID_t CpuID;
 
     retval = read(sockfd, buffer, sizeof(buffer));
-    printf("Received: %d\t", retval);
+    printf("SBN_Client: Received: %d\t", retval);
 
     // TODO: error checking (-1 returned, perror)
 
