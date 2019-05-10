@@ -17,15 +17,7 @@
 
 #define  DEFAULT_PROTOCOL   0
 
-/**
- * Just trying to figure out how to connect to the tcp sbn module
- * It looks like the SBN header is just:
- *     uint16 MsgSz, uint8 MsgType, uint32 ProcessorID
- * The rest of the info is in the CCSDS header I guess... which may be built a few ways...
- *     TODO: get the CCSDS header
- * For now I can hard code all of this.
- */
-
+// TODO: can this be included instead of duplicated here?
 #define CCSDS_TIME_SIZE 6 // <- see mps_mission_cfg.h
 
 // Refer to sbn_cont_tbl.c to make sure these match
@@ -45,6 +37,7 @@ int send_heartbeat(int sockfd);
 int recv_msg(int sockfd);
 ///////////////////////
 
+// TODO: Our use of sockfd is not uniform. Should pass to each function XOR use as global
 int sockfd = 0;
 int cpuId = 0;
 struct sockaddr_in server_address;
@@ -241,6 +234,7 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 
     if (write_result != total_size)
     {
+        // TODO: This isn't an allocation error...
         return CFE_SB_BUF_ALOC_ERR;
     }
 
@@ -303,4 +297,33 @@ int recv_msg(int sockfd)
     printf("\n");
 
     printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz, MsgType, CpuID);
+
+    if (MsgSz != retval)
+    {
+        printf("SBN_Client: Size mismatch (expected vs actual): %u - %u\n", MsgSz, (unsigned int) retval);
+    }
+    else
+    {
+        switch(MsgType)
+        {
+            case SBN_NO_MSG:
+                printf("SBN_Client recv_msg: SBN_NO_MSG\n");
+                break;
+            case SBN_SUB_MSG:
+                printf("SBN_Client recv_msg: SBN_SUB_MSG\n");
+                break;
+            case SBN_UNSUB_MSG:
+                printf("SBN_Client recv_msg: SBN_UNSUB_MSG\n");
+                break;
+            case SBN_APP_MSG:
+                printf("SBN_Client recv_msg: SBN_APP_MSG\n");
+                break;
+            case SBN_PROTO_MSG:
+                printf("SBN_Client recv_msg: SBN_PROTO_MSG\n");
+                break;
+
+            default:
+                printf("SBN_Client recv_msg: ERROR - unrecognized type %d\n", MsgType);
+        }
+    }
 }
