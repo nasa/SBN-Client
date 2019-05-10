@@ -60,11 +60,11 @@ int32 SBN_ClientInit(void)
     // Gets socket file descriptor
     sockfd = connect_to_server(IP_ADDR, PORT);
     cpuId = 2;
-    
+
     if (sockfd < 0)
     {
-      printf("SBN_clint failed to get sockfd, error %d\n", sockfd);
-      exit(sockfd);
+        printf("SBN_clint failed to get sockfd, error %d\n", sockfd);
+        exit(sockfd);
     }
 
     // Receive a message or something?
@@ -173,80 +173,80 @@ int send_heartbeat(int sockfd)
 
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
-  printf ("CFE_SB_CreatePipe not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_CreatePipe not yet implemented\n");
+    return -1;
 }
 
 int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 {
-  printf ("CFE_SB_DeletePipe not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_DeletePipe not yet implemented\n");
+    return -1;
 }
 
 int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-  printf ("CFE_SB_Subscribe not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_Subscribe not yet implemented\n");
+    return -1;
 }
 
 int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, CFE_SB_Qos_t Quality, uint16 MsgLim)
 {
-  printf ("CFE_SB_SubscribeEx not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_SubscribeEx not yet implemented\n");
+    return -1;
 }
 
 int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, uint16 MsgLim)
 {
-  printf ("CFE_SB_SubscribeLocal not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_SubscribeLocal not yet implemented\n");
+    return -1;
 }
 
 int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-  printf ("CFE_SB_Unsubscribe not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_Unsubscribe not yet implemented\n");
+    return -1;
 }
 
 int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-  printf ("CFE_SB_UnsubscribeLocal not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_UnsubscribeLocal not yet implemented\n");
+    return -1;
 }
 
 uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 {
-  printf("Sending from client...\n");
-  char *buffer;
-  uint16 msg_size = CFE_SB_GetTotalMsgLength(msg);
-  
-  size_t write_result, total_size = msg_size + SBN_PACKED_HDR_SZ;
-  Pack_t Pack;
-  
-  if (total_size > CFE_SB_MAX_SB_MSG_SIZE)
-  {
-    return CFE_SB_MSG_TOO_BIG;
-  }
-  
-  buffer = malloc(total_size);
-  
-  Pack_Init(&Pack, buffer, total_size, 0);
+    printf("Sending from client...\n");
+    char *buffer;
+    uint16 msg_size = CFE_SB_GetTotalMsgLength(msg);
 
-  Pack_UInt16(&Pack, msg_size);
-  Pack_UInt8(&Pack, SBN_APP_MSG);
-  Pack_UInt32(&Pack, cpuId); 
-  
-  memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
-  
-  write_result = write(sockfd, buffer, total_size);
-  
-  if (write_result != total_size)
-  {
-    return CFE_SB_BUF_ALOC_ERR;
-  }
-  
-  free(buffer);
-  
-  return CFE_SUCCESS;
+    size_t write_result, total_size = msg_size + SBN_PACKED_HDR_SZ;
+    Pack_t Pack;
+
+    if (total_size > CFE_SB_MAX_SB_MSG_SIZE)
+    {
+        return CFE_SB_MSG_TOO_BIG;
+    }
+
+    buffer = malloc(total_size);
+
+    Pack_Init(&Pack, buffer, total_size, 0);
+
+    Pack_UInt16(&Pack, msg_size);
+    Pack_UInt8(&Pack, SBN_APP_MSG);
+    Pack_UInt32(&Pack, cpuId);
+
+    memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
+
+    write_result = write(sockfd, buffer, total_size);
+
+    if (write_result != total_size)
+    {
+        return CFE_SB_BUF_ALOC_ERR;
+    }
+
+    free(buffer);
+
+    return CFE_SUCCESS;
 }
 
 int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
@@ -259,8 +259,8 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
 
 int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr, CFE_SB_ZeroCopyHandle_t BufferHandle)
 {
-  printf ("CFE_SB_ZeroCopySend not yet implemented\n");
-  return -1;
+    printf ("CFE_SB_ZeroCopySend not yet implemented\n");
+    return -1;
 }
 // Receiving messages
 
