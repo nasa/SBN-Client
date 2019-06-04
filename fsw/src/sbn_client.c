@@ -62,19 +62,6 @@ void CFE_SBN_Client_InitPipeTbl(void)
         InvalidatePipe(&PipeTbl[i]);
     }/* end for */
     
-    for(i = 0; i < CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE; i++)
-    {
-        uint8 j;
-        
-        MsgId_Subscriptions[i].msgId = CFE_SBN_CLIENT_INVALID_MSG_ID;
-        
-        for(j = 0;j < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; j++)
-        {
-            MsgId_Subscriptions[i].pipeIds[j] = CFE_SBN_CLIENT_INVALID_PIPE;
-        }
-        
-    }
-    
 }
 
 void InvalidatePipe(CFE_SBN_Client_PipeD_t *pipe)
@@ -84,13 +71,14 @@ void InvalidatePipe(CFE_SBN_Client_PipeD_t *pipe)
     pipe->InUse         = CFE_SBN_CLIENT_NOT_IN_USE;
     pipe->SysQueueId    = CFE_SBN_CLIENT_UNUSED_QUEUE;
     pipe->PipeId        = CFE_SBN_CLIENT_INVALID_PIPE;
-    
-    // for(i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
-    // {
-    //     pipe->SubscribedMsgIds[i] = CFE_SBN_CLIENT_INVALID_MSG_ID;
-    // }
-    
     memset(&pipe->PipeName[0],0,OS_MAX_API_NAME);
+    
+    for(i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
+    {
+        pipe->SubscribedMsgIds[i] = CFE_SBN_CLIENT_INVALID_MSG_ID;
+    }
+    
+    
 }
 
 CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void)
@@ -136,6 +124,21 @@ uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
     }/* end if */
   
 }/* end CFE_SBN_Client_GetPipeIdx */
+
+uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
+{
+    int i;
+    
+    for (i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
+    {
+        if (PipeTbl[PipeId].SubscribedMsgIds[i] == CFE_SBN_CLIENT_INVALID_MSG_ID)
+        {
+            return i;
+        }
+    }
+    
+    return CFE_SBN_CLIENT_MAX_MSG_IDS_MET;
+}
 
 int32 SBN_ClientInit(void)
 {
@@ -354,17 +357,19 @@ int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 
 int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-  uint8 PipeIdx;
+    uint8 PipeIdx;
+    uint8 MsgIdIdx;
   
-  /* take semaphore to prevent a task switch during this call NOTE:is this necessary for sbn_client?*/
+    /* take semaphore to prevent a task switch during this call NOTE:is this necessary for sbn_client?*/
   
-  /* get task id for events NOTE: probably not necessary for sbn_client*/
+    /* get task id for events NOTE: probably not necessary for sbn_client*/
   
-  /* get the callers Application Id  NOTE: we already have this locally*/
+    /* get the callers Application Id  NOTE: we already have this locally*/
   
-  /* check that the pipe has been created */
+    /* check that the pipe has been created */
+    PipeIdx = CFE_SBN_Client_GetPipeIdx(PipeId);
   
-    if (CFE_SBN_Client_GetPipeIdx(PipeId) == CFE_SBN_CLIENT_INVALID_PIPE)
+    if (PipeIdx == CFE_SBN_CLIENT_INVALID_PIPE)
     {
       //TODO:Error here
       return CFE_SBN_CLIENT_BAD_ARGUMENT;
@@ -382,11 +387,17 @@ int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
   
     /* Get the index to the first available element in the routing table NOTE:how does routing table work? do I need it?*/
   
+    MsgIdIdx = CFE_SBN_Client_GetMessageSubscribeIndex(PipeId);
+    printf("MsgIdIdx = %d\n", MsgIdIdx);
+    if (MsgIdIdx == CFE_SBN_CLIENT_MAX_MSG_IDS_MET)
+    {
+        //TODO:Error here
+        return CFE_SBN_CLIENT_BAD_ARGUMENT;
+    }
     
+    PipeTbl[PipeIdx].SubscribedMsgIds[MsgIdIdx] = MsgId;
     
-  
-    printf ("SBN_Client:CFE_SB_Subscribe not yet implemented\n");
-    return -1;
+    return CFE_SUCCESS;
 }
 
 int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, CFE_SB_Qos_t Quality, uint16 MsgLim)

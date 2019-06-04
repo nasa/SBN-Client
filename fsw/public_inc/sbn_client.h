@@ -24,9 +24,10 @@
 #define CFE_SBN_CLIENT_CR_PIPE_ERR_EID          1005
 #define CFE_SBN_CLIENT_PIPE_ADDED_EID           1006
 #define CFE_SBN_CLIENT_PIPE_DELETED_EID         1007
-#define CFE_SBN_CLIENT_MAX_MSG_IDS_MET_EID      1008
+#define CFE_SBN_CLIENT_MAX_MSG_IDS_MET          0xFF
+#define CFE_SBN_CLIENT_MAX_MSG_IDS_MET_EID      1009
 #define CFE_SBN_CLIENT_PIPE_CR_ERR              ((int32)0xca001005)
-#define CFE_SBN_CLIENT_INVALID_MSG_ID           0xFF
+#define CFE_SBN_CLIENT_INVALID_MSG_ID           0
 
 #define CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE  32
 
@@ -64,7 +65,7 @@ typedef struct {
     uint32             NumberOfMessages;
     uint32             NextMessage;
     char               Messages[CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH][CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
-    //CFE_SB_MsgId_t     SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE]
+    CFE_SB_MsgId_t     SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE]
 } CFE_SBN_Client_PipeD_t;
 
 // SBN header // TODO: from include?
