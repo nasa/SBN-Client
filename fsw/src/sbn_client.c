@@ -11,9 +11,11 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
+#include "cfe_platform_cfg.h"
 #include "sbn_constants.h"
 #include "sbn_interfaces.h"
 #include "sbn_pack.h"
+#include "sbn_client.h"
 
 #define  DEFAULT_PROTOCOL   0
 
@@ -37,6 +39,7 @@ int send_heartbeat(int sockfd);
 int recv_msg(int sockfd);
 ///////////////////////
 
+
 // TODO: Our use of sockfd is not uniform. Should pass to each function XOR use as global
 int sockfd = 0;
 int cpuId = 0;
@@ -46,7 +49,93 @@ void *heartbeatMinder(void *vargp);
 pthread_t heart_thread_id;
 void *receiveMinder(void *vargp);
 pthread_t receive_thread_id;
+CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
+MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 
+
+void CFE_SBN_Client_InitPipeTbl(void)
+{
+    puts("Pipe table init");
+    uint8  i;
+
+    for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++){
+        InvalidatePipe(&PipeTbl[i]);
+    }/* end for */
+    
+    for(i = 0; i < CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE; i++)
+    {
+        uint8 j;
+        
+        MsgId_Subscriptions[i].msgId = CFE_SBN_CLIENT_INVALID_MSG_ID;
+        
+        for(j = 0;j < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; j++)
+        {
+            MsgId_Subscriptions[i].pipeIds[j] = CFE_SBN_CLIENT_INVALID_PIPE;
+        }
+        
+    }
+    
+}
+
+void InvalidatePipe(CFE_SBN_Client_PipeD_t *pipe)
+{
+    int i;
+    
+    pipe->InUse         = CFE_SBN_CLIENT_NOT_IN_USE;
+    pipe->SysQueueId    = CFE_SBN_CLIENT_UNUSED_QUEUE;
+    pipe->PipeId        = CFE_SBN_CLIENT_INVALID_PIPE;
+    
+    // for(i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
+    // {
+    //     pipe->SubscribedMsgIds[i] = CFE_SBN_CLIENT_INVALID_MSG_ID;
+    // }
+    
+    memset(&pipe->PipeName[0],0,OS_MAX_API_NAME);
+}
+
+CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void)
+{
+    uint8 i;
+
+    /* search for next available pipe entry */
+    for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
+    {
+        if(PipeTbl[i].InUse == CFE_SBN_CLIENT_NOT_IN_USE){
+            return i;
+        }/* end if */
+
+    }/* end for */
+
+    return CFE_SBN_CLIENT_INVALID_PIPE;
+}
+
+    
+uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
+{
+  // Quick check because PipeId should match PipeIdx
+    if (PipeTbl[PipeId].PipeId == PipeId && PipeTbl[PipeId].InUse == CFE_SBN_CLIENT_IN_USE)
+    {
+        return PipeId;
+    }
+    else
+    {
+        int i;
+    
+        for(i=0;i<CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;i++)
+        {
+
+            if(PipeTbl[i].PipeId == PipeId && PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
+            {
+                return i;
+            }/* end if */
+
+        } /* end for */
+    
+        // Pipe ID not found. TODO: error event? No, lets have caller do that...
+        return CFE_SBN_CLIENT_INVALID_PIPE;
+    }/* end if */
+  
+}/* end CFE_SBN_Client_GetPipeIdx */
 
 int32 SBN_ClientInit(void)
 {
@@ -59,6 +148,9 @@ int32 SBN_ClientInit(void)
         printf("SBN_client: Failed to get sockfd, error %d\n", sockfd);
         exit(sockfd);
     }
+    
+    // Create pipe table
+    CFE_SBN_Client_InitPipeTbl();
 
     // Receive a message or something?
     recv_msg(sockfd);
@@ -118,12 +210,6 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     return sockfd;
 }
 
-// SBN header // TODO: from include?
-typedef struct {
-    uint16_t SBN_MsgSz;
-    uint8_t  SBN_MsgType;
-    uint32_t SBN_ProcessorID;
-} SBN_Hdr_t;
 
 // Deal with sending out heartbeat messages
 #define SBN_TCP_HEARTBEAT_MSG 0xA0
@@ -166,18 +252,139 @@ int send_heartbeat(int sockfd)
 
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
-    printf ("SBN_Client:CFE_SB_CreatePipe not yet implemented\n");
-    return -1;
+    printf("SBN_Client: CreatingPipe\n");
+    
+    /* AppId is static for now */
+    
+    /* caller name is static for now */
+    
+    /* name will not require NULL terminator */
+    
+    /* TODO: determine if semaphore is necessary */
+    
+    /* TODO: determine if taskId is necessary */
+    
+    /* set user's pipe id value to 'invalid' for error cases below */
+    if(PipeIdPtr != NULL){
+        *PipeIdPtr = CFE_SBN_CLIENT_INVALID_PIPE;
+    }/* end if */
+    
+    /* check input parameters */
+    if((PipeIdPtr == NULL)||(Depth > CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)||(Depth == 0))
+    {
+        // TODO: what does this do? CFE_SB.HKTlmMsg.Payload.CreatePipeErrorCounter++;
+        // TODO: only if semaphore is necessary! CFE_SB_UnlockSharedData(__func__,__LINE__);
+        /* replaced by send event below! CFE_EVS_SendEvent(CFE_SB_CR_PIPE_BAD_ARG_EID,CFE_EVS_EventType_ERROR,CFE_SB.AppId,
+          "CreatePipeErr:Bad Input Arg:app=%s,ptr=0x%lx,depth=%d,maxdepth=%d",
+                CFE_SB_GetAppTskName(TskId,FullName),(unsigned long)PipeIdPtr,(int)Depth,CFE_PLATFORM_SB_MAX_PIPE_DEPTH);
+            */    
+        CFE_EVS_SendEvent(CFE_SBN_CLIENT_CR_PIPE_ERR_EID,CFE_EVS_EventType_ERROR,
+          "CreatePipeErr:Bad Input Arg:app=%s,ptr=0x%lx,depth=%d,maxdepth=%d",
+          APP_NAME,(unsigned long)PipeIdPtr,(int)Depth,
+          CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH);
+        return CFE_SBN_CLIENT_BAD_ARGUMENT;
+    }/*end if*/
+    
+      uint8 i;
+    
+    for(i=0;i<CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;i++)
+    {
+      
+      if (PipeTbl[i].InUse != CFE_SBN_CLIENT_IN_USE)
+      {
+        // TODO:Initialize pipe
+        PipeTbl[i].InUse = CFE_SBN_CLIENT_IN_USE;
+        //PipeTbl[i].SysQueueId = ?
+        PipeTbl[i].PipeId = i;
+        //PipeTbl[i].QueueDepth = ?
+        //PipeTbl[i].AppId = ?
+        PipeTbl[i].SendErrors = 0;
+        //strcpy(&CFE_SB.PipeTbl[PipeTblIdx].AppName[0],&AppName[0]); TODO: is App name required? will cfs proxy handle it?
+        strncpy(&PipeTbl[i].PipeName[0], PipeName, OS_MAX_API_NAME); //TODO: Use different value for size?
+        PipeTbl[i].NumberOfMessages = 0;
+        PipeTbl[i].NextMessage = 0;
+        //TODO: init Messages to empty?
+        
+        *PipeIdPtr = i;
+        
+        return CFE_SUCCESS;
+      }
+    }
+        
+    /* if pipe table is full, send event and return error */
+    CFE_EVS_SendEvent(CFE_SBN_CLIENT_MAX_PIPES_MET_EID,CFE_EVS_EventType_ERROR,
+      "CreatePipeErr:Max Pipes(%d)In Use.app %s",
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPES, APP_NAME);
+    
+    
+    
+    return CFE_SBN_CLIENT_MAX_PIPES_MET;
 }
 
 int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 {
-    printf ("SBN_Client:CFE_SB_DeletePipe not yet implemented\n");
-    return -1;
+  
+    uint8 i;
+
+    for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
+    {
+        if (PipeTbl[i].PipeId == PipeId)
+        {
+            if (PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
+            {
+                InvalidatePipe(&PipeTbl[i]);
+                CFE_EVS_SendEvent(CFE_SBN_CLIENT_PIPE_DELETED_EID, 
+                CFE_EVS_EventType_DEBUG, "Pipe Deleted:id %d,owner %s",
+                (int)PipeId, APP_NAME);
+                return CFE_SUCCESS;
+            }
+            else
+            {
+                //TODO:error
+            }
+            
+        }
+        
+    }
+    
+    //TODO: if we get here no pipes matched, error
+    
+    
 }
 
 int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
+  uint8 PipeIdx;
+  
+  /* take semaphore to prevent a task switch during this call NOTE:is this necessary for sbn_client?*/
+  
+  /* get task id for events NOTE: probably not necessary for sbn_client*/
+  
+  /* get the callers Application Id  NOTE: we already have this locally*/
+  
+  /* check that the pipe has been created */
+  
+    if (CFE_SBN_Client_GetPipeIdx(PipeId) == CFE_SBN_CLIENT_INVALID_PIPE)
+    {
+      //TODO:Error here
+      return CFE_SBN_CLIENT_BAD_ARGUMENT;
+    }
+  
+    /* check that the requestor is the owner of the pipe NOTE: not necessary because there can be only 1 app? */
+  
+    /* check message id key and scope NOTE: do the same as cfe_sb_api?*/
+  
+    /* Convert the API MsgId into the SB internal representation MsgKey NOTE: not sure what this does yet*/
+  
+    /* check for duplicate subscription */  
+  
+    /* check for multiple subscriptions to same pipe? TODO: not sure how this is done */
+  
+    /* Get the index to the first available element in the routing table NOTE:how does routing table work? do I need it?*/
+  
+    
+    
+  
     printf ("SBN_Client:CFE_SB_Subscribe not yet implemented\n");
     return -1;
 }
