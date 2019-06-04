@@ -17,7 +17,7 @@
 #include "sbn_pack.h"
 #include "sbn_client.h"
 
-#define  DEFAULT_PROTOCOL   0
+#define  CFE_SBN_CLIENT_NO_PROTOCOL   0
 
 // TODO: can this be included instead of duplicated here?
 #define CCSDS_TIME_SIZE 6 // <- see mps_mission_cfg.h
@@ -175,7 +175,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     int address_converted, connection;
 
     // Create an ipv4 TCP socket
-    sockfd = socket(AF_INET, SOCK_STREAM, DEFAULT_PROTOCOL);
+    sockfd = socket(AF_INET, SOCK_STREAM, CFE_SBN_CLIENT_NO_PROTOCOL);
 
     // socket error
     if (sockfd < 0)
@@ -220,7 +220,7 @@ void *heartbeatMinder(void *vargp)
 {
     while(1) // TODO: check run state?
     {
-        sleep(1);
+        sleep(3);
         if (sockfd != 0)
         {
             printf("SBN_Client: Sending heartbeat\n");
@@ -489,59 +489,98 @@ void *receiveMinder(void *vargp)
 
 int recv_msg(int sockfd)
 {
-    // CFE_SB_Msg_t *msg;
-    int retval = 0;
-    char buffer[CFE_SB_MAX_SB_MSG_SIZE]; // TODO: Plus SBN header?
-
+    int bytes_received = 0;
+    int total_bytes_recd = 0;
+    char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
+    char msg_buffer[CFE_SB_MAX_SB_MSG_SIZE]; // TODO: Plus SBN header?
     SBN_MsgSz_t MsgSz;
     SBN_MsgType_t MsgType;
     SBN_CpuID_t CpuID;
-
-    retval = read(sockfd, buffer, sizeof(buffer));
-    printf("SBN_Client: Received: %d\t", retval);
+    
+    //TODO:some sort of timeout on this?
+    while (total_bytes_recd != SBN_PACKED_HDR_SZ)
+    {
+        bytes_received = read(sockfd, sbn_hdr_buffer + total_bytes_recd, SBN_PACKED_HDR_SZ - total_bytes_recd);
+        //printf("bytes_received = %d\n", bytes_received);
+        if (bytes_received < 0)
+        {
+            //TODO:ERROR socket is dead somehow
+            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_BROKEN_ERR");
+            return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
+        }
+        else if (bytes_received == 0)
+        {
+            //TODO:ERROR closed remotely 
+            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_CLOSED_ERR");
+            return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
+        }
+        
+        total_bytes_recd += bytes_received;
+    }
+    
+    printf("SBN_Client: Received: %d\t", total_bytes_recd);
 
     // TODO: error checking (-1 returned, perror)
 
     Unpack_t Unpack;
-    Unpack_Init(&Unpack, buffer, SBN_MAX_PACKED_MSG_SZ);
+    Unpack_Init(&Unpack, sbn_hdr_buffer, SBN_PACKED_HDR_SZ);
     Unpack_UInt16(&Unpack, &MsgSz);
     Unpack_UInt8(&Unpack, &MsgType);
     Unpack_UInt32(&Unpack, &CpuID);
 
-    for (int i = 0; i < retval; i++)
+    for (int i = 0; i < SBN_PACKED_HDR_SZ; i++)
     {
-        printf("0x%02X ", (unsigned char)(buffer[i]));
+        printf("0x%02X ", (unsigned char)(sbn_hdr_buffer[i]));
     }
     printf("\n");
 
     printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz, MsgType, CpuID);
 
-    if (MsgSz != retval)
-    {
-        printf("SBN_Client: Size mismatch (expected vs actual): %u - %u\n", MsgSz, (unsigned int) retval);
-    }
-    else
-    {
-        switch(MsgType)
-        {
-            case SBN_NO_MSG:
-                printf("SBN_Client recv_msg: SBN_NO_MSG\n");
-                break;
-            case SBN_SUB_MSG:
-                printf("SBN_Client recv_msg: SBN_SUB_MSG\n");
-                break;
-            case SBN_UNSUB_MSG:
-                printf("SBN_Client recv_msg: SBN_UNSUB_MSG\n");
-                break;
-            case SBN_APP_MSG:
-                printf("SBN_Client recv_msg: SBN_APP_MSG\n");
-                break;
-            case SBN_PROTO_MSG:
-                printf("SBN_Client recv_msg: SBN_PROTO_MSG\n");
-                break;
+    //TODO: check cpuID to see if it is correct for this location?
 
-            default:
-                printf("SBN_Client recv_msg: ERROR - unrecognized type %d\n", MsgType);
+    switch(MsgType)
+    {
+        case SBN_NO_MSG:
+            printf("SBN_Client recv_msg: SBN_NO_MSG\n");
+            break;
+        case SBN_SUB_MSG:
+            printf("SBN_Client recv_msg: SBN_SUB_MSG\n");
+            break;
+        case SBN_UNSUB_MSG:
+            printf("SBN_Client recv_msg: SBN_UNSUB_MSG\n");
+            break;
+        case SBN_APP_MSG:
+            printf("SBN_Client recv_msg: SBN_APP_MSG\n");
+            break;
+        case SBN_PROTO_MSG:
+            printf("SBN_Client recv_msg: SBN_PROTO_MSG\n");
+            break;
+        case 0xA0:
+            printf("SBN_Client recv_msg: Heartbeat received!\n");
+            break;
+
+        default:
+            printf("SBN_Client recv_msg: ERROR - unrecognized type %d\n", MsgType);
+    }
+    
+    bytes_received = 0;
+    total_bytes_recd = 0;
+    
+    while (total_bytes_recd != MsgSz)
+    {
+        bytes_received = read(sockfd, msg_buffer + total_bytes_recd, MsgSz - total_bytes_recd);
+        
+        if (bytes_received < 0)
+        {
+            //TODO:ERROR socket is dead somehow
+            return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
         }
+        else if (bytes_received == 0)
+        {
+            //TODO:ERROR closed remotely 
+            return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
+        }
+        
+        total_bytes_recd += bytes_received;
     }
 }
