@@ -52,6 +52,43 @@ pthread_t receive_thread_id;
 CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 
+// message_entry_point determines which slot a new message enters the pipe.
+// the mod allows it to go around the bend easily, i.e. 2 + 4 % 5 = 1, 
+// slots 2,3,4,0 are taken so 1 is entry
+int message_entry_point(CFE_SBN_Client_PipeD_t pipe)
+{
+    return (pipe.NextMessage + pipe.NumberOfMessages) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+}
+
+int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, size_t MsgSz)
+{
+    int bytes_received = 0;
+    int total_bytes_recd = 0;
+    
+    //TODO:Some kind of timeout on this.
+    while (total_bytes_recd != MsgSz)
+    {
+        bytes_received = read(sockfd, msg_buffer + total_bytes_recd, MsgSz - total_bytes_recd);
+        
+        if (bytes_received < 0)
+        {
+            //TODO:ERROR socket is dead somehow        
+            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_BROKEN_ERR");
+            return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
+        }
+        else if (bytes_received == 0)
+        {
+            //TODO:ERROR closed remotely 
+            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_CLOSED_ERR");
+            return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
+        }
+        
+        total_bytes_recd += bytes_received;
+    }
+    
+    printf("SBN_Client: Received: %d\t", total_bytes_recd);
+}
+
 
 void CFE_SBN_Client_InitPipeTbl(void)
 {
@@ -95,6 +132,61 @@ CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void)
     }/* end for */
 
     return CFE_SBN_CLIENT_INVALID_PIPE;
+}
+
+//NOTE:using memcpy to move message into pipe. What about pointer passing?
+//    :can we only look to msgId then memcpy only that then read directly
+//    : into pipe? This could speed things up...
+void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
+{
+    int bytes_received = 0;
+    int total_bytes_recd = 0;
+    char msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
+    CFE_SB_MsgId_t MsgId;
+    
+    int status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg_buffer, MsgSz);
+    
+    //TODO: Status check goes here
+
+    MsgId = CFE_SB_GetMsgId(msg_buffer);
+    
+    //TODO: check that msgid is valid
+    
+    // put message into pipe
+    
+    int i;
+    
+    for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
+    {    
+        if (PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
+        {
+            int j;
+            
+            for(j = 0; j < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; j++)
+            {
+                if (PipeTbl[i].SubscribedMsgIds[j] == MsgId)
+                {
+                    if (PipeTbl[i].NumberOfMessages == CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
+                    {
+                        //TODO: error pipe overflow
+                        return;
+                    }
+                    else
+                    {    
+                        memcpy(PipeTbl[i].Messages[message_entry_point(PipeTbl[i])], msg_buffer, MsgSz);
+                        PipeTbl[i].NumberOfMessages++;
+                        return;
+                    } /* end if */
+                    
+                }/* end if */
+                 
+            } /* end for */
+            //TODO: error no subscription for this msgid
+        
+        } /* end if */
+    
+    } /* end for */
+    //TODO: error no pipes in use
 }
 
     
@@ -492,33 +584,13 @@ int recv_msg(int sockfd)
     int bytes_received = 0;
     int total_bytes_recd = 0;
     char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
-    char msg_buffer[CFE_SB_MAX_SB_MSG_SIZE]; // TODO: Plus SBN header?
     SBN_MsgSz_t MsgSz;
     SBN_MsgType_t MsgType;
     SBN_CpuID_t CpuID;
     
-    //TODO:some sort of timeout on this?
-    while (total_bytes_recd != SBN_PACKED_HDR_SZ)
-    {
-        bytes_received = read(sockfd, sbn_hdr_buffer + total_bytes_recd, SBN_PACKED_HDR_SZ - total_bytes_recd);
-        //printf("bytes_received = %d\n", bytes_received);
-        if (bytes_received < 0)
-        {
-            //TODO:ERROR socket is dead somehow
-            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_BROKEN_ERR");
-            return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
-        }
-        else if (bytes_received == 0)
-        {
-            //TODO:ERROR closed remotely 
-            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_CLOSED_ERR");
-            return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
-        }
-        
-        total_bytes_recd += bytes_received;
-    }
+    int status = CFE_SBN_CLIENT_ReadBytes(sockfd, sbn_hdr_buffer, SBN_PACKED_HDR_SZ);
     
-    printf("SBN_Client: Received: %d\t", total_bytes_recd);
+    //TODO: status check goes here
 
     // TODO: error checking (-1 returned, perror)
 
@@ -551,11 +623,13 @@ int recv_msg(int sockfd)
             break;
         case SBN_APP_MSG:
             printf("SBN_Client recv_msg: SBN_APP_MSG\n");
-            break;
+            int status = 0;
+            ingest_app_message(sockfd, MsgSz);
+            return status;
         case SBN_PROTO_MSG:
             printf("SBN_Client recv_msg: SBN_PROTO_MSG\n");
             break;
-        case 0xA0:
+        case SBN_RECVD_HEARTBEAT_MSG:
             printf("SBN_Client recv_msg: Heartbeat received!\n");
             break;
 
@@ -563,24 +637,5 @@ int recv_msg(int sockfd)
             printf("SBN_Client recv_msg: ERROR - unrecognized type %d\n", MsgType);
     }
     
-    bytes_received = 0;
-    total_bytes_recd = 0;
-    
-    while (total_bytes_recd != MsgSz)
-    {
-        bytes_received = read(sockfd, msg_buffer + total_bytes_recd, MsgSz - total_bytes_recd);
-        
-        if (bytes_received < 0)
-        {
-            //TODO:ERROR socket is dead somehow
-            return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
-        }
-        else if (bytes_received == 0)
-        {
-            //TODO:ERROR closed remotely 
-            return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
-        }
-        
-        total_bytes_recd += bytes_received;
-    }
 }
+

@@ -5,6 +5,7 @@
  */
 
 #include <time.h>
+#include <unistd.h>
 
 #include "cfe.h"
 #include "utassert.h"
@@ -51,6 +52,13 @@ extern Ut_OSFILEAPI_HookTable_t         Ut_OSFILEAPI_HookTable;
 extern Ut_CFE_ES_HookTable_t            Ut_CFE_ES_HookTable;
 extern Ut_OSAPI_HookTable_t             Ut_OSAPI_HookTable;
 
+void Test_Group_Setup(void)
+{
+    time_t random_gen = time(NULL);
+    srand(random_gen);
+    
+    printf("Random Seed = %d\n", random_gen);
+}
 
 void SBN_Client_Setup(void)
 {
@@ -67,7 +75,7 @@ void SBN_Client_Setup(void)
   Ut_CFE_TBL_Reset();
   
   // reseed random generator
-  srand(time(NULL));
+  //srand(time(NULL));
 }
 
 void SBN_Client_Teardown(void)
@@ -304,6 +312,55 @@ void Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
     
 }
 
+void Test_ingest_app_message(void)
+{
+    /* Arrange */
+    int p[2]; pipe(p);
+    unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
+    int msgSize = sizeof(msg);
+    int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
+    printf("pipe_assigned = %d\n", pipe_assigned);
+    int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
+    printf("msg_id_slot = %d\n", msg_id_slot);
+    int next_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+    printf("next_msg = %d\n", next_msg);
+    int num_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; 
+    printf("num_msg = %d\n", num_msg);
+    int msg_slot;
+    
+    write(p[1], msg, msgSize);
+    close(p[1]);
+    
+    PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
+    PipeTbl[pipe_assigned].PipeId = pipe_assigned;
+    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = 0x1881;
+    PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
+    PipeTbl[pipe_assigned].NextMessage = next_msg;
+    
+    msg_slot = next_msg + num_msg;
+    
+    if (msg_slot >= CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
+    {
+        msg_slot = msg_slot - CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+    } 
+    printf("msg_slot = %d\n", msg_slot);
+    
+    /* Act */ 
+    ingest_app_message(p[0], msgSize);
+    
+    /* Assert */
+    int i;
+    
+    for(i = 0; i < msgSize; i++)
+    {
+        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], ErrorMessage("PipeTbl[%d].Messages[%d][%d] should = %d, but was ", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[0][i]));
+    }
+}
+
+//void Test_ingest_app_message_SuccessCausesPipeNumberOfMessagesToIncreaseBy1
+//void Test_ingest_app_message_FailsWhenNoPipesInUse
+//void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId
+
 void Test_starter(void)
 {
     /* Arrange */
@@ -321,6 +378,8 @@ void Test_starter(void)
 
 void SBN_Client_Test_AddTestCases(void)
 {
+    UtTest_Add(Test_Group_Setup, NULL, NULL, "Test_Group_Setup");
+    
     /* CFE_SBN_Client_InitPipeTbl Tests */
     UtTest_Add(Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes");
     
@@ -340,5 +399,7 @@ void SBN_Client_Test_AddTestCases(void)
     UtTest_Add(Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds");
     UtTest_Add(Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid");
     UtTest_Add(Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
+    
+    UtTest_Add(Test_ingest_app_message, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message");
     
 }
