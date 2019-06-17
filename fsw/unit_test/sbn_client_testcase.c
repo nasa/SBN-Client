@@ -361,6 +361,45 @@ void Test_ingest_app_message(void)
 //void Test_ingest_app_message_FailsWhenNoPipesInUse
 //void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId
 
+void Test_Wrap_CFE_SB_RcvMsgSuccess(void)
+{
+    /* Arrange */
+    unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
+    int msgSize = sizeof(msg);
+    int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
+    printf("pipe_assigned = %d\n", pipe_assigned);
+    int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
+    printf("msg_id_slot = %d\n", msg_id_slot);
+    int next_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+    printf("next_msg = %d\n", next_msg);
+    int num_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; 
+    printf("num_msg = %d\n", num_msg);
+    CFE_SB_MsgPtr_t buffer;
+
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+
+    pipe->InUse = CFE_SBN_CLIENT_IN_USE;
+    pipe->PipeId = pipe_assigned;
+    pipe->SubscribedMsgIds[msg_id_slot] = 0x1881;
+    pipe->NumberOfMessages = num_msg;
+    pipe->NextMessage = next_msg;
+    
+    memcpy(pipe->Messages[next_msg], msg, msgSize);
+    
+    /* Act */ 
+    int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, 5000);
+
+    /* Assert */
+    int i = 0;
+    
+    UtAssert_True(result == CFE_SUCCESS, ErrorMessage("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
+    for(i = 0; i < msgSize; i++)
+    {
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[next_msg][i], ErrorMessage("buffer[%d] should = %d, but was %d", i, PipeTbl[pipe_assigned].Messages[next_msg][i], buffer[i]));
+    }
+
+}
+
 void Test_starter(void)
 {
     /* Arrange */
@@ -400,6 +439,10 @@ void SBN_Client_Test_AddTestCases(void)
     UtTest_Add(Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid");
     UtTest_Add(Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
     
+    /* ingest_app_message Tests */
     UtTest_Add(Test_ingest_app_message, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message");
+    
+    /* Wrap_CFE_SB_RcvMsg Tests */
+    UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccess, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccess");
     
 }

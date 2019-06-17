@@ -73,26 +73,26 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, size_t MsgSz
         if (bytes_received < 0)
         {
             //TODO:ERROR socket is dead somehow        
-            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_BROKEN_ERR");
+            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_BROKEN_ERR\n");
             return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
         }
         else if (bytes_received == 0)
         {
             //TODO:ERROR closed remotely 
-            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_CLOSED_ERR");
+            puts("BAD!!!! CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
             return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
         }
         
         total_bytes_recd += bytes_received;
     }
     
-    printf("SBN_Client: Received: %d\t", total_bytes_recd);
+    printf("SBN_Client: Received: %d\n", total_bytes_recd);
 }
 
 
 void CFE_SBN_Client_InitPipeTbl(void)
 {
-    puts("Pipe table init");
+    puts("CFE_SBN_Client_InitPipeTbl");
     uint8  i;
 
     for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++){
@@ -559,7 +559,39 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
     // Need to have multiple pipes... so the subscribe thing
     // Need to coordinate with the recv_msg thread... so locking?
     // Also, what about messages that get split? Is that an issue?
-}
+    int8   pipe_idx;
+    time_t entry_time = time(NULL);
+    
+    //TODO: TimeOut is in milliseconds.  do a better job of timing on this instead of just seconds.
+    while (entry_time + (TimeOut / 1000) > time(NULL))
+    {
+        pipe_idx = CFE_SBN_Client_GetPipeIdx(PipeId);
+        if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
+        {
+            puts("BAD!! INVALID PIPE ERROR!");
+            //TODO: don't know if this is a valid error return value;
+            return CFE_SBN_CLIENT_INVALID_PIPE;
+        }
+        else
+        {
+            CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
+            uint32 next_msg = pipe->NextMessage;
+            uint16 msg_size;
+            
+            if (pipe->NumberOfMessages > 0)
+            {
+                msg_size = CFE_SB_GetTotalMsgLength(pipe->Messages[next_msg]);
+                memcpy(*BufPtr, pipe->Messages[next_msg], msg_size);
+                
+                pipe->NextMessage = (next_msg + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+                return CFE_SUCCESS;
+            }
+        
+        }/* end if */
+        
+    }/* end while */
+    
+} /* end __wrap_CFE_SB_RcvMsg */
 
 int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr, CFE_SB_ZeroCopyHandle_t BufferHandle)
 {
@@ -583,7 +615,8 @@ int recv_msg(int sockfd)
 {
     int bytes_received = 0;
     int total_bytes_recd = 0;
-    char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
+    unsigned char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
+    unsigned char msg[CFE_SB_MAX_SB_MSG_SIZE];
     SBN_MsgSz_t MsgSz;
     SBN_MsgType_t MsgType;
     SBN_CpuID_t CpuID;
@@ -602,7 +635,7 @@ int recv_msg(int sockfd)
 
     for (int i = 0; i < SBN_PACKED_HDR_SZ; i++)
     {
-        printf("0x%02X ", (unsigned char)(sbn_hdr_buffer[i]));
+        printf("0x%02X ", sbn_hdr_buffer[i]);
     }
     printf("\n");
 
@@ -614,12 +647,15 @@ int recv_msg(int sockfd)
     {
         case SBN_NO_MSG:
             printf("SBN_Client recv_msg: SBN_NO_MSG\n");
+            CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_SUB_MSG:
             printf("SBN_Client recv_msg: SBN_SUB_MSG\n");
+            CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_UNSUB_MSG:
             printf("SBN_Client recv_msg: SBN_UNSUB_MSG\n");
+            CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_APP_MSG:
             printf("SBN_Client recv_msg: SBN_APP_MSG\n");
@@ -627,15 +663,23 @@ int recv_msg(int sockfd)
             ingest_app_message(sockfd, MsgSz);
             return status;
         case SBN_PROTO_MSG:
-            printf("SBN_Client recv_msg: SBN_PROTO_MSG\n");
+            printf("SBN_Client recv_msg: SBN_PROTO_MSG\n");      
+            CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_RECVD_HEARTBEAT_MSG:
             printf("SBN_Client recv_msg: Heartbeat received!\n");
+            CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
 
         default:
             printf("SBN_Client recv_msg: ERROR - unrecognized type %d\n", MsgType);
     }
     
+    puts("Received Message:");
+    for (int i = 0; i < MsgSz; i++)
+    {
+        printf("0x%02X ", msg[i]);
+    }
+    printf("\n");
 }
 
