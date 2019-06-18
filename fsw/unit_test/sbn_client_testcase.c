@@ -372,7 +372,7 @@ void Test_Wrap_CFE_SB_RcvMsgSuccess(void)
     printf("msg_id_slot = %d\n", msg_id_slot);
     int next_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
     printf("next_msg = %d\n", next_msg);
-    int num_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; 
+    int num_msg = (rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH) + 1; 
     printf("num_msg = %d\n", num_msg);
     CFE_SB_MsgPtr_t buffer;
 
@@ -399,6 +399,8 @@ void Test_Wrap_CFE_SB_RcvMsgSuccess(void)
     }
 
 }
+
+//TODO: Test_Wrap_CFE_SB_RcvMsgFail when num messages = 0
 
 void Test_starter(void)
 {
