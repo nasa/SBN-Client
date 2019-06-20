@@ -400,6 +400,8 @@ void Test_Wrap_CFE_SB_RcvMsgSuccess(void)
 
 }
 
+//TODO: Test_Wrap_CFE_SB_RcvMsgSuccess when num messages = 1
+//TODO: Test_Wrap_CFE_SB_RcvMsgSuccess when num messages = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH
 //TODO: Test_Wrap_CFE_SB_RcvMsgFail when num messages = 0
 
 void Test_starter(void)
