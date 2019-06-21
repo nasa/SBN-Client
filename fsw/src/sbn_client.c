@@ -746,6 +746,7 @@ int recv_msg(int sockfd)
             break;
         case SBN_APP_MSG:
             ingest_app_message(sockfd, MsgSz);
+            break;
         case SBN_PROTO_MSG:      
             CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
