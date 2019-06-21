@@ -349,7 +349,7 @@ void *heartbeatMinder(void *vargp)
     while(1) // TODO: check run state?
     {
       puts("heartbeatMinder running");
-        printf ("sockfd = %d\n", sockfd);
+      
         if (sockfd != 0)
         {
             printf("SBN_Client: Sending heartbeat\n");
@@ -387,7 +387,7 @@ int send_heartbeat(int sockfd)
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
     printf("SBN_Client: CreatingPipe\n");
-    //SBN_ClientInit();
+    SBN_ClientInit();
     /* AppId is static for now */
     
     /* caller name is static for now */
@@ -663,7 +663,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
         else
         {
             CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
-            
+            //printf("pipe->NumberOfMessages = %d\n", pipe->NumberOfMessages);
             if (pipe->NumberOfMessages > 1)
             {
                 /* must progress to next message in pipe */
@@ -680,7 +680,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
             }
         
         }/* end if */
-      //sleep(0);  
+      sleep(1);  
     }/* end while */
     
 } /* end __wrap_CFE_SB_RcvMsg */
