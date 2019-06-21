@@ -57,17 +57,17 @@ static void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID, CFE_SB_Qos_t QoS);
 
 int32 SBN_ClientInit(void)
 {
-  puts ("SBN_CLIENT_INIT");
+  //puts ("SBN_CLIENT_INIT");
     // Gets socket file descriptor
     sockfd = connect_to_server(IP_ADDR, PORT);
     cpuId = 2;
 
     if (sockfd < 0)
     {
-        printf("SBN_client: Failed to get sockfd, error %d\n", sockfd);
+        printf("SBN_CLIENT: ERROR Failed to get sockfd, error %d\n", sockfd);
         exit(sockfd);
     }
-    printf("sockfd = %d\n", sockfd);
+    
     // Create pipe table
     CFE_SBN_Client_InitPipeTbl();
 
@@ -76,11 +76,8 @@ int32 SBN_ClientInit(void)
     //recv_msg(sockfd);
 
     // Thread for watchdog?
-    int hbt = pthread_create(&heart_thread_id, NULL, heartbeatMinder, NULL);
-    int rcm =  pthread_create(&receive_thread_id, NULL, receiveMinder, NULL);
-
-    // printf("hbt = %d\n", hbt);
-    // printf("rcm = %d\n", rcm);
+    pthread_create(&heart_thread_id, NULL, heartbeatMinder, NULL);
+    pthread_create(&receive_thread_id, NULL, receiveMinder, NULL);
     
     // TODO: is thread ever cleaned up?
     // pthread_join(thread_id, NULL);
@@ -112,26 +109,26 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, size_t MsgSz
         if (bytes_received < 0)
         {
             //TODO:ERROR socket is dead somehow        
-            puts("ERROR!!!! CFE_SBN_CLIENT_PIPE_BROKEN_ERR\n");
+            puts("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_BROKEN_ERR\n");
             return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
         }
         else if (bytes_received == 0)
         {
             //TODO:ERROR closed remotely 
-            puts("ERROR!!!! CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
+            puts("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
             return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
         }
         
         total_bytes_recd += bytes_received;
     }
     
-    printf("SBN_Client: Received: %d\n", total_bytes_recd);
+    //printf("SBN_Client: Received: %d\n", total_bytes_recd);
 }
 
 
 void CFE_SBN_Client_InitPipeTbl(void)
 {
-    puts("CFE_SBN_Client_InitPipeTbl");
+    //puts("CFE_SBN_Client_InitPipeTbl");
     uint8  i;
 
     for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++){
@@ -183,11 +180,11 @@ size_t write_message(char *buffer, size_t size)
 {
   size_t result;
   
-  printf("Writing Message from SBN_CLIENT sockfd =%d, size = %d\n", sockfd, size);
+  //printf("Writing Message from SBN_CLIENT sockfd =%d, size = %d\n", sockfd, size);
   
   result = write(sockfd, buffer, size);
   
-  printf("result = %d\n", result);
+  //printf("result = %d\n", result);
   
   return result;
 }
@@ -197,7 +194,7 @@ size_t write_message(char *buffer, size_t size)
 //    : into pipe? This could speed things up...
 void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
 {
-    puts("Ingesting APP message");
+    //puts("Ingesting APP message");
     int bytes_received = 0;
     int total_bytes_recd = 0;
     char msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
@@ -212,7 +209,7 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
 
     MsgId = CFE_SB_GetMsgId(msg_buffer);
     
-    printf("MessageID = %04X\n", MsgId);
+    //printf("MessageID = %04X\n", MsgId);
     
     //TODO: check that msgid is valid
     
@@ -230,11 +227,11 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
             {
                 if (PipeTbl[i].SubscribedMsgIds[j] == MsgId)
                 {
-                    printf("PipeTbl[i].NumberOfMessages = %d\n", PipeTbl[i].NumberOfMessages);
+                    
                     if (PipeTbl[i].NumberOfMessages == CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
                     {
                         //TODO: error pipe overflow
-                        puts("SBN_CLIENT: error pipe overflow");
+                        puts("SBN_CLIENT: ERROR pipe overflow");
                         return;
                     }
                     else
@@ -251,7 +248,7 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
         } /* end if */
     
     } /* end for */
-    puts("SBN_CLIENT: error no subscription for this msgid");
+    puts("SBN_CLIENT: ERROR no subscription for this msgid");
 }
 
     
@@ -345,14 +342,14 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
 #define SBN_TCP_HEARTBEAT_MSG 0xA0
 void *heartbeatMinder(void *vargp)
 {
-  puts("heartbeatMinder started");
+  //puts("heartbeatMinder started");
     while(1) // TODO: check run state?
     {
-      puts("heartbeatMinder running");
+      //puts("heartbeatMinder running");
       
         if (sockfd != 0)
         {
-            printf("SBN_Client: Sending heartbeat\n");
+            //printf("SBN_Client: Sending heartbeat\n");
             send_heartbeat(sockfd);
         }
         
@@ -364,7 +361,7 @@ void *heartbeatMinder(void *vargp)
 // TODO: return value?
 int send_heartbeat(int sockfd)
 {
-    printf("SBN_Client: Sending a heartbeat\n");
+    //printf("SBN_Client: Sending a heartbeat\n");
     
     int retval = 0;
     char sbn_header[SBN_PACKED_HDR_SZ] = {0};
@@ -378,7 +375,7 @@ int send_heartbeat(int sockfd)
     
     retval = write(sockfd, sbn_header, sizeof(sbn_header));
     
-    printf("SBN_Client: Did the send work? %d\n", retval);
+    //printf("SBN_Client: Did the send work? %d\n", retval);
 }
 
 
@@ -386,7 +383,7 @@ int send_heartbeat(int sockfd)
 
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
-    printf("SBN_Client: CreatingPipe\n");
+    //printf("SBN_Client: CreatingPipe\n");
     SBN_ClientInit();
     /* AppId is static for now */
     
@@ -507,21 +504,21 @@ static void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID,
     Pack_MsgID(&Pack, MsgID);
     Pack_Data(&Pack, &QoS, sizeof(QoS)); /* 2 uint8's */
     
-    int i = 0;
-    puts("SUB MSG: ");
-    for (i;i < Pack.BufUsed; i++)
-    {
-      printf("0x%02x ", (unsigned char)Buf[i]);
-    }
-    printf("i = %d\n", i);
-    puts("");
+    // int i = 0;
+    // puts("SUB MSG: ");
+    // for (i;i < Pack.BufUsed; i++)
+    // {
+    //   printf("0x%02x ", (unsigned char)Buf[i]);
+    // }
+    // printf("i = %d\n", i);
+    // puts("");
     
     size_t write_result = write_message(Buf, Pack.BufUsed);
     
     if (write_result != Pack.BufUsed)
     {
       //TODO: error
-      puts("Error SendSubToSbn!!\n");
+      puts("SBN_CLIENT: ERROR SendSubToSbn!!\n");
     }
     
 }/* end SendLocalSubToPeer */
@@ -579,31 +576,31 @@ int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 
 int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, CFE_SB_Qos_t Quality, uint16 MsgLim)
 {
-    printf ("SBN_Client:CFE_SB_SubscribeEx not yet implemented\n");
+    printf ("SBN_CLIENT: ERROR CFE_SB_SubscribeEx not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, uint16 MsgLim)
 {
-    printf ("SBN_Client:CFE_SB_SubscribeLocal not yet implemented\n");
+    printf ("SBN_CLIENT: ERROR CFE_SB_SubscribeLocal not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-    printf ("SBN_Client:CFE_SB_Unsubscribe not yet implemented\n");
+    printf ("SBN_CLIENT: ERROR CFE_SB_Unsubscribe not yet implemented\n");
     return -1;
 }
 
 int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-    printf ("SBN_Client:CFE_SB_UnsubscribeLocal not yet implemented\n");
+    printf ("SBN_CLIENT: ERROR CFE_SB_UnsubscribeLocal not yet implemented\n");
     return -1;
 }
 
 uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 {
-    printf("SBN_Client:Sending Message...\n");
+    //printf("SBN_Client:Sending Message...\n");
     char *buffer;
     uint16 msg_size = CFE_SB_GetTotalMsgLength(msg);
 
@@ -640,7 +637,7 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 
 int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
 {
-    puts("SBN_CLIENT: Checking for messages...");
+    //puts("SBN_CLIENT: Checking for messages...");
     // Oh my.
     // Need to have multiple pipes... so the subscribe thing
     // Need to coordinate with the recv_msg thread... so locking?
@@ -656,7 +653,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
         
         if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
         {
-            puts("ERROR!! INVALID PIPE ERROR!");
+            puts("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
             //TODO: don't know if this is a valid error return value;
             return CFE_SBN_CLIENT_INVALID_PIPE;
         }
@@ -687,17 +684,17 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
 
 int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr, CFE_SB_ZeroCopyHandle_t BufferHandle)
 {
-    printf ("SBN_Client:CFE_SB_ZeroCopySend not yet implemented\n");
+    printf ("SBN_CLIENT: ERROR CFE_SB_ZeroCopySend not yet implemented\n");
     return -1;
 }
 // Receiving messages
 
 void *receiveMinder(void *vargp)
 {
-  puts("receiveMinder started");
+  //puts("receiveMinder started");
     while(1) // TODO: check run state?
     {
-        printf("SBN_Client: Checking messages\n");
+        //printf("SBN_Client: Checking messages\n");
         recv_msg(sockfd); // TODO: pass message pointer?
         // On heartbeats, need to update known liveness state of SBN
         // On other messages, need to make available for next CFE_SB_RcvMsg call
@@ -732,40 +729,32 @@ int recv_msg(int sockfd)
     // }
     // printf("\n");
 
-    printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz, MsgType, CpuID);
+    //printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz, MsgType, CpuID);
 
     //TODO: check cpuID to see if it is correct for this location?
 
     switch(MsgType)
     {
         case SBN_NO_MSG:
-            printf("SBN_Client recv_msg: SBN_NO_MSG\n");
             CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_SUB_MSG:
-            printf("SBN_Client recv_msg: SBN_SUB_MSG\n");
             CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_UNSUB_MSG:
-            printf("SBN_Client recv_msg: SBN_UNSUB_MSG\n");
             CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_APP_MSG:
-            printf("SBN_Client recv_msg: SBN_APP_MSG\n");
-            int status = 0;
             ingest_app_message(sockfd, MsgSz);
-            return status;
-        case SBN_PROTO_MSG:
-            printf("SBN_Client recv_msg: SBN_PROTO_MSG\n");      
+        case SBN_PROTO_MSG:      
             CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
         case SBN_RECVD_HEARTBEAT_MSG:
-            printf("SBN_Client recv_msg: Heartbeat received!\n");
             CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
             break;
 
         default:
-            printf("SBN_Client recv_msg: ERROR - unrecognized type %d\n", MsgType);
+            printf("SBN_CLIENT: ERROR - recv_msg unrecognized type %d\n", MsgType);
     }
     
     // puts("Received Message:");
