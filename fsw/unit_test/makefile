@@ -98,7 +98,7 @@ endif
 
 ENABLE_WRAP = TRUE
 ifeq ($(ENABLE_WRAP), TRUE)
-WRAP_LOPT = -Wl,-wrap,CFE_SB_CreatePipe,-wrap,CFE_SB_Subscribe,-wrap,CFE_SB_RcvMsg
+WRAP_LOPT = -Wl,-wrap,CFE_SB_CreatePipe,-wrap,CFE_SB_Subscribe,-wrap,CFE_SB_RcvMsg,-wrap,socket,-wrap,htons,-wrap,inet_pton,-wrap,connect
 endif
 
 #WARNINGS = -Wall -W -ansi -Werror -Wstrict-prototypes -Wundef

@@ -53,12 +53,50 @@ CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 static void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID, CFE_SB_Qos_t QoS);
 
+
+
+int32 SBN_ClientInit(void)
+{
+  puts ("SBN_CLIENT_INIT");
+    // Gets socket file descriptor
+    sockfd = connect_to_server(IP_ADDR, PORT);
+    cpuId = 2;
+
+    if (sockfd < 0)
+    {
+        printf("SBN_client: Failed to get sockfd, error %d\n", sockfd);
+        exit(sockfd);
+    }
+    printf("sockfd = %d\n", sockfd);
+    // Create pipe table
+    CFE_SBN_Client_InitPipeTbl();
+
+    // Receive a message or something?
+    //recv_msg(sockfd);
+    //recv_msg(sockfd);
+
+    // Thread for watchdog?
+    int hbt = pthread_create(&heart_thread_id, NULL, heartbeatMinder, NULL);
+    int rcm =  pthread_create(&receive_thread_id, NULL, receiveMinder, NULL);
+
+    // printf("hbt = %d\n", hbt);
+    // printf("rcm = %d\n", rcm);
+    
+    // TODO: is thread ever cleaned up?
+    // pthread_join(thread_id, NULL);
+
+    // TODO: return failure?
+    return OS_SUCCESS;
+}
+
+
+
 // message_entry_point determines which slot a new message enters the pipe.
 // the mod allows it to go around the bend easily, i.e. 2 + 4 % 5 = 1, 
 // slots 2,3,4,0 are taken so 1 is entry
 int message_entry_point(CFE_SBN_Client_PipeD_t pipe)
 {
-    return (pipe.NextMessage + pipe.NumberOfMessages) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+    return (pipe.ReadMessage + pipe.NumberOfMessages) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
 }
 
 int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, size_t MsgSz)
@@ -97,18 +135,24 @@ void CFE_SBN_Client_InitPipeTbl(void)
     uint8  i;
 
     for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++){
-        InvalidatePipe(&PipeTbl[i]);
+        invalidate_pipe(&PipeTbl[i]);
     }/* end for */
+    
     
 }
 
-void InvalidatePipe(CFE_SBN_Client_PipeD_t *pipe)
+void invalidate_pipe(CFE_SBN_Client_PipeD_t *pipe)
 {
     int i;
     
     pipe->InUse         = CFE_SBN_CLIENT_NOT_IN_USE;
     pipe->SysQueueId    = CFE_SBN_CLIENT_UNUSED_QUEUE;
     pipe->PipeId        = CFE_SBN_CLIENT_INVALID_PIPE;
+    /* SB always holds one message so Number of messages should always be a minimum of 1 */
+    pipe->NumberOfMessages = 1;
+    /* Message to be read will be incremented after receive is called */
+    /* Therefor initial next message is the last in the chain */
+    pipe->ReadMessage = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1;
     memset(&pipe->PipeName[0],0,OS_MAX_API_NAME);
     
     for(i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
@@ -161,7 +205,10 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     
     int status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg_buffer, MsgSz);
     
-    //TODO: Status check goes here
+    // if (status != CFE_SUCCESS)
+    // {
+    //   return status;
+    // }
 
     MsgId = CFE_SB_GetMsgId(msg_buffer);
     
@@ -248,40 +295,6 @@ uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
     }
     
     return CFE_SBN_CLIENT_MAX_MSG_IDS_MET;
-}
-
-int32 SBN_ClientInit(void)
-{
-  puts ("SBN_CLIENT_INIT");
-    // Gets socket file descriptor
-    sockfd = connect_to_server(IP_ADDR, PORT);
-    cpuId = 2;
-
-    if (sockfd < 0)
-    {
-        printf("SBN_client: Failed to get sockfd, error %d\n", sockfd);
-        exit(sockfd);
-    }
-    
-    // Create pipe table
-    CFE_SBN_Client_InitPipeTbl();
-
-    // Receive a message or something?
-    //recv_msg(sockfd);
-    //recv_msg(sockfd);
-
-    // Thread for watchdog?
-    int hbt = pthread_create(&heart_thread_id, NULL, heartbeatMinder, NULL);
-    int rcm =  pthread_create(&receive_thread_id, NULL, receiveMinder, NULL);
-
-    // printf("hbt = %d\n", hbt);
-    // printf("rcm = %d\n", rcm);
-    
-    // TODO: is thread ever cleaned up?
-    // pthread_join(thread_id, NULL);
-
-    // TODO: return failure?
-    return OS_SUCCESS;
 }
 
 int connect_to_server(const char *server_ip, uint16_t server_port)
@@ -374,7 +387,7 @@ int send_heartbeat(int sockfd)
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
     printf("SBN_Client: CreatingPipe\n");
-    SBN_ClientInit();
+    //SBN_ClientInit();
     /* AppId is static for now */
     
     /* caller name is static for now */
@@ -422,8 +435,6 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
         PipeTbl[i].SendErrors = 0;
         //strcpy(&CFE_SB.PipeTbl[PipeTblIdx].AppName[0],&AppName[0]); TODO: is App name required? will cfs proxy handle it?
         strncpy(&PipeTbl[i].PipeName[0], PipeName, OS_MAX_API_NAME); //TODO: Use different value for size?
-        PipeTbl[i].NumberOfMessages = 0;
-        PipeTbl[i].NextMessage = 0;
         //TODO: init Messages to empty?
         
         *PipeIdPtr = i;
@@ -453,7 +464,7 @@ int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
         {
             if (PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
             {
-                InvalidatePipe(&PipeTbl[i]);
+                invalidate_pipe(&PipeTbl[i]);
                 // CFE_EVS_SendEvent(CFE_SBN_CLIENT_PIPE_DELETED_EID, 
                 // CFE_EVS_EventType_DEBUG, "Pipe Deleted:id %d,owner %s",
                 // (int)PipeId, APP_NAME);
@@ -629,8 +640,7 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 
 int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
 {
-    puts("SBN_CLIENT: __wrap_CFE_SB_RcvMsg");
-    printf("PipeId = %d\n", PipeId);
+    puts("SBN_CLIENT: Checking for messages...");
     // Oh my.
     // Need to have multiple pipes... so the subscribe thing
     // Need to coordinate with the recv_msg thread... so locking?
@@ -642,9 +652,8 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
     //TODO: TimeOut is in milliseconds.  do a better job of timing on this instead of just seconds.
     while ((entry_time + (TimeOut / 1000)) > time(NULL))
     {
-      puts("SBN_CLIENT: entered while");
         pipe_idx = CFE_SBN_Client_GetPipeIdx(PipeId);
-        printf("pipe_idx = %d\n", pipe_idx);
+        
         if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
         {
             puts("ERROR!! INVALID PIPE ERROR!");
@@ -655,23 +664,23 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
         {
             CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
             
-            if (pipe->NumberOfMessages > 0)
+            if (pipe->NumberOfMessages > 1)
             {
-                uint32 next_msg = pipe->NextMessage;
+                /* must progress to next message in pipe */
+                uint32 next_msg = (pipe->ReadMessage + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
                 uint16 msg_size;
-                puts("SBN_CLIENT: should be getting message");
+                pipe->ReadMessage = next_msg;
+                
                 msg_size = CFE_SB_GetTotalMsgLength(pipe->Messages[next_msg]);
-                printf("SBN_CLIENT: should be getting message msg_size = %d\n", msg_size);
-                //memcpy(*BufPtr, pipe->Messages[next_msg], msg_size);
+                
                 *BufPtr = &(pipe->Messages[next_msg]);
-                puts("SBN_CLIENT: should be getting message done with mem copy");
-                pipe->NextMessage = (next_msg + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+                
                 pipe->NumberOfMessages -= 1;
                 return CFE_SUCCESS;
             }
         
         }/* end if */
-      sleep(1);  
+      //sleep(0);  
     }/* end while */
     
 } /* end __wrap_CFE_SB_RcvMsg */
