@@ -74,11 +74,11 @@ typedef struct {
     uint32             NumberOfMessages;
     uint32             ReadMessage;
     unsigned char      Messages[CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH][CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
-    CFE_SB_MsgId_t     SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE]
+    CFE_SB_MsgId_t     SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE];
 } CFE_SBN_Client_PipeD_t;
 
 // SBN header // TODO: from include?
-typedef struct 
+typedef struct
 {
     uint16 SBN_MsgSz;
     uint8  SBN_MsgType;
@@ -91,7 +91,7 @@ typedef struct {
 } MsgId_to_pipes_t;
 
 typedef struct {
-  
+
 } SubscriptionTable_t;
 
 
