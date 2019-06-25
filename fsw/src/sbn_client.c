@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <math.h>
 
 #include "cfe_platform_cfg.h"
 #include "sbn_constants.h"
@@ -37,6 +38,8 @@ int connect_to_server(const char *server_ip, uint16_t server_port);
 int send_msg(int sockfd, CFE_SB_Msg_t *msg);
 int send_heartbeat(int sockfd);
 int recv_msg(int sockfd);
+pthread_mutex_t receive_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  received_condition = PTHREAD_COND_INITIALIZER;
 ///////////////////////
 
 
@@ -52,7 +55,7 @@ pthread_t receive_thread_id;
 CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 static void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID, CFE_SB_Qos_t QoS);
-
+void invalidate_pipe(CFE_SBN_Client_PipeD_t *pipe);
 
 
 int32 SBN_ClientInit(void)
@@ -80,7 +83,7 @@ int32 SBN_ClientInit(void)
     pthread_create(&receive_thread_id, NULL, receiveMinder, NULL);
     
     // TODO: is thread ever cleaned up?
-    // pthread_join(thread_id, NULL);
+    //pthread_join(receive_thread_id, NULL);
 
     // TODO: return failure?
     return OS_SUCCESS;
@@ -197,7 +200,7 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     //puts("Ingesting APP message");
     int bytes_received = 0;
     int total_bytes_recd = 0;
-    char msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
+    unsigned char msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
     CFE_SB_MsgId_t MsgId;
     
     int status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg_buffer, MsgSz);
@@ -207,11 +210,15 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     //   return status;
     // }
 
-    MsgId = CFE_SB_GetMsgId(msg_buffer);
+    MsgId = CFE_SB_GetMsgId((CFE_SB_Msg_t *)msg_buffer);
     
     //printf("MessageID = %04X\n", MsgId);
     
     //TODO: check that msgid is valid
+    
+    // take mutex
+    pthread_mutex_lock(&receive_mutex);
+    //puts("\n\nRECEIVED LOCK!\n\n");
     
     // put message into pipe
     
@@ -232,12 +239,17 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
                     {
                         //TODO: error pipe overflow
                         puts("SBN_CLIENT: ERROR pipe overflow");
+                        
+                        pthread_mutex_unlock(&receive_mutex);
                         return;
                     }
-                    else
+                    else /* message is put into pipe */
                     {    
                         memcpy(PipeTbl[i].Messages[message_entry_point(PipeTbl[i])], msg_buffer, MsgSz);
                         PipeTbl[i].NumberOfMessages++;
+                        
+                        pthread_mutex_unlock(&receive_mutex);
+                        pthread_cond_signal(&received_condition); /* only a received message should send signal */
                         return;
                     } /* end if */
                     
@@ -249,6 +261,9 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     
     } /* end for */
     puts("SBN_CLIENT: ERROR no subscription for this msgid");
+    
+    pthread_mutex_unlock(&receive_mutex);
+    return;
 }
 
     
@@ -643,43 +658,76 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, int3
     // Need to coordinate with the recv_msg thread... so locking?
     // Also, what about messages that get split? Is that an issue?
     int8   pipe_idx;
-    time_t entry_time = time(NULL);
+    struct timespec enter_time;
+    int32  status;
     
+    clock_gettime(CLOCK_REALTIME, &enter_time);
+      
+    pipe_idx = CFE_SBN_Client_GetPipeIdx(PipeId);
     
-    //TODO: TimeOut is in milliseconds.  do a better job of timing on this instead of just seconds.
-    while ((entry_time + (TimeOut / 1000)) > time(NULL))
+    if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
     {
-        pipe_idx = CFE_SBN_Client_GetPipeIdx(PipeId);
+        puts("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
+        //TODO: don't know if this is a valid error return value;
+        status = CFE_SBN_CLIENT_INVALID_PIPE;
+    }
+    else
+    {
+        CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
         
-        if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
+        pthread_mutex_lock(&receive_mutex);
+        //puts("\nLOCKING\n");
+        
+        if (pipe->NumberOfMessages > 1)
         {
-            puts("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
-            //TODO: don't know if this is a valid error return value;
-            return CFE_SBN_CLIENT_INVALID_PIPE;
+            /* must progress to next message in pipe */
+            uint32 next_msg = (pipe->ReadMessage + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+            uint16 msg_size;
+            pipe->ReadMessage = next_msg;
+            
+            msg_size = CFE_SB_GetTotalMsgLength(pipe->Messages[next_msg]);
+            
+            *BufPtr = (CFE_SB_MsgPtr_t *)&(pipe->Messages[next_msg]);
+            
+            pipe->NumberOfMessages -= 1;
+            status = CFE_SUCCESS;
         }
         else
         {
-            CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
-            //printf("pipe->NumberOfMessages = %d\n", pipe->NumberOfMessages);
-            if (pipe->NumberOfMessages > 1)
-            {
-                /* must progress to next message in pipe */
-                uint32 next_msg = (pipe->ReadMessage + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-                uint16 msg_size;
-                pipe->ReadMessage = next_msg;
-                
-                msg_size = CFE_SB_GetTotalMsgLength(pipe->Messages[next_msg]);
-                
-                *BufPtr = &(pipe->Messages[next_msg]);
-                
-                pipe->NumberOfMessages -= 1;
-                return CFE_SUCCESS;
-            }
-        
-        }/* end if */
-      sleep(1);  
-    }/* end while */
+          int wait_result;
+          struct timespec future_timeout;
+          
+          /* set future time for timeout check to entry time + timeout milliseconds */
+          future_timeout.tv_sec = enter_time.tv_sec;
+          future_timeout.tv_nsec = enter_time.tv_nsec + (TimeOut * pow(10, 6));
+
+          /* when nsec greater than 1 second perform update to seconds and nanoseconds */
+          if (future_timeout.tv_nsec >= pow(10, 9))
+          {
+            future_timeout.tv_sec += future_timeout.tv_nsec / pow(10, 9);
+            future_timeout.tv_nsec = future_timeout.tv_nsec % (long) pow(10, 9);
+          }
+          
+          wait_result = pthread_cond_timedwait(&received_condition, &receive_mutex, &future_timeout);
+               
+          if (wait_result == ETIMEDOUT)
+          {
+            //puts("\n\nTIMEOUT!!!!!\n\n");
+            status = CFE_EVS_EventType_ERROR;
+          } /* end if */
+          
+        } /* end if */
     
+    } /* end if */
+    
+    int pmu = pthread_mutex_unlock(&receive_mutex);
+    
+    if (pmu != 0)
+    {
+      status =  CFE_EVS_ERROR;
+    } /* end if */
+    
+    return status;
 } /* end __wrap_CFE_SB_RcvMsg */
 
 int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr, CFE_SB_ZeroCopyHandle_t BufferHandle)
