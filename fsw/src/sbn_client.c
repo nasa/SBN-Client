@@ -304,6 +304,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     // socket error
     if (sockfd < 0)
     {
+        perror("connect_to_server socket error: ");
         return -1;
     }
 
@@ -317,11 +318,13 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     // inet_pton can have two separate errors, a value of 1 is success.
     if (address_converted == 0)
     {
+        perror("connect_to_server inet_pton 0 error: ");
         return -2;
     }
 
     if (address_converted == -1)
     {
+        perror("connect_to_server inet_pton -1 error: ");
         return -3;
     }
 
@@ -331,6 +334,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     // connect error
     if (connection < 0)
     {
+        perror("connect_to_server connect error: ");
         return -4;
     }
 
