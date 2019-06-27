@@ -24,13 +24,9 @@
 #define CCSDS_TIME_SIZE 6 // <- see mps_mission_cfg.h
 
 // Refer to sbn_cont_tbl.c to make sure these match
-// SBN is running here:
-#define PORT    1234
-#define IP_ADDR "127.0.0.1"
-
-// Peer (us) is running here:
-#define PEER_PORT    1235
-#define PEER_IP_ADDR "127.0.0.1"
+// SBN is running here: <- Should be in the platform config
+// #define SBN_CLIENT_PORT    1234
+// #define SBN_CLIENT_IP_ADDR "127.0.0.1"
 
 // Private functions
 int32 SBN_ClientInit(void);
@@ -62,7 +58,8 @@ int32 SBN_ClientInit(void)
 {
   //puts ("SBN_CLIENT_INIT");
     // Gets socket file descriptor
-    sockfd = connect_to_server(IP_ADDR, PORT);
+    printf("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
+    sockfd = connect_to_server(SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
     cpuId = 2;
 
     if (sockfd < 0)
@@ -400,7 +397,7 @@ int send_heartbeat(int sockfd)
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
     //printf("SBN_Client: CreatingPipe\n");
-    SBN_ClientInit();
+    //SBN_ClientInit();
     /* AppId is static for now */
     
     /* caller name is static for now */
