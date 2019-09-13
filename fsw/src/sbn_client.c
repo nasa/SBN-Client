@@ -25,8 +25,13 @@
 
 // Refer to sbn_cont_tbl.c to make sure these match
 // SBN is running here: <- Should be in the platform config
-// #define SBN_CLIENT_PORT    1234
-// #define SBN_CLIENT_IP_ADDR "127.0.0.1"
+#define SBN_CLIENT_PORT    1234
+#define SBN_CLIENT_IP_ADDR "127.0.0.1"
+
+#define SERVER_SOCKET_ERROR        -1
+#define SERVER_INET_PTON_SRC_ERROR   -2
+#define SERVER_INET_PTON_INVALID_AF_ERROR   -3
+#define SERVER_CONNECT_ERROR       -4
 
 // Private functions
 int32 SBN_ClientInit(void);
@@ -313,7 +318,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     if (sockfd < 0)
     {
         perror("connect_to_server socket error: ");
-        return -1;
+        return SERVER_SOCKET_ERROR;
     }
 
     memset(&server_address, '0', sizeof(server_address));
@@ -327,13 +332,13 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     if (address_converted == 0)
     {
         perror("connect_to_server inet_pton 0 error: ");
-        return -2;
+        return SERVER_INET_PTON_SRC_ERROR;
     }
 
     if (address_converted == -1)
     {
         perror("connect_to_server inet_pton -1 error: ");
-        return -3;
+        return SERVER_INET_PTON_INVALID_AF_ERROR;
     }
 
     connection = connect(sockfd, (struct sockaddr *)&server_address,
@@ -343,7 +348,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     if (connection < 0)
     {
         perror("connect_to_server connect error: ");
-        return -4;
+        return SERVER_CONNECT_ERROR;
     }
 
     return sockfd;

@@ -42,6 +42,7 @@ char em[MAX_ERROR_MESSAGE_SIZE];
 CFE_SB_PipeId_t pipePtr;
 uint16 depth;
 const char *pipeName = "TestPipe";
+time_t random_gen;
 
 // Real Functions
 int __real_connect_to_server(const char *, uint16_t);
@@ -77,9 +78,14 @@ extern Ut_OSAPI_HookTable_t             Ut_OSAPI_HookTable;
 
 void Test_Group_Setup(void)
 {
-    time_t random_gen = time(NULL);
+    random_gen = time(NULL);
     srand(random_gen);
     
+    printf("Random Seed = %d\n", random_gen);
+}
+
+void Test_Group_Teardown(void)
+{
     printf("Random Seed = %d\n", random_gen);
 }
 
@@ -101,9 +107,6 @@ void SBN_Client_Setup(void)
   Ut_CFE_ES_Reset();
   Ut_CFE_EVS_Reset();
   Ut_CFE_TBL_Reset();
-  
-  // reseed random generator
-  //srand(time(NULL));
 }
 
 void SBN_Client_Teardown(void)
@@ -169,28 +172,33 @@ void Test_connect_to_server_returns_sockfd_when_successful(void)
   wrap_connect_return_value = 0;
     
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped calls */
+  /* NULL can be used in the test call because all usages in the CUT are wrapped
+  ** calls */
   int result = connect_to_server(NULL, NULL);
   
   /* Assert */
-  UtAssert_True(result == wrap_socket_return_value, ErrorMessage("sockfd returned should have been %d, but was %d", wrap_socket_return_value, result));
+  UtAssert_True(result == wrap_socket_return_value, 
+    ErrorMessage("sockfd returned should have been %d, but was %d", 
+    wrap_socket_return_value, result));
 }
 
-void Test_connect_to_server_returns_expected_error_when_socket_fails(void)
+void Test_connect_to_server_returns_error_when_socket_fails(void)
 {
   /* Arrange */
   /* once socket fails CUT returns error */
   wrap_socket_return_value = (rand() % INT_MIN) * -1;
     
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped calls */
+  /* NULL can be used in the test call because all usages in the CUT are wrapped
+  ** calls */
   int result = connect_to_server(NULL, NULL);
   
   /* Assert */
-  UtAssert_True(result == -1, ErrorMessage("error returned should have been %d, but was %d", -1, result));
+  UtAssert_True(result == -1, 
+    ErrorMessage("error returned should have been %d, but was %d", -1, result));
 }
 
-void Test_connect_to_server_returns_expected_error_when_inet_pton_src_is_invalid(void)
+void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
 {
   /* Arrange */
   /* once inet_pton fails CUT returns error */
@@ -199,14 +207,16 @@ void Test_connect_to_server_returns_expected_error_when_inet_pton_src_is_invalid
   wrap_inet_pton_return_value = 0;
     
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped calls */
+  /* NULL can be used in the test call because all usages in the CUT are wrapped
+  ** calls */
   int result = connect_to_server(NULL, NULL);
   
   /* Assert */
-  UtAssert_True(result == -2, ErrorMessage("error returned should have been %d, but was %d", -2, result));
+  UtAssert_True(result == -2, 
+    ErrorMessage("error returned should have been %d, but was %d", -2, result));
 }
 
-void Test_connect_to_server_returns_expected_error_when_inet_pton_af_is_invalid(void)
+void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
 {
   /* Arrange */
   /* once inet_pton fails CUT returns error */
@@ -215,14 +225,16 @@ void Test_connect_to_server_returns_expected_error_when_inet_pton_af_is_invalid(
   wrap_inet_pton_return_value = -1;
     
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped calls */
+  /* NULL can be used in the test call because all usages in the CUT are wrapped
+  ** calls */
   int result = connect_to_server(NULL, NULL);
   
   /* Assert */
-  UtAssert_True(result == -3, ErrorMessage("error returned should have been %d, but was %d", -3, result));
+  UtAssert_True(result == -3, 
+    ErrorMessage("error returned should have been %d, but was %d", -3, result));
 }
 
-void Test_connect_to_server_returns_expected_error_when_connect_fails(void)
+void Test_connect_to_server_returns_error_when_connect_fails(void)
 {
   /* Arrange */
   wrap_socket_return_value = rand() % INT_MAX;
@@ -231,12 +243,15 @@ void Test_connect_to_server_returns_expected_error_when_connect_fails(void)
   wrap_connect_return_value = (rand() % INT_MIN) * -1;
     
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped calls */
+  /* NULL can be used in the test call because all usages in the CUT are wrapped
+  ** calls */
   int result = connect_to_server(NULL, NULL);
   
   /* Assert */
-  UtAssert_True(result == -4, ErrorMessage("error returned should have been %d, but was %d", -4, result));
+  UtAssert_True(result == -4, 
+    ErrorMessage("error returned should have been %d, but was %d", -4, result));
 }
+
 
 /* CFE_SBN_Client_InitPipeTbl Tests */
 
@@ -285,7 +300,7 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
     UtAssert_True(result == pipe, ErrorMessage("CFE_SBN_Client_GetPipeIdx should have returned %d, but was %d", pipe, result));
 }
 
-void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_expected_error_when_connect_failspeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)  //NOTE:not sure if this can really ever occur
+void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_when_connect_failspeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)  //NOTE:not sure if this can really ever occur
 {
     /* Arrange */
     CFE_SB_PipeId_t pipe = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
@@ -864,9 +879,9 @@ void SBN_Client_Test_AddTestCases(void)
     
     /* Wrap_CFE_SB_CreatePipe Tests */
     /* create pipe tests will not run with SBN_ClientInit enabled, needs more setup */
-    // UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS");
-    // UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly");
-    // UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull");
+    UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS");
+    UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly");
+    UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull");
     
     /* WRAP_CFE_SB_DeletePipe Tests */
     UtTest_Add(Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse, SBN_Client_Setup, SBN_Client_Teardown, "Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse");
@@ -888,6 +903,8 @@ void SBN_Client_Test_AddTestCases(void)
     UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
     UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
     
+    /* Group Teardown */
+    UtTest_Add(Test_Group_Setup, NULL, NULL, "Test_Group_Setup");
 }
 
 /* Helper Functions */
@@ -895,8 +912,8 @@ void SBN_Client_Test_AddTestCases(void)
 void add_connect_to_server_tests(void)
 {
     UtTest_Add(Test_connect_to_server_returns_sockfd_when_successful, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_sockfd_when_successful");
-    UtTest_Add(Test_connect_to_server_returns_expected_error_when_socket_fails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_expected_error_when_socket_fails");
-    UtTest_Add(Test_connect_to_server_returns_expected_error_when_inet_pton_src_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_expected_error_when_inet_pton_src_is_invalid");
-    UtTest_Add(Test_connect_to_server_returns_expected_error_when_inet_pton_af_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_expected_error_when_inet_pton_af_is_invalid");
-    UtTest_Add(Test_connect_to_server_returns_expected_error_when_connect_fails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_expected_error_when_connect_fails");  
+    UtTest_Add(Test_connect_to_server_returns_error_when_socket_fails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_socket_fails");
+    UtTest_Add(Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid");
+    UtTest_Add(Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid");
+    UtTest_Add(Test_connect_to_server_returns_error_when_connect_fails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_connect_fails");  
 }
