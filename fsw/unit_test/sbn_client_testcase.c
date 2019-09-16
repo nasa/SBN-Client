@@ -30,12 +30,13 @@
 
 #include "sbn_client_version.h"
 
-#define MAX_ERROR_MESSAGE_SIZE 100
+#define MIN_INT                 -2147483648
+#define MAX_ERROR_MESSAGE_SIZE  100
 
 
 void SBN_Client_Setup(void);
 void SBN_Client_Teardown(void);
-
+void add_connect_to_server_tests(void);
 
 // Global variables for testing
 char em[MAX_ERROR_MESSAGE_SIZE];
@@ -46,6 +47,7 @@ time_t random_gen;
 
 // Real Functions
 int __real_connect_to_server(const char *, uint16_t);
+size_t __real_read(int fd, void* buf, size_t cnt);
 
 // Use real function hooks
 boolean use_real_connect_to_server = TRUE;
@@ -56,6 +58,7 @@ uint16_t __wrap_htons(uint16_t);
 int __wrap_inet_pton(int, const char *, void*);
 int __wrap_connect(int, const struct sockaddr *, socklen_t);
 int __wrap_connect_to_server(const char *, uint16_t);
+size_t __wrap_read(int fd, void* buf, size_t cnt); 
 
 // Wrapped Functions return values
 int wrap_socket_return_value;
@@ -63,6 +66,7 @@ uint16_t wrap_htons_return_value;
 int wrap_inet_pton_return_value;
 int wrap_connect_return_value;
 int wrap_connect_to_server_return_value;
+size_t wrap_read_return_value;
 
 
 // SBN Client variable accessors
@@ -81,12 +85,12 @@ void Test_Group_Setup(void)
     random_gen = time(NULL);
     srand(random_gen);
     
-    printf("Random Seed = %d\n", random_gen);
+    printf("Random Seed = %d\n", (int)random_gen);
 }
 
 void Test_Group_Teardown(void)
 {
-    printf("Random Seed = %d\n", random_gen);
+    printf("Random Seed = %d\n", (int)random_gen);
 }
 
 void SBN_Client_Setup(void)
@@ -98,6 +102,7 @@ void SBN_Client_Setup(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 1;
   wrap_connect_return_value = -1;
+  wrap_read_return_value = MIN_INT;
   
   memset(PipeTbl, 0, sizeof(PipeTbl));
     
@@ -132,7 +137,7 @@ char *ErrorMessage(const char *format, ...)
 **
 *******************************************************************************/
 
-__wrap_socket(int domain, int type, int protocol)
+int __wrap_socket(int domain, int type, int protocol)
 {
   return wrap_socket_return_value;
 }
@@ -152,6 +157,17 @@ int __wrap_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
   return wrap_connect_return_value;
 }
 
+size_t __wrap_read(int fd, void* buf, size_t cnt)
+{
+    if (wrap_read_return_value != MIN_INT)
+    {
+        return wrap_read_return_value;
+    }
+    else
+    {
+        return __real_read(fd, buf, cnt);
+    }
+}
 
 
 /*******************************************************************************
@@ -162,7 +178,6 @@ int __wrap_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 
 /* connect_to_server Tests */
-
 void Test_connect_to_server_returns_sockfd_when_successful(void)
 {
   /* Arrange */
@@ -251,10 +266,10 @@ void Test_connect_to_server_returns_error_when_connect_fails(void)
   UtAssert_True(result == -4, 
     ErrorMessage("error returned should have been %d, but was %d", -4, result));
 }
+/* end connect_to_server Tests */
 
 
 /* CFE_SBN_Client_InitPipeTbl Tests */
-
 void Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes(void)
 {
     /* Arrange */
@@ -283,9 +298,10 @@ void Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes(void)
     }
 
 }
+/* end CFE_SBN_Client_InitPipeTbl Tests */
+
 
 /* CFE_SBN_Client_GetPipeIdx Tests */
-
 void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
 {
     /* Arrange */
@@ -322,9 +338,10 @@ void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_when_connect_
     /* Assert */
     UtAssert_True(result == tblIdx, ErrorMessage("CFE_SBN_Client_GetPipeIdx for pipeId %d should have returned %d, but was %d", pipe, tblIdx, result));
 }
+/* end CFE_SBN_Client_GetPipeIdx Tests */
+
 
 /* Wrap_CFE_SB_CreatePipe Tests */
-
 void Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
 {
   /* Arrange */
@@ -359,7 +376,7 @@ void Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
 {
   /* Arrange */
   int i;
-  uint32 initial_event_q_depth = Ut_CFE_EVS_GetEventQueueDepth();
+  //uint32 initial_event_q_depth = Ut_CFE_EVS_GetEventQueueDepth();
   
   for (i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
   {
@@ -368,9 +385,7 @@ void Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
   
   /* Act */ 
   int32 result = CFE_SB_CreatePipe(&pipePtr, depth, pipeName);
-  uint32 current_event_q_depth = Ut_CFE_EVS_GetEventQueueDepth();
-  char *expected_error_msg = ErrorMessage("CreatePipeErr:Max Pipes(%d)In Use.app %s", CFE_PLATFORM_SBN_CLIENT_MAX_PIPES, APP_NAME);
-  
+  //uint32 current_event_q_depth = Ut_CFE_EVS_GetEventQueueDepth();
   
   /* Assert */
   UtAssert_True(result == CFE_SBN_CLIENT_MAX_PIPES_MET, ErrorMessage("Call to CFE_SB_CreatePipe result should be %d, but was %d", CFE_SBN_CLIENT_CR_PIPE_ERR_EID, result));
@@ -379,6 +394,8 @@ void Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
   //UtAssert_EventSent(CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg, 
   //  ErrorMessage("Error event as expected was not sent. Expected: Error = %d, ErrorType=%d, Error Message = %s", CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg));
 }
+/* end Wrap_CFE_SB_CreatePipe Tests */
+
 
 /* WRAP_CFE_SB_DeletePipe Tests */
 void Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
@@ -394,6 +411,8 @@ void Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
   /* Assert */
   UtAssert_True(result == CFE_SUCCESS, ErrorMessage("Call to CFE_SB_DeletePipe to delete pipe#%d result should be %d, but was %d", pipeIdToDelete, CFE_SUCCESS, result));
 }
+/* end WRAP_CFE_SB_DeletePipe Tests */
+
 
 /* Wrap_CFE_SB_Subscribe Tests */
 void Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds(void)
@@ -414,7 +433,7 @@ void Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotA
       
     for (i = num_msgIds_subscribed; i < (CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE - num_msgIds_subscribed); i++)
     {
-        PipeTbl[pipe_id].SubscribedMsgIds[i] == CFE_SBN_CLIENT_INVALID_MSG_ID;
+        PipeTbl[pipe_id].SubscribedMsgIds[i] = CFE_SBN_CLIENT_INVALID_MSG_ID;
     }
     
     /* Act */ 
@@ -463,8 +482,9 @@ void Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
         
     /* Assert */
     UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, ErrorMessage("Call to CFE_SB_Subscribe with pipeId %d should return error %d, but was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
-    
 }
+/* end Wrap_CFE_SB_Subscribe Tests */
+
 
 /* ingest_app_message Tests */
 void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
@@ -653,6 +673,8 @@ void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
 //void Test_ingest_app_message_SuccessCausesPipeNumberOfMessagesToIncreaseBy1
 //void Test_ingest_app_message_FailsWhenNoPipesInUse
 //void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId
+/* end ingest_app_message Tests */
+
 
 /* Wrap_CFE_SB_RcvMsg Tests */
 void Test_Wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
@@ -844,6 +866,102 @@ void Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
 //     /* Assert */
 //     UtAssert_True(result == OS_SUCCESS, ErrorMessage("SBN_ClientInit result should be %d, but was %d", OS_SUCCESS, result));
 // }
+/* end Wrap_CFE_SB_RcvMsg Tests */
+
+
+/* CFE_SBN_CLIENT_ReadBytes Tests*/
+void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken(void)
+{
+    /* Arrange */
+    int sock_fd = (rand() % 10) + 1; /* 1 to 10 */
+    size_t MsgSz = 8; /* TODO: random size generation? */
+    unsigned char msg_buffer[MsgSz];
+    wrap_read_return_value = -1;
+    int result;
+    
+    /* Act */ 
+    result = CFE_SBN_CLIENT_ReadBytes(sock_fd, msg_buffer, MsgSz);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SBN_CLIENT_PIPE_BROKEN_ERR, 
+        "CFE_SBN_CLIENT_ReadBytes should have returned CFE_SBN_CLIENT_PIPE_BROKEN_ERR, but did not.");
+} /* end Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken */
+
+void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed(void)
+{
+    /* Arrange */
+    int sock_fd = (rand() % 10) + 1; /* 1 to 10 */
+    size_t MsgSz = 8; /* TODO: random size generation? */
+    unsigned char msg_buffer[MsgSz];
+    wrap_read_return_value = 0;
+    int result;
+    
+    /* Act */ 
+    result = CFE_SBN_CLIENT_ReadBytes(sock_fd, msg_buffer, MsgSz);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SBN_CLIENT_PIPE_CLOSED_ERR, 
+        "CFE_SBN_CLIENT_ReadBytes should have returned CFE_SBN_CLIENT_PIPE_CLOSED_ERR, but did not.");
+}
+
+void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
+{
+    /* Arrange */
+    int sock_fd = (rand() % 10) + 1; /* 1 to 10 */
+    size_t MsgSz = 8; /* TODO: random size generation? */
+    unsigned char msg_buffer[MsgSz];
+    wrap_read_return_value = 8;
+    int result;
+    
+    /* Act */ 
+    result = CFE_SBN_CLIENT_ReadBytes(sock_fd, msg_buffer, MsgSz);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SUCCESS, 
+        "CFE_SBN_CLIENT_ReadBytes should have returned CFE_SUCCESS, but did not.");
+}
+/* end CFE_SBN_CLIENT_ReadBytes Tests*/
+
+
+/* CFE_SBN_Client_GetAvailPipeIdx Tests*/
+void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed(void)
+{
+    /* Arrange */
+    int i;
+    CFE_SB_PipeId_t result;
+    for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
+    {
+        PipeTbl[i].InUse = CFE_SBN_CLIENT_IN_USE;
+    }
+    
+    /* Act */ 
+    result = CFE_SBN_Client_GetAvailPipeIdx();
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SBN_CLIENT_INVALID_PIPE, 
+        "CFE_SBN_Client_GetAvailPipeIdx should have returned CFE_SBN_CLIENT_INVALID_PIPE, but did not.");
+    
+}
+
+void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
+{
+    /* Arrange */
+    int i;
+    int available_index = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; /* 0 to CFE_PLATFORM_SBN_CLIENT_MAX_PIPES */
+    CFE_SB_PipeId_t result;
+    for(i = 0; i < available_index; i++)
+    {
+        PipeTbl[i].InUse = CFE_SBN_CLIENT_IN_USE;
+    }
+    
+    /* Act */ 
+    result = CFE_SBN_Client_GetAvailPipeIdx();
+    
+    /* Assert */
+    UtAssert_True(result == available_index, ErrorMessage("CFE_SBN_Client_GetAvailPipeIdx should have returned %d, but returned %d instead.", available_index, result));
+    
+}
+/* end CFE_SBN_Client_GetAvailPipeIdx Tests*/
 
 void Test_starter(void)
 {
@@ -902,6 +1020,15 @@ void SBN_Client_Test_AddTestCases(void)
     UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe");
     UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
     UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
+    
+    /* CFE_SBN_CLIENT_ReadBytes Tests*/
+    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken");
+    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed");
+    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived");
+    
+    /* CFE_SBN_Client_GetAvailPipeIdx Tests*/
+    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
+    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
     
     /* Group Teardown */
     UtTest_Add(Test_Group_Setup, NULL, NULL, "Test_Group_Setup");
