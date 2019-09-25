@@ -348,6 +348,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     if (connection < 0)
     {
         perror("connect_to_server connect error: ");
+        printf("SERVER_CONNECT_ERROR: Connect failed error: %d", connection);
         return SERVER_CONNECT_ERROR;
     }
 
