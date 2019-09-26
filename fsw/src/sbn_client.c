@@ -309,6 +309,7 @@ uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
 
 int connect_to_server(const char *server_ip, uint16_t server_port)
 {
+    sleep(5);
     int address_converted, connection;
 
     // Create an ipv4 TCP socket
@@ -320,6 +321,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
         perror("connect_to_server socket error: ");
         return SERVER_SOCKET_ERROR;
     }
+    printf("sockfd = %d/n", sockfd);
 
     memset(&server_address, '0', sizeof(server_address));
 
@@ -327,7 +329,8 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     server_address.sin_port = htons(server_port);
 
     address_converted = inet_pton(AF_INET, server_ip, &server_address.sin_addr);
-
+    
+    printf("address_converted = %d/n", address_converted);
     // inet_pton can have two separate errors, a value of 1 is success.
     if (address_converted == 0)
     {
@@ -343,10 +346,83 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
 
     connection = connect(sockfd, (struct sockaddr *)&server_address,
                          sizeof(server_address));
-
+    
     // connect error
     if (connection < 0)
     {
+        switch(errno)
+        {
+            case EACCES:
+            puts("connect err = EACCES");
+            break;
+            
+            case EPERM:
+            puts("connect err = EPERM");
+            break;
+            
+            case EADDRINUSE:
+            puts("connect err = EADDRINUSE");
+            break;
+            
+            case EADDRNOTAVAIL:
+            puts("connect err = EADDRNOTAVAIL");
+            break;
+            
+            case EAFNOSUPPORT:
+            puts("connect err = EAFNOSUPPORT");
+            break;
+            
+            case EAGAIN:
+            puts("connect err = EAGAIN");
+            break;
+            
+            case EALREADY:
+            puts("connect err = EALREADY");
+            break;
+            
+            case EBADF:
+            puts("connect err = EBADF");
+            break;
+            
+            case ECONNREFUSED:
+            puts("connect err = ECONNREFUSED");
+            break;
+            
+            case EFAULT:
+            puts("connect err = EFAULT");
+            break;
+            
+            case EINPROGRESS:
+            puts("connect err = EINPROGRESS");
+            break;
+            
+            case EINTR:
+            puts("connect err = EINTR");
+            break;
+            
+            case EISCONN:
+            puts("connect err = EISCONN");
+            break;
+            
+            case ENETUNREACH:
+            puts("connect err = ENETUNREACH");
+            break;
+            
+            case ENOTSOCK:
+            puts("connect err = ENOTSOCK");
+            break;
+            
+            case EPROTOTYPE:
+            puts("connect err = EPROTOTYPE");
+            break;
+            
+            case ETIMEDOUT:
+            puts("connect err = ETIMEDOUT");
+            break;
+            
+            
+        }
+        
         perror("connect_to_server connect error: ");
         printf("SERVER_CONNECT_ERROR: Connect failed error: %d", connection);
         return SERVER_CONNECT_ERROR;
