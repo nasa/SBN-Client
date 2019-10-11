@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "cfe.h"
 #include "utassert.h"
@@ -59,6 +60,7 @@ int __wrap_inet_pton(int, const char *, void*);
 int __wrap_connect(int, const struct sockaddr *, socklen_t);
 int __wrap_connect_to_server(const char *, uint16_t);
 size_t __wrap_read(int fd, void* buf, size_t cnt); 
+unsigned int __wrap_sleep(unsigned int seconds);
 
 // Wrapped Functions return values
 int wrap_socket_return_value;
@@ -169,6 +171,11 @@ size_t __wrap_read(int fd, void* buf, size_t cnt)
     }
 }
 
+unsigned int __wrap_sleep(unsigned int seconds)
+{
+    return 0;
+}
+
 
 /*******************************************************************************
 **
@@ -193,7 +200,7 @@ void Test_connect_to_server_returns_sockfd_when_successful(void)
   
   /* Assert */
   UtAssert_True(result == wrap_socket_return_value, 
-    ErrorMessage("sockfd returned should have been %d, but was %d", 
+    ErrorMessage("sockfd returned should have been %d and was %d", 
     wrap_socket_return_value, result));
 }
 
@@ -202,7 +209,7 @@ void Test_connect_to_server_returns_error_when_socket_fails(void)
   /* Arrange */
   /* once socket fails CUT returns error */
   wrap_socket_return_value = (rand() % INT_MIN) * -1;
-    
+  errno = -1;
   /* Act */ 
   /* NULL can be used in the test call because all usages in the CUT are wrapped
   ** calls */
@@ -210,7 +217,7 @@ void Test_connect_to_server_returns_error_when_socket_fails(void)
   
   /* Assert */
   UtAssert_True(result == -1, 
-    ErrorMessage("error returned should have been %d, but was %d", -1, result));
+    ErrorMessage("Error returned should have been %d and was %d", -1, result));
 }
 
 void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
@@ -220,6 +227,7 @@ void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
   wrap_socket_return_value = rand() % INT_MAX;
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 0;
+  errno = -2;
     
   /* Act */ 
   /* NULL can be used in the test call because all usages in the CUT are wrapped
@@ -228,7 +236,7 @@ void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
   
   /* Assert */
   UtAssert_True(result == -2, 
-    ErrorMessage("error returned should have been %d, but was %d", -2, result));
+    ErrorMessage("error returned should have been %d and was %d", -2, result));
 }
 
 void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
@@ -238,6 +246,7 @@ void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
   wrap_socket_return_value = rand() % INT_MAX;
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = -1;
+  errno = -3;
     
   /* Act */ 
   /* NULL can be used in the test call because all usages in the CUT are wrapped
@@ -246,7 +255,7 @@ void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
   
   /* Assert */
   UtAssert_True(result == -3, 
-    ErrorMessage("error returned should have been %d, but was %d", -3, result));
+    ErrorMessage("error returned should have been %d and was %d", -3, result));
 }
 
 void Test_connect_to_server_returns_error_when_connect_fails(void)
@@ -256,6 +265,7 @@ void Test_connect_to_server_returns_error_when_connect_fails(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 1;
   wrap_connect_return_value = (rand() % INT_MIN) * -1;
+  errno = -4;
     
   /* Act */ 
   /* NULL can be used in the test call because all usages in the CUT are wrapped
@@ -264,7 +274,7 @@ void Test_connect_to_server_returns_error_when_connect_fails(void)
   
   /* Assert */
   UtAssert_True(result == -4, 
-    ErrorMessage("error returned should have been %d, but was %d", -4, result));
+    ErrorMessage("error returned should have been %d and was %d", -4, result));
 }
 /* end connect_to_server Tests */
 
@@ -283,16 +293,16 @@ void Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes(void)
     {
         CFE_SBN_Client_PipeD_t test_pipe = PipeTbl[i];
         
-        UtAssert_True(test_pipe.InUse == CFE_SBN_CLIENT_NOT_IN_USE, ErrorMessage("PipeTbl[%d].InUse should equal %d, but was %d", i, CFE_SBN_CLIENT_NOT_IN_USE, PipeTbl[i].InUse));
-        UtAssert_True(test_pipe.SysQueueId == CFE_SBN_CLIENT_UNUSED_QUEUE, ErrorMessage("PipeTbl[%d].SysQueueId should equal %d, but was %d", i, CFE_SBN_CLIENT_UNUSED_QUEUE, PipeTbl[i].SysQueueId));
-        UtAssert_True(test_pipe.PipeId == CFE_SBN_CLIENT_INVALID_PIPE, ErrorMessage("PipeTbl[%d].PipeId should equal %d, but was %d", i, CFE_SBN_CLIENT_INVALID_PIPE, PipeTbl[i].PipeId));
-        UtAssert_True(test_pipe.NumberOfMessages == 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should equal %d, but was %d", i, 1, PipeTbl[i].NumberOfMessages));
-        UtAssert_True(test_pipe.ReadMessage == (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), ErrorMessage("PipeTbl[%d].NumberOfMessages should equal %d, but was %d", i, (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), PipeTbl[i].ReadMessage));
-        UtAssert_True(strcmp(test_pipe.PipeName, "") == 0, ErrorMessage("PipeTbl[%d].PipeId should equal 'empty string', but was %s", i, PipeTbl[i].PipeName));  
+        UtAssert_True(test_pipe.InUse == CFE_SBN_CLIENT_NOT_IN_USE, ErrorMessage("PipeTbl[%d].InUse should equal %d and was %d", i, CFE_SBN_CLIENT_NOT_IN_USE, PipeTbl[i].InUse));
+        UtAssert_True(test_pipe.SysQueueId == CFE_SBN_CLIENT_UNUSED_QUEUE, ErrorMessage("PipeTbl[%d].SysQueueId should equal %d and was %d", i, CFE_SBN_CLIENT_UNUSED_QUEUE, PipeTbl[i].SysQueueId));
+        UtAssert_True(test_pipe.PipeId == CFE_SBN_CLIENT_INVALID_PIPE, ErrorMessage("PipeTbl[%d].PipeId should equal %d and was %d", i, CFE_SBN_CLIENT_INVALID_PIPE, PipeTbl[i].PipeId));
+        UtAssert_True(test_pipe.NumberOfMessages == 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 1, PipeTbl[i].NumberOfMessages));
+        UtAssert_True(test_pipe.ReadMessage == (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), ErrorMessage("PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), PipeTbl[i].ReadMessage));
+        UtAssert_True(strcmp(test_pipe.PipeName, "") == 0, ErrorMessage("PipeTbl[%d].PipeId should equal '' and was '%s'", i, PipeTbl[i].PipeName));  
     
         for(j = 0; j < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; j++)
         {
-            UtAssert_True(test_pipe.SubscribedMsgIds[j] == CFE_SBN_CLIENT_INVALID_MSG_ID, ErrorMessage("PipeTbl[%d].SubscribedMsgIds[%d] should be %d, but was %d", i, j, CFE_SBN_CLIENT_INVALID_MSG_ID, test_pipe.SubscribedMsgIds[j]));
+            UtAssert_True(test_pipe.SubscribedMsgIds[j] == CFE_SBN_CLIENT_INVALID_MSG_ID, ErrorMessage("PipeTbl[%d].SubscribedMsgIds[%d] should be %d and was %d", i, j, CFE_SBN_CLIENT_INVALID_MSG_ID, test_pipe.SubscribedMsgIds[j]));
         }
         
     }
@@ -313,7 +323,7 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == pipe, ErrorMessage("CFE_SBN_Client_GetPipeIdx should have returned %d, but was %d", pipe, result));
+    UtAssert_True(result == pipe, ErrorMessage("CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", pipe, result));
 }
 
 void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_when_connect_failspeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)  //NOTE:not sure if this can really ever occur
@@ -336,7 +346,7 @@ void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_when_connect_
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == tblIdx, ErrorMessage("CFE_SBN_Client_GetPipeIdx for pipeId %d should have returned %d, but was %d", pipe, tblIdx, result));
+    UtAssert_True(result == tblIdx, ErrorMessage("CFE_SBN_Client_GetPipeIdx for pipeId %d should have returned %d and was %d", pipe, tblIdx, result));
 }
 /* end CFE_SBN_Client_GetPipeIdx Tests */
 
@@ -351,7 +361,7 @@ void Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
   int32 result = CFE_SB_CreatePipe(&pipePtr, depth, pipeName);
   
   /* Assert */
-  UtAssert_True(result == CFE_SUCCESS, ErrorMessage("Pipe creation should have succeeded (= %d), but failed (= %d)", CFE_SUCCESS, result));
+  UtAssert_True(result == CFE_SUCCESS, ErrorMessage("Pipe creation should have succeeded with (= %d), the result was (= %d)", CFE_SUCCESS, result));
 }
 
 void Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
@@ -363,13 +373,13 @@ void Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
   CFE_SB_CreatePipe(&pipePtr, depth, pipeName);
   
   /* Assert */
-  UtAssert_True(pipePtr == 0, ErrorMessage("PipePtr should point to pipe 0 (initial pipe), but instead points to pipe %d.", pipePtr));
-  UtAssert_True(PipeTbl[0].InUse == CFE_SBN_CLIENT_IN_USE, ErrorMessage("PipeTbl[0].InUse should be %d, but was %d", CFE_SBN_CLIENT_IN_USE, PipeTbl[0].InUse));
-  UtAssert_True(PipeTbl[0].PipeId == 0, ErrorMessage("PipeTbl[0].PipeID should be %d, but was %d", 0, PipeTbl[0].PipeId));
-  UtAssert_True(PipeTbl[0].SendErrors == 0, ErrorMessage("PipeTbl[0].SendErrors should be %d, but was %d", 0, PipeTbl[0].SendErrors));
-  UtAssert_True(strcmp(&PipeTbl[0].PipeName[0], pipeName) == 0, ErrorMessage("PipeTbl[0].PipeName should be %s, but was %s", pipeName, PipeTbl[0].PipeName));
-  UtAssert_True(PipeTbl[0].NumberOfMessages == 0, ErrorMessage("PipeTbl[0].NumberOfMessages should be %d, but was %d", 0, PipeTbl[0].NumberOfMessages));
-  UtAssert_True(PipeTbl[0].ReadMessage == 0, ErrorMessage("PipeTbl[0].ReadMessage should be %d, but was %d", 0, PipeTbl[0].ReadMessage));  
+  UtAssert_True(pipePtr == 0, ErrorMessage("PipePtr should point to pipe 0 (initial pipe) and points to pipe %d.", pipePtr));
+  UtAssert_True(PipeTbl[0].InUse == CFE_SBN_CLIENT_IN_USE, ErrorMessage("PipeTbl[0].InUse should be %d and was %d", CFE_SBN_CLIENT_IN_USE, PipeTbl[0].InUse));
+  UtAssert_True(PipeTbl[0].PipeId == 0, ErrorMessage("PipeTbl[0].PipeID should be %d and was %d", 0, PipeTbl[0].PipeId));
+  UtAssert_True(PipeTbl[0].SendErrors == 0, ErrorMessage("PipeTbl[0].SendErrors should be %d and was %d", 0, PipeTbl[0].SendErrors));
+  UtAssert_True(strcmp(&PipeTbl[0].PipeName[0], pipeName) == 0, ErrorMessage("PipeTbl[0].PipeName should be %s and was %s", pipeName, PipeTbl[0].PipeName));
+  UtAssert_True(PipeTbl[0].NumberOfMessages == 0, ErrorMessage("PipeTbl[0].NumberOfMessages should be %d and was %d", 0, PipeTbl[0].NumberOfMessages));
+  UtAssert_True(PipeTbl[0].ReadMessage == 0, ErrorMessage("PipeTbl[0].ReadMessage should be %d and was %d", 0, PipeTbl[0].ReadMessage));  
 }
 
 void Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
@@ -388,7 +398,7 @@ void Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
   //uint32 current_event_q_depth = Ut_CFE_EVS_GetEventQueueDepth();
   
   /* Assert */
-  UtAssert_True(result == CFE_SBN_CLIENT_MAX_PIPES_MET, ErrorMessage("Call to CFE_SB_CreatePipe result should be %d, but was %d", CFE_SBN_CLIENT_CR_PIPE_ERR_EID, result));
+  UtAssert_True(result == CFE_SBN_CLIENT_MAX_PIPES_MET, ErrorMessage("Call to CFE_SB_CreatePipe result should be %d and was %d", CFE_SBN_CLIENT_MAX_PIPES_MET, result));
   //TODO:set stubs to intercept wraps on CFE calls
   //UtAssert_True(current_event_q_depth == initial_event_q_depth + 1, ErrorMessage("Event queue count should be %d, but was %d", initial_event_q_depth + 1, current_event_q_depth));
   //UtAssert_EventSent(CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg, 
@@ -409,7 +419,7 @@ void Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
   int32 result = CFE_SB_DeletePipe(pipeIdToDelete);
   
   /* Assert */
-  UtAssert_True(result == CFE_SUCCESS, ErrorMessage("Call to CFE_SB_DeletePipe to delete pipe#%d result should be %d, but was %d", pipeIdToDelete, CFE_SUCCESS, result));
+  UtAssert_True(result == CFE_SUCCESS, ErrorMessage("Call to CFE_SB_DeletePipe to delete pipe#%d result should be %d and was %d", pipeIdToDelete, CFE_SUCCESS, result));
 }
 /* end WRAP_CFE_SB_DeletePipe Tests */
 
@@ -440,8 +450,8 @@ void Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotA
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
     
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, ErrorMessage("Call to CFE_SB_Subscribe should return %d, but was %d", CFE_SUCCESS, result));
-    UtAssert_True(PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed] == msg_id, ErrorMessage("PipeTble[%d].SubscribedMsgIds[%d] should be %d, but was %d", pipe_id, num_msgIds_subscribed, msg_id, PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed]));
+    UtAssert_True(result == CFE_SUCCESS, ErrorMessage("Call to CFE_SB_Subscribe should return %d and was %d", CFE_SUCCESS, result));
+    UtAssert_True(PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed] == msg_id, ErrorMessage("PipeTble[%d].SubscribedMsgIds[%d] should be %d and was %d", pipe_id, num_msgIds_subscribed, msg_id, PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed]));
     
 }
 
@@ -457,7 +467,7 @@ void Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
         
     /* Assert */
-    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, ErrorMessage("Call to CFE_SB_Subscribe with pipeId %d should return error %d, but was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
+    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, ErrorMessage("Call to CFE_SB_Subscribe with pipeId %d should return error %d and was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
     
 }
 
@@ -481,7 +491,7 @@ void Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
         
     /* Assert */
-    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, ErrorMessage("Call to CFE_SB_Subscribe with pipeId %d should return error %d, but was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
+    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, ErrorMessage("Call to CFE_SB_Subscribe with pipeId %d should return error %d and was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
 }
 /* end Wrap_CFE_SB_Subscribe Tests */
 
@@ -528,10 +538,10 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
     
     for(i = 0; i < msgSize; i++)
     {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], ErrorMessage("PipeTbl[%d].Messages[%d][%d] should = %d, but was ", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[0][i]));
+        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], ErrorMessage("PipeTbl[%d].Messages[%d][%d] should = %d and was %d ", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[msg_slot][i]));
     }  
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, ErrorMessage("PipeTbl[%d].NumberOfMessages should = %d, but was ", pipe_assigned, CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d, but was ", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));  
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, ErrorMessage("PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));  
 }
 
 void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
@@ -575,10 +585,10 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     
     for(i = 0; i < msgSize; i++)
     {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], ErrorMessage("PipeTbl[%d].Messages[%d][%d] should = %d, but was ", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[0][i]));
+        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], ErrorMessage("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[msg_slot][i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have increased by 1 to %d, but was ", pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d, but was ", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have increased by 1 to %d and was %d", pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
 }
 
 void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
@@ -622,10 +632,10 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     
     for(i = 0; i < msgSize; i++)
     {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], ErrorMessage("PipeTbl[%d].Messages[%d][%d] should = %d, but was ", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[0][i]));
+        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], ErrorMessage("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[msg_slot][i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have increased by 1 to %d, but was ", pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d, but was ", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have increased by 1 to %d and was %d", pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
 }
 
 void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
@@ -666,8 +676,8 @@ void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
     
     /* Assert */
     /* TODO:add failure assert here */
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg, ErrorMessage("PipeTbl[%d].NumberOfMessages %d should not increase because of failure, but was %d", pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d, but was ", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg, ErrorMessage("PipeTbl[%d].NumberOfMessages %d should not increase because of failure and was %d", pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
 }
 
 //void Test_ingest_app_message_SuccessCausesPipeNumberOfMessagesToIncreaseBy1
@@ -710,13 +720,13 @@ void Test_Wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, ErrorMessage("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, ErrorMessage("__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d, but was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], buffer[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d, but is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d, but is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
 void Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
@@ -755,10 +765,10 @@ void Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
     UtAssert_True(result == CFE_SUCCESS, ErrorMessage("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d, but was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], buffer[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d, but is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d, but is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
 void Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
@@ -797,10 +807,10 @@ void Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
     UtAssert_True(result == CFE_SUCCESS, ErrorMessage("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d, but was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], buffer[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d, but is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d, but is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
 void Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
@@ -839,10 +849,10 @@ void Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
     UtAssert_True(result == CFE_SUCCESS, ErrorMessage("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d, but was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], buffer[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], ErrorMessage("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d, but is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d, but is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, ErrorMessage("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, ErrorMessage("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
 //TODO: Test_Wrap_CFE_SB_RcvMsgSuccess when num messages = 1
@@ -901,7 +911,7 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed(void)
     
     /* Assert */
     UtAssert_True(result == CFE_SBN_CLIENT_PIPE_CLOSED_ERR, 
-        "CFE_SBN_CLIENT_ReadBytes should have returned CFE_SBN_CLIENT_PIPE_CLOSED_ERR, but did not.");
+        "CFE_SBN_CLIENT_ReadBytes returned CFE_SBN_CLIENT_PIPE_CLOSED_ERR");
 }
 
 void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
@@ -918,7 +928,7 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
     
     /* Assert */
     UtAssert_True(result == CFE_SUCCESS, 
-        "CFE_SBN_CLIENT_ReadBytes should have returned CFE_SUCCESS, but did not.");
+        "CFE_SBN_CLIENT_ReadBytes returned CFE_SUCCESS");
 }
 /* end CFE_SBN_CLIENT_ReadBytes Tests*/
 
@@ -939,7 +949,7 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed(void)
     
     /* Assert */
     UtAssert_True(result == CFE_SBN_CLIENT_INVALID_PIPE, 
-        "CFE_SBN_Client_GetAvailPipeIdx should have returned CFE_SBN_CLIENT_INVALID_PIPE, but did not.");
+        "CFE_SBN_Client_GetAvailPipeIdx returned CFE_SBN_CLIENT_INVALID_PIPE");
     
 }
 
@@ -958,7 +968,7 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
     result = CFE_SBN_Client_GetAvailPipeIdx();
     
     /* Assert */
-    UtAssert_True(result == available_index, ErrorMessage("CFE_SBN_Client_GetAvailPipeIdx should have returned %d, but returned %d instead.", available_index, result));
+    UtAssert_True(result == available_index, ErrorMessage("CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", available_index, result));
     
 }
 /* end CFE_SBN_Client_GetAvailPipeIdx Tests*/

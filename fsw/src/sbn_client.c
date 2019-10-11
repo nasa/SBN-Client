@@ -318,10 +318,10 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     // socket error
     if (sockfd < 0)
     {
-        perror("connect_to_server socket error: ");
+        perror("connect_to_server socket error");
         return SERVER_SOCKET_ERROR;
     }
-    printf("sockfd = %d/n", sockfd);
+    printf("sockfd = %d\n", sockfd);
 
     memset(&server_address, '0', sizeof(server_address));
 
@@ -330,17 +330,17 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
 
     address_converted = inet_pton(AF_INET, server_ip, &server_address.sin_addr);
     
-    printf("address_converted = %d/n", address_converted);
+    printf("address_converted = %d\n", address_converted);
     // inet_pton can have two separate errors, a value of 1 is success.
     if (address_converted == 0)
     {
-        perror("connect_to_server inet_pton 0 error: ");
+        perror("connect_to_server inet_pton 0 error");
         return SERVER_INET_PTON_SRC_ERROR;
     }
 
     if (address_converted == -1)
     {
-        perror("connect_to_server inet_pton -1 error: ");
+        perror("connect_to_server inet_pton -1 error");
         return SERVER_INET_PTON_INVALID_AF_ERROR;
     }
 
@@ -423,7 +423,8 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
             
         }
         
-        perror("connect_to_server connect error: ");
+        perror("connect_to_server connect error");
+        printf("SERVER_CONNECT_ERROR: Connect failed error: %d\n", connection);
         return SERVER_CONNECT_ERROR;
     }
 
