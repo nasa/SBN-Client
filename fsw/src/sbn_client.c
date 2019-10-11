@@ -28,11 +28,6 @@
 #define SBN_CLIENT_PORT    1234
 #define SBN_CLIENT_IP_ADDR "127.0.0.1"
 
-#define SERVER_SOCKET_ERROR        -1
-#define SERVER_INET_PTON_SRC_ERROR   -2
-#define SERVER_INET_PTON_INVALID_AF_ERROR   -3
-#define SERVER_CONNECT_ERROR       -4
-
 // Private functions
 int32 SBN_ClientInit(void);
 int connect_to_server(const char *server_ip, uint16_t server_port);
@@ -418,9 +413,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
             
             case ETIMEDOUT:
             puts("connect err = ETIMEDOUT");
-            break;
-            
-            
+            break;        
         }
         
         perror("connect_to_server connect error");

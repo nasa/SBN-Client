@@ -40,6 +40,11 @@
 #define CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE  32
 
 #define SBN_RECVD_HEARTBEAT_MSG                 0xA0
+
+#define SERVER_SOCKET_ERROR        -1
+#define SERVER_INET_PTON_SRC_ERROR   -2
+#define SERVER_INET_PTON_INVALID_AF_ERROR   -3
+#define SERVER_CONNECT_ERROR       -4
 /******************************************************************************
 **  Typedef:  CFE_SB_BufferD_t
 **

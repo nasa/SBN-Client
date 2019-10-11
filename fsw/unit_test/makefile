@@ -98,14 +98,25 @@ endif
 
 ENABLE_WRAP = TRUE
 ifeq ($(ENABLE_WRAP), TRUE)
-WRAP_LOPT = -Wl,-wrap,CFE_SB_CreatePipe,-wrap,CFE_SB_Subscribe,-wrap,CFE_SB_RcvMsg,-wrap,socket,-wrap,htons,-wrap,inet_pton,-wrap,connect,-wrap,read,-wrap,sleep
+WRAP_LOPT := -Wl
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_CreatePipe
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_Subscribe
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_RcvMsg
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,socket
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,htons
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,inet_pton
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,connect
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,read
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,sleep
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,puts
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,perror
 endif
 
 #WARNINGS = -Wall -W -ansi -Werror -Wstrict-prototypes -Wundef
 WARNINGS = -Wall -Wstrict-prototypes
 DEBUGGER = -g
 
-COPT = $(WARNINGS) $(DEBUGGER) $(GCOV_COPT) 
+override COPT += $(WARNINGS) $(DEBUGGER) $(GCOV_COPT) 
 #COPT = $(WARNINGS) $(DEBUGGER) $(GCOV_COPT) -DSOFTWARE_LITTLE_BIT_ORDER -D_EL -D_ix86_ 
 
 LOPT = $(GCOV_LOPT) $(WRAP_LOPT)
