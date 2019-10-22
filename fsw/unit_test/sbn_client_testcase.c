@@ -1418,7 +1418,8 @@ void Test_starter(void)
 
 void SBN_Client_Test_AddTestCases(void)
 {
-    UtTest_Add(Test_Group_Setup, NULL, NULL, "Test_Group_Setup");
+    UtGroupSetup_Add(Test_Group_Setup);
+    UtGroupTeardown_Add(Test_Group_Teardown);
     
     /* SBN_ClientInit Tests */
     //UtTest_Add(Test_SBN_ClientInitSuccess, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInitSuccess");
@@ -1467,9 +1468,6 @@ void SBN_Client_Test_AddTestCases(void)
     /* CFE_SBN_Client_GetAvailPipeIdx Tests*/
     UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
     UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
-    
-    /* Group Teardown */
-    UtTest_Add(Test_Group_Setup, NULL, NULL, "Test_Group_Setup");
 }
 
 /* Helper Functions */

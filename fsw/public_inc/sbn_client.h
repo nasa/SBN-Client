@@ -106,6 +106,8 @@ int32 SBN_ClientInit(void);
 void CFE_SBN_Client_InitPipeTbl(void);
 void InvalidatePipe(CFE_SBN_Client_PipeD_t *pipe);
 void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz);
+CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr);
+uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t MsgPtr);
 
 #endif /* _sbn_client_h_ */
 

@@ -121,6 +121,14 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, size_t MsgSz
         
         total_bytes_recd += bytes_received;
     }
+    // 
+    // puts("CFE_SBN_CLIENT_ReadBytes THIS MESSAGE:");
+    // int i =0;
+    // for (i = 0; i < MsgSz; i++)
+    // {
+    //     printf("0x%02X ", msg_buffer[i]);
+    // }
+    // printf("\n");
     
     return CFE_SUCCESS;
 }
@@ -205,9 +213,9 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
       printf("CFE_SBN_CLIENT_ReadBytes returned a bad status = %d\n", status);
     }
 
-    MsgId = CFE_SB_GetMsgId((CFE_SB_Msg_t *)msg_buffer);
+    MsgId = CFE_SBN_Client_GetMsgId((CFE_SB_MsgPtr_t)msg_buffer);
     
-    //TODO: check that msgid is valid
+    //TODO: check that msgid is valid - How?
     
     // take mutex
     pthread_mutex_lock(&receive_mutex);
@@ -238,6 +246,7 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
                     }
                     else /* message is put into pipe */
                     {    
+                        puts("message received");
                         memcpy(PipeTbl[i].Messages[message_entry_point(PipeTbl[i])], msg_buffer, MsgSz);
                         PipeTbl[i].NumberOfMessages++;
                         
@@ -691,7 +700,7 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 {
     //printf("SBN_Client:Sending Message...\n");
     char *buffer;
-    uint16 msg_size = CFE_SB_GetTotalMsgLength(msg);
+    uint16 msg_size = CFE_SBN_Client_GetTotalMsgLength(msg);
 
     size_t write_result, total_size = msg_size + SBN_PACKED_HDR_SZ;
     Pack_t Pack;
@@ -710,6 +719,15 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
     Pack_UInt32(&Pack, cpuId);
 
     memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
+    
+    // int i = 0;
+    // puts("SUB MSG: ");
+    // for (i;i < Pack.BufUsed; i++)
+    // {
+    //   printf("0x%02x ", (unsigned char)Buf[i]);
+    // }
+    // printf("i = %d\n", i);
+    // puts("");
 
     write_result = write_message(buffer, total_size);
 
@@ -844,14 +862,16 @@ int recv_msg(int sockfd)
     Unpack_UInt16(&Unpack, &MsgSz);
     Unpack_UInt8(&Unpack, &MsgType);
     Unpack_UInt32(&Unpack, &CpuID);
-
-    // for (int i = 0; i < SBN_PACKED_HDR_SZ; i++)
+    
+    // puts("RECEIVEING THIS MESSAGE:");
+    // int i =0;
+    // for (i = 0; i < 50 + SBN_PACKED_HDR_SZ; i++)
     // {
     //     printf("0x%02X ", sbn_hdr_buffer[i]);
     // }
     // printf("\n");
 
-    //printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz, MsgType, CpuID);
+    printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz, MsgType, CpuID);
 
     //TODO: check cpuID to see if it is correct for this location?
 
@@ -890,5 +910,42 @@ int recv_msg(int sockfd)
     // printf("\n");
     
     return status;
+}
+
+CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)
+{
+   CFE_SB_MsgId_t MsgId = 0;
+
+#ifdef MESSAGE_FORMAT_IS_CCSDS
+
+#ifndef MESSAGE_FORMAT_IS_CCSDS_VER_2  
+    MsgId = CCSDS_RD_SID(MsgPtr->Hdr);
+#else
+
+    uint32            SubSystemId;
+
+    MsgId = CCSDS_RD_APID(MsgPtr->Hdr); /* Primary header APID  */
+     
+    if ( CCSDS_RD_TYPE(MsgPtr->Hdr) == CCSDS_CMD)
+      MsgId = MsgId | CFE_SB_CMD_MESSAGE_TYPE;  
+
+    /* Add in the SubSystem ID as needed */
+    SubSystemId = CCSDS_RD_SUBSYSTEM_ID(MsgPtr->SpacePacket.ApidQ);
+    MsgId = (MsgId | (SubSystemId << 8));
+
+#endif
+#endif
+
+return MsgId;
+
+}/* end CFE_SBN_Client_GetMsgId */
+
+uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t MsgPtr)
+{
+#ifdef MESSAGE_FORMAT_IS_CCSDS
+
+    return CCSDS_RD_LEN(MsgPtr->Hdr);
+
+#endif
 }
 
