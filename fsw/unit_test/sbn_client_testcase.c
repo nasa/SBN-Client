@@ -41,6 +41,9 @@
 #define MAX_ERROR_MESSAGE_SIZE  120
 #define CONNECT_ERROR_VALUE     -1
 
+#define FIRST_CALL     1
+#define SECOND_CALL    2
+
 
 void SBN_Client_Setup(void);
 void SBN_Client_Teardown(void);
@@ -76,6 +79,10 @@ size_t __real_read(int fd, void* buf, size_t cnt);
 boolean use_real_connect_to_server = TRUE;
 const char *puts_expected_string = "";
 const char *perror_expected_string = "";
+int wrap_exit_expected_status;   
+int error_on_pthread_call_number;
+uint8 pthread_call_number;
+int pthread_error_value;
 
 /* Wrapped Functions */
 int __wrap_puts(const char *str);
@@ -87,6 +94,10 @@ int __wrap_connect(int, const struct sockaddr *, socklen_t);
 int __wrap_connect_to_server(const char *, uint16_t);
 size_t __wrap_read(int fd, void* buf, size_t cnt); 
 unsigned int __wrap_sleep(unsigned int seconds);
+void __wrap_exit(int status);
+int __wrap_pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                          void *(*start_routine) (void *), void *arg);
+
 
 /* Wrapped function return value settings */
 int wrap_socket_return_value;
@@ -108,6 +119,9 @@ extern Ut_OSFILEAPI_HookTable_t         Ut_OSFILEAPI_HookTable;
 extern Ut_CFE_ES_HookTable_t            Ut_CFE_ES_HookTable;
 extern Ut_OSAPI_HookTable_t             Ut_OSAPI_HookTable;
 
+extern int sockfd;
+extern int cpuId;
+
 /* Test Setup and Teardown */
 void Test_Group_Setup(void)
 {
@@ -125,6 +139,8 @@ void Test_Group_Teardown(void)
 void SBN_Client_Setup(void)
 {
   /* SBN_Client resets */
+  sockfd = 0;
+  cpuId = 0;
   pipePtr = 0;
   depth = 5;
   wrap_socket_return_value = (rand() % INT_MIN) * -1;
@@ -132,6 +148,10 @@ void SBN_Client_Setup(void)
   wrap_inet_pton_return_value = 1;
   wrap_connect_return_value = -1;
   wrap_read_return_value = MIN_INT;
+  wrap_exit_expected_status = 0;   
+  error_on_pthread_call_number = -1;
+  pthread_call_number = 0;
+  pthread_error_value = 0;
   
   memset(PipeTbl, 0, sizeof(PipeTbl));
     
@@ -228,15 +248,174 @@ unsigned int __wrap_sleep(unsigned int seconds)
     return 0;
 }
 
+void __wrap_exit(int status)
+{
+    UtAssert_True(status == wrap_exit_expected_status,
+        TestResultMsg("exit() status should be %d, and was %d", 
+        wrap_exit_expected_status, status));
+}
+
+int __wrap_pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                          void *(*start_routine) (void *), void *arg)
+{
+    pthread_call_number += 1;
+    int result;
+    
+    if (error_on_pthread_call_number == pthread_call_number)
+    {
+        result = pthread_error_value;
+    }
+    else
+    {
+        result = 0;
+    }
+    
+    return result;
+}
 
 /*******************************************************************************
 **
-**  SBN_Client Tests
+**  Helper Functions for check_pthread_create_status Tests
 **
 *******************************************************************************/
 
+void check_pthread_create_status_OutputsCorrectError(int error, 
+       const char *error_name)
+{    
+    /* Arrange */ 
+    const char *p_e_s[50];
+    int status = error;
+    int32 errorId = rand() % INT_MIN;
+    
+    sprintf(p_e_s, "Create thread error = %s", error_name);
+    puts_expected_string = p_e_s;
+    perror_expected_string = "pthread_create error";
+    
+    /* Act */
+    int32 result = check_pthread_create_status(status, errorId);
+    
+    /* Assert */
+    UtAssert_True(result == errorId, 
+        "check_pthread_create_status returned the errorId argument");
+}
 
-/* connect_to_server Tests */
+
+/*******************************************************************************
+**
+**  check_pthread_create_status Tests
+**
+*******************************************************************************/
+
+void Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN(void)
+{
+    check_pthread_create_status_OutputsCorrectError(EAGAIN, "EAGAIN");
+}
+
+void Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL(void)
+{
+    
+        check_pthread_create_status_OutputsCorrectError(EINVAL, "EINVAL");
+}
+
+void Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM(void)
+{
+    
+        check_pthread_create_status_OutputsCorrectError(EPERM, "EPERM");
+}
+
+void Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero(void)
+{
+    /* Arrange */ 
+    int status = rand() % INT_MIN;
+    int32 errorId = rand() % INT_MIN;
+    perror_expected_string = "pthread_create error";
+    
+    /* Act */
+    int32 result = check_pthread_create_status(status, errorId);
+    
+    /* Assert */
+    UtAssert_True(result == errorId, 
+        "check_pthread_create_status returned the errorId argument");
+}
+
+
+void Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_WhenStatusIsZero(void)
+{
+    /* Arrange */ 
+    int status = 0;
+    int32 errorId = rand() % INT_MIN;
+    
+    /* Act */
+    int32 result = check_pthread_create_status(status, errorId);
+    
+    /* Assert */
+    UtAssert_True(result == SBN_CLIENT_SUCCESS, 
+        "check_pthread_create_status returned SBN_CLIENT_SUCCESS");
+}
+
+
+
+/*******************************************************************************
+**
+**  Helper Functions for connect_to_server Tests
+**
+*******************************************************************************/
+
+void connect_to_server_socket_fail_check(int32 expected_error, 
+       const char *error_name)
+{
+    /* Arrange */
+    const char *p_e_s[50];
+    
+    wrap_socket_return_value = -1;
+    errno = expected_error;
+    sprintf(p_e_s, "socket err = %s", error_name);
+    puts_expected_string = p_e_s;
+    perror_expected_string = "connect_to_server socket error";
+    
+    /* Act */ 
+    /* NULL can be used in the test call because all usages in the CUT are wrapped
+    ** calls */
+    int result = connect_to_server(NULL, NULL);
+    
+    /* Assert */
+    UtAssert_True(result == SERVER_SOCKET_ERROR, 
+      TestResultMsg("Error returned should have been %d and was %d", 
+      SERVER_SOCKET_ERROR, result));
+}
+
+void connect_to_server_connect_fail_check(int32 expected_error, 
+       const char *error_name)
+{
+    /* Arrange */
+    const char *p_e_s[50];
+    
+    wrap_socket_return_value = rand() % INT_MAX;
+    wrap_htons_return_value = 0;
+    wrap_inet_pton_return_value = 1;
+    wrap_connect_return_value = CONNECT_ERROR_VALUE;
+    errno = expected_error;
+    sprintf(p_e_s, "connect err = %s", error_name);
+    puts_expected_string = p_e_s;
+    perror_expected_string = "connect_to_server connect error";
+
+    /* Act */ 
+    /* NULL can be used in the test call because all usages in the CUT are wrapped
+    ** calls */
+    int result = connect_to_server(NULL, NULL);
+
+    /* Assert */
+    UtAssert_True(result == SERVER_CONNECT_ERROR, 
+      TestResultMsg("error returned should have been %d and was %d", 
+      SERVER_CONNECT_ERROR, result));
+}
+
+/*******************************************************************************
+**
+**  connect_to_server Tests
+**
+*******************************************************************************/
+
 void Test_connect_to_server_returns_sockfd_when_successful(void)
 {
   /* Arrange */
@@ -256,20 +435,59 @@ void Test_connect_to_server_returns_sockfd_when_successful(void)
     wrap_socket_return_value, result));
 }
 
-void Test_connect_to_server_returns_error_when_socket_fails(void)
+void Test_connect_to_server_Outputs_EACCES_WhenSocketFails(void)
 {
-  /* Arrange */
-  /* once socket fails CUT returns error */
-  wrap_socket_return_value = (rand() % INT_MIN) * -1;
-  /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped
-  ** calls */
-  int result = connect_to_server(NULL, NULL);
-  
-  /* Assert */
-  UtAssert_True(result == SERVER_SOCKET_ERROR, 
-    TestResultMsg("Error returned should have been %d and was %d", 
-    SERVER_SOCKET_ERROR, result));
+    connect_to_server_socket_fail_check(EACCES, "EACCES");
+}
+
+void Test_connect_to_server_Outputs_EAFNOSUPPORT_WhenSocketFails(void)
+{
+    connect_to_server_socket_fail_check(EAFNOSUPPORT, "EAFNOSUPPORT");
+}
+
+void Test_connect_to_server_Outputs_EINVAL_WhenSocketFails(void)
+{
+    connect_to_server_socket_fail_check(EINVAL, "EINVAL");
+}
+
+void Test_connect_to_server_Outputs_EMFILE_WhenSocketFails(void)
+{
+    connect_to_server_socket_fail_check(EMFILE, "EMFILE");
+}
+
+void Test_connect_to_server_Outputs_ENOBUFS_WhenSocketFails(void)
+{
+    connect_to_server_socket_fail_check(ENOBUFS, "ENOBUFS");
+}
+
+void Test_connect_to_server_Outputs_ENOMEM_WhenSocketFails(void)
+{
+    connect_to_server_socket_fail_check(ENOMEM, "ENOMEM");
+}
+
+void Test_connect_to_server_Outputs_EPROTONOSUPPORT_WhenSocketFails(void)
+{
+    connect_to_server_socket_fail_check(EPROTONOSUPPORT, "EPROTONOSUPPORT");
+}
+
+void Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches(void)
+{
+    /* Arrange */
+    wrap_socket_return_value = -1;
+    errno = 0xFFFF;
+    /* TODO: printf is being used not puts, need a better way to check */
+    /* puts_expected_string = "Unknown socket error = 65535"; */
+    perror_expected_string = "connect_to_server socket error";
+    
+    /* Act */ 
+    /* NULL can be used in the test call because all usages in the CUT are wrapped
+    ** calls */
+    int result = connect_to_server(NULL, NULL);
+    
+    /* Assert */
+    UtAssert_True(result == SERVER_SOCKET_ERROR, 
+      TestResultMsg("Error returned should have been %d and was %d", 
+      SERVER_SOCKET_ERROR, result));
 }
 
 void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
@@ -312,7 +530,7 @@ void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
     SERVER_INET_PTON_INVALID_AF_ERROR, result));
 }
 
-void Test_connect_to_server_returns_error_when_connect_fails(void)
+void Test_connect_to_server_returns_error_WhenConnectFails(void)
 {
     /* Arrange */
     wrap_socket_return_value = rand() % INT_MAX;
@@ -331,384 +549,101 @@ void Test_connect_to_server_returns_error_when_connect_fails(void)
       TestResultMsg("error returned should have been %d and was %d", -4, result));
 }
 
-void Test_connect_to_server_outputs_EACCES_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EACCES_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EACCES;
-    puts_expected_string = "connect err = EACCES";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EACCES, "EACCES");
 }
 
-void Test_connect_to_server_outputs_EPERM_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EPERM_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EPERM;
-    puts_expected_string = "connect err = EPERM";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EPERM, "EPERM");
 }
 
-void Test_connect_to_server_outputs_EADDRINUSE_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EADDRINUSE_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EADDRINUSE;
-    puts_expected_string = "connect err = EADDRINUSE";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EADDRINUSE, "EADDRINUSE");
 }
 
-void Test_connect_to_server_outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EADDRNOTAVAIL;
-    puts_expected_string = "connect err = EADDRNOTAVAIL";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EADDRNOTAVAIL, "EADDRNOTAVAIL");
 }
 
-void Test_connect_to_server_outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EAFNOSUPPORT;
-    puts_expected_string = "connect err = EAFNOSUPPORT";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EAFNOSUPPORT, "EAFNOSUPPORT");
 }
 
-void Test_connect_to_server_outputs_EAGAIN_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EAGAIN_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EAGAIN;
-    puts_expected_string = "connect err = EAGAIN";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EAGAIN, "EAGAIN");
 }
 
-void Test_connect_to_server_outputs_EALREADY_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EALREADY_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EALREADY;
-    puts_expected_string = "connect err = EALREADY";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EALREADY, "EALREADY");
 }
 
-void Test_connect_to_server_outputs_EBADF_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EBADF_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EBADF;
-    puts_expected_string = "connect err = EBADF";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EBADF, "EBADF");
 }
 
-void Test_connect_to_server_outputs_ECONNREFUSED_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ECONNREFUSED_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = ECONNREFUSED;
-    puts_expected_string = "connect err = ECONNREFUSED";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(ECONNREFUSED, "ECONNREFUSED");
 }
 
-void Test_connect_to_server_outputs_EFAULT_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EFAULT_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EFAULT;
-    puts_expected_string = "connect err = EFAULT";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EFAULT, "EFAULT");
 }
 
-void Test_connect_to_server_outputs_EINPROGRESS_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EINPROGRESS_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EINPROGRESS;
-    puts_expected_string = "connect err = EINPROGRESS";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EINPROGRESS, "EINPROGRESS");
 }
 
-void Test_connect_to_server_outputs_EINTR_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EINTR_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EINTR;
-    puts_expected_string = "connect err = EINTR";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EINTR, "EINTR");
 }
 
-void Test_connect_to_server_outputs_EISCONN_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EISCONN_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EISCONN;
-    puts_expected_string = "connect err = EISCONN";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EISCONN, "EISCONN");
 }
 
-void Test_connect_to_server_outputs_ENETUNREACH_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ENETUNREACH_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = ENETUNREACH;
-    puts_expected_string = "connect err = ENETUNREACH";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(ENETUNREACH, "ENETUNREACH");
 }
 
-void Test_connect_to_server_outputs_ENOTSOCK_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ENOTSOCK_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = ENOTSOCK;
-    puts_expected_string = "connect err = ENOTSOCK";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(ENOTSOCK, "ENOTSOCK");
 }
 
-void Test_connect_to_server_outputs_EPROTOTYPE_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EPROTOTYPE_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = EPROTOTYPE;
-    puts_expected_string = "connect err = EPROTOTYPE";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(EPROTOTYPE, "EPROTOTYPE");
 }
 
-void Test_connect_to_server_outputs_ETIMEDOUT_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ETIMEDOUT_errorWhenConnectReturnsThatError(void)
 {
-    /* Arrange */
-    wrap_socket_return_value = rand() % INT_MAX;
-    wrap_htons_return_value = 0;
-    wrap_inet_pton_return_value = 1;
-    wrap_connect_return_value = CONNECT_ERROR_VALUE;
-    errno = ETIMEDOUT;
-    puts_expected_string = "connect err = ETIMEDOUT";
-    perror_expected_string = "connect_to_server connect error";
-
-    /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
-
-    /* Assert */
-    UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+    connect_to_server_connect_fail_check(ETIMEDOUT, "ETIMEDOUT");
 }
 /* end connect_to_server Tests */
 
 
-/* CFE_SBN_Client_InitPipeTbl Tests */
-void Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes(void)
+
+/*******************************************************************************
+**
+**  CFE_SBN_Client_InitPipeTbl Tests
+**
+*******************************************************************************/
+
+void Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes(void)
 {
     /* Arrange */
     int i, j;
@@ -739,7 +674,13 @@ void Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes(void)
 /* end CFE_SBN_Client_InitPipeTbl Tests */
 
 
-/* CFE_SBN_Client_GetPipeIdx Tests */
+
+/*******************************************************************************
+**
+**  CFE_SBN_Client_GetPipeIdx Tests
+**
+*******************************************************************************/
+
 void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
 {
     /* Arrange */
@@ -754,7 +695,7 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
     UtAssert_True(result == pipe, TestResultMsg("CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", pipe, result));
 }
 
-void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_when_connect_failspeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)  //NOTE:not sure if this can really ever occur
+void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_WhenConnectFailspeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)  //NOTE:not sure if this can really ever occur
 {
     /* Arrange */
     CFE_SB_PipeId_t pipe = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
@@ -779,8 +720,14 @@ void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_when_connect_
 /* end CFE_SBN_Client_GetPipeIdx Tests */
 
 
-/* Wrap_CFE_SB_CreatePipe Tests */
-void Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
+
+/*******************************************************************************
+**
+**  __wrap_CFE_SB_CreatePipe Tests
+**
+*******************************************************************************/
+
+void Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
 {
   /* Arrange */
   
@@ -792,7 +739,7 @@ void Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
   UtAssert_True(result == CFE_SUCCESS, TestResultMsg("Pipe creation should have succeeded with (= %d), the result was (= %d)", CFE_SUCCESS, result));
 }
 
-void Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
+void Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
 {
   /* Arrange */
   
@@ -810,7 +757,7 @@ void Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
   UtAssert_True(PipeTbl[0].ReadMessage == 0, TestResultMsg("PipeTbl[0].ReadMessage should be %d and was %d", 0, PipeTbl[0].ReadMessage));  
 }
 
-void Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
+void Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
 {
   /* Arrange */
   int i;
@@ -832,11 +779,17 @@ void Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
   //UtAssert_EventSent(CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg, 
   //  TestResultMsg("Error event as expected was not sent. Expected: Error = %d, ErrorType=%d, Error Message = %s", CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg));
 }
-/* end Wrap_CFE_SB_CreatePipe Tests */
+/* end __wrap_CFE_SB_CreatePipe Tests */
 
 
-/* WRAP_CFE_SB_DeletePipe Tests */
-void Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
+
+/*******************************************************************************
+**
+**  __wrap_CFE_SB_DeletePipe Tests
+**
+*******************************************************************************/
+
+void Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
 {
   /* Arrange */
   int pipeIdToDelete = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
@@ -849,11 +802,17 @@ void Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
   /* Assert */
   UtAssert_True(result == CFE_SUCCESS, TestResultMsg("Call to CFE_SB_DeletePipe to delete pipe#%d result should be %d and was %d", pipeIdToDelete, CFE_SUCCESS, result));
 }
-/* end WRAP_CFE_SB_DeletePipe Tests */
+/* end __wrap_CFE_SB_DeletePipe Tests */
 
 
-/* Wrap_CFE_SB_Subscribe Tests */
-void Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds(void)
+
+/*******************************************************************************
+**
+**  __wrap_CFE_SB_Subscribe Tests
+**
+*******************************************************************************/
+
+void Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds(void)
 {
     /* Arrange */
     int i;
@@ -883,7 +842,7 @@ void Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotA
     
 }
 
-void Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
+void Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
 {
     /* Arrange */
     int pipe_id = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
@@ -899,7 +858,7 @@ void Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
     
 }
 
-void Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
+void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
 {
     /* Arrange */
     int i;
@@ -921,8 +880,15 @@ void Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
     /* Assert */
     UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg("Call to CFE_SB_Subscribe with pipeId %d should return error %d and was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
 }
-/* end Wrap_CFE_SB_Subscribe Tests */
+/* end __wrap_CFE_SB_Subscribe Tests */
 
+
+
+/*******************************************************************************
+**
+**  ingest_app_message Tests
+**
+*******************************************************************************/
 
 /* ingest_app_message Tests */
 void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
@@ -1114,8 +1080,14 @@ void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
 /* end ingest_app_message Tests */
 
 
-/* Wrap_CFE_SB_RcvMsg Tests */
-void Test_Wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
+
+/*******************************************************************************
+**
+**  __wrap_CFE_SB_RcvMsg Tests
+**
+*******************************************************************************/
+
+void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
 {
     /* Arrange */
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
@@ -1157,7 +1129,7 @@ void Test_Wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
-void Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
+void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
 {
     /* Arrange */
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
@@ -1199,7 +1171,7 @@ void Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
-void Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
+void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
 {
     /* Arrange */
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
@@ -1241,7 +1213,7 @@ void Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
-void Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
+void Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
 {
     /* Arrange */
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
@@ -1283,29 +1255,108 @@ void Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
 }
 
-//TODO: Test_Wrap_CFE_SB_RcvMsgSuccess when num messages = 1
-//TODO: Test_Wrap_CFE_SB_RcvMsgSuccess when num messages = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH
-//TODO: Test_Wrap_CFE_SB_RcvMsgFail when num messages = 0
+//TODO: Test__wrap_CFE_SB_RcvMsgSuccess when num messages = 1
+//TODO: Test__wrap_CFE_SB_RcvMsgSuccess when num messages = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH
+//TODO: Test__wrap_CFE_SB_RcvMsgFail when num messages = 0
+/* end __wrap_CFE_SB_RcvMsg Tests */
 
-/* SBN_ClientInit Tests */
-/* needs more setup to be done correctly */
-// void Test_SBN_ClientInitSuccess(void)
-// {
-//     /* Arrange */
-//     /* connect_to_server call control */
-//     wrap_socket_return_value = rand() % INT_MAX;
-//     wrap_htons_return_value = 0;
-//     wrap_inet_pton_return_value = 1;
-//     wrap_connect_return_value = 0;
-// 
-//     /* Act */ 
-//     int32 result = SBN_ClientInit();
-// 
-//     /* Assert */
-//     UtAssert_True(result == OS_SUCCESS, TestResultMsg("SBN_ClientInit result should be %d, but was %d", OS_SUCCESS, result));
-// }
-/* end Wrap_CFE_SB_RcvMsg Tests */
 
+
+/*******************************************************************************
+**
+**  SBN_ClientInit Tests
+**
+*******************************************************************************/
+
+void Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server(void)
+{
+    /* Arrange */
+    /* connect_to_server call control */
+    wrap_socket_return_value = (rand() % INT_MAX) * -1;
+    errno = 0xFFFF;
+    wrap_exit_expected_status = SBN_CLIENT_BAD_SOCK_FD_EID;
+
+    /* Act */ 
+    int32 result = SBN_ClientInit();
+
+    /* Assert */
+    /* Note during a live run of this function it will exit(sockfd); however
+     * during a test, exit() is wrapped and the value passed to it is checked
+     * in the wrapped function.  The check for a result is ONLY put here to 
+     * show that the Status gets set correctly in the function.  If the exit()
+     * assert in the wrapper passes, it shows that the function will correctly
+     * exit the operation */
+    UtAssert_True(result == SBN_CLIENT_BAD_SOCK_FD_EID, 
+        TestResultMsg("SBN_ClientInit result should be %d, but was %d", 
+        SBN_CLIENT_BAD_SOCK_FD_EID, result));
+}
+
+void Test_SBN_ClientInit_FailsBecauseCreateHeartThreadFails(void)
+{
+    /* Arrange */
+    /* connect_to_server call control */
+    wrap_socket_return_value = rand() % INT_MAX;
+    wrap_htons_return_value = 0;
+    wrap_inet_pton_return_value = 1;
+    wrap_connect_return_value = 0;
+    
+    /* set expected exit value */
+    wrap_exit_expected_status = SBN_CLIENT_HEART_THREAD_CREATE_EID;
+    
+    /* set pthread error */
+    error_on_pthread_call_number = FIRST_CALL;
+    pthread_error_value = -1;
+
+    /* Act */ 
+    int32 result = SBN_ClientInit();
+
+    /* Assert */
+    UtAssert_True(result == SBN_CLIENT_HEART_THREAD_CREATE_EID, 
+        TestResultMsg("SBN_ClientInit result should be %d, but was %d", 
+        SBN_CLIENT_HEART_THREAD_CREATE_EID, result));
+}
+
+void Test_SBN_ClientInit_FailsBecauseCreateReceiveThreadFails(void)
+{
+    /* Arrange */
+    /* connect_to_server call control */
+    wrap_socket_return_value = rand() % INT_MAX;
+    wrap_htons_return_value = 0;
+    wrap_inet_pton_return_value = 1;
+    wrap_connect_return_value = 0;
+    
+    /* set expected exit value */
+    wrap_exit_expected_status = SBN_CLIENT_RECEIVE_THREAD_CREATE_EID;
+    
+    /* set pthread error */
+    error_on_pthread_call_number = SECOND_CALL;
+    pthread_error_value = -1;
+
+    /* Act */ 
+    int32 result = SBN_ClientInit();
+
+    /* Assert */
+    UtAssert_True(result == SBN_CLIENT_RECEIVE_THREAD_CREATE_EID, 
+        TestResultMsg("SBN_ClientInit result should be %d, but was %d", 
+        SBN_CLIENT_RECEIVE_THREAD_CREATE_EID, result));
+}
+
+void Test_SBN_ClientInit_Success(void)
+{
+    /* Arrange */
+    /* connect_to_server call control */
+    wrap_socket_return_value = rand() % INT_MAX;
+    wrap_htons_return_value = 0;
+    wrap_inet_pton_return_value = 1;
+    wrap_connect_return_value = 0;
+
+    /* Act */ 
+    int32 result = SBN_ClientInit();
+
+    /* Assert */
+    UtAssert_True(result == OS_SUCCESS, TestResultMsg("SBN_ClientInit result should be %d, but was %d", OS_SUCCESS, result));
+}
+/* end SBN_ClientInit Tests */
 
 /* CFE_SBN_CLIENT_ReadBytes Tests*/
 void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken(void)
@@ -1399,7 +1450,71 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
     UtAssert_True(result == available_index, TestResultMsg("CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", available_index, result));
     
 }
-/* end CFE_SBN_Client_GetAvailPipeIdx Tests*/
+
+void Test__wrap_CFE_SB_SubscribeEx_AlwaysFails(void)
+{
+    /* Arrange */
+    int32 expectedResult = -1;
+    
+    /* Act */ 
+    int32 result = __wrap_CFE_SB_SubscribeEx();
+    
+    /* Assert */
+    UtAssert_True(result = expectedResult, 
+        "__wrap_CFE_SB_SubscribeEx failed and returned -1");
+} /* end Test__wrap_CFE_SB_SubscribeEx_AlwaysFails */
+
+void Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails(void)
+{
+    /* Arrange */
+    int32 expectedResult = -1;
+    
+    /* Act */ 
+    int32 result = __wrap_CFE_SB_SubscribeLocal();
+    
+    /* Assert */
+    UtAssert_True(result = expectedResult, 
+        "__wrap_CFE_SB_SubscribeLocal failed and returned -1");
+} /* end Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails */
+
+void Test__wrap_CFE_SB_Unsubscribe_AlwaysFails(void)
+{
+    /* Arrange */
+    int32 expectedResult = -1;
+    
+    /* Act */ 
+    int32 result = __wrap_CFE_SB_Unsubscribe();
+    
+    /* Assert */
+    UtAssert_True(result = expectedResult, 
+        "__wrap_CFE_SB_Unsubscribe failed and returned -1");
+} /* end Test__wrap_CFE_SB_Unsubscribe_AlwaysFails */
+
+void Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails(void)
+{
+    /* Arrange */
+    int32 expectedResult = -1;
+    
+    /* Act */ 
+    int32 result = __wrap_CFE_SB_UnsubscribeLocal();
+    
+    /* Assert */
+    UtAssert_True(result = expectedResult, 
+        "__wrap_CFE_SB_UnsubscribeLocal failed and returned -1");
+} /* end Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails */
+
+void Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails(void)
+{
+    /* Arrange */
+    int32 expectedResult = -1;
+    
+    /* Act */ 
+    int32 result = __wrap_CFE_SB_ZeroCopySend();
+    
+    /* Assert */
+    UtAssert_True(result = expectedResult, 
+        "__wrap_CFE_SB_ZeroCopySend failed and returned -1");
+} /* end Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails */
 
 void Test_starter(void)
 {
@@ -1421,14 +1536,25 @@ void SBN_Client_Test_AddTestCases(void)
     UtGroupSetup_Add(Test_Group_Setup);
     UtGroupTeardown_Add(Test_Group_Teardown);
     
+    /* check_pthread_create_status Tests */
+    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN");
+    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL");
+    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM");
+    UtTest_Add(Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero");
+    UtTest_Add(Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_WhenStatusIsZero, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_WhenStatusIsZero");
+    
+    
     /* SBN_ClientInit Tests */
-    //UtTest_Add(Test_SBN_ClientInitSuccess, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInitSuccess");
+    UtTest_Add(Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server");
+    UtTest_Add(Test_SBN_ClientInit_FailsBecauseCreateHeartThreadFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_FailsBecauseCreateHeartThreadFails");
+    UtTest_Add(Test_SBN_ClientInit_FailsBecauseCreateReceiveThreadFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_FailsBecauseCreateReceiveThreadFails");
+    UtTest_Add(Test_SBN_ClientInit_Success, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_Success");
     
     /* connect_to_server Tests */
     add_connect_to_server_tests();
     
     /* CFE_SBN_Client_InitPipeTbl Tests */
-    UtTest_Add(Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_InitPipeTblFullyIniitializesPipes");
+    UtTest_Add(Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes");
     
     /* CFE_SBN_Client_GetPipeIdx Tests */
     UtTest_Add(Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx");
@@ -1436,17 +1562,17 @@ void SBN_Client_Test_AddTestCases(void)
     
     /* Wrap_CFE_SB_CreatePipe Tests */
     /* create pipe tests will not run with SBN_ClientInit enabled, needs more setup */
-    UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS");
-    UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly");
-    UtTest_Add(Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull");
+    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS");
+    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly");
+    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull");
     
     /* WRAP_CFE_SB_DeletePipe Tests */
-    UtTest_Add(Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse, SBN_Client_Setup, SBN_Client_Teardown, "Test_WRAP_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse");
+    UtTest_Add(Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse");
     
     /* Wrap_CFE_SB_Subscribe Tests */
-    UtTest_Add(Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds");
-    UtTest_Add(Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid");
-    UtTest_Add(Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds");
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid");
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
     
     /* ingest_app_message Tests */
     UtTest_Add(Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft");
@@ -1455,10 +1581,10 @@ void SBN_Client_Test_AddTestCases(void)
     UtTest_Add(Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull");
     
     /* Wrap_CFE_SB_RcvMsg Tests */
-    UtTest_Add(Test_Wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
-    UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe");
-    UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
-    UtTest_Add(Test_Wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_Wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
     
     /* CFE_SBN_CLIENT_ReadBytes Tests*/
     UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken");
@@ -1468,6 +1594,21 @@ void SBN_Client_Test_AddTestCases(void)
     /* CFE_SBN_Client_GetAvailPipeIdx Tests*/
     UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
     UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
+
+    /* __wrap_CFE_SB_SubscribeEx Tests */
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeEx_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeEx_AlwaysFails");
+
+    /* __wrap_CFE_SB_SubscribeLocal Tests */
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails");
+
+    /* __wrap_CFE_SB_Unsubscribe Tests */
+    UtTest_Add(Test__wrap_CFE_SB_Unsubscribe_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_Unsubscribe_AlwaysFails");
+
+    /* __wrap_CFE_SB_UnsubscribeLocal Tests */
+    UtTest_Add(Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails");
+    
+    /* __wrap_CFE_SB_ZeroCopySend Tests */
+    UtTest_Add(Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails");
 }
 
 /* Helper Functions */
@@ -1475,26 +1616,33 @@ void SBN_Client_Test_AddTestCases(void)
 void add_connect_to_server_tests(void)
 {
     UtTest_Add(Test_connect_to_server_returns_sockfd_when_successful, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_sockfd_when_successful");
-    UtTest_Add(Test_connect_to_server_returns_error_when_socket_fails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_socket_fails");
+    UtTest_Add(Test_connect_to_server_Outputs_EACCES_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EACCES_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EAFNOSUPPORT_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EAFNOSUPPORT_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EINVAL_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EINVAL_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EMFILE_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EMFILE_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_ENOBUFS_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENOBUFS_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_ENOMEM_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENOMEM_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EPROTONOSUPPORT_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EPROTONOSUPPORT_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches");
     UtTest_Add(Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid");
     UtTest_Add(Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid");
-    UtTest_Add(Test_connect_to_server_returns_error_when_connect_fails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_connect_fails");
-    UtTest_Add(Test_connect_to_server_outputs_EACCES_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EACCES_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EPERM_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EPERM_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EADDRINUSE_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EADDRINUSE_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EAGAIN_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EAGAIN_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EALREADY_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EALREADY_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EBADF_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EBADF_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_ECONNREFUSED_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_ECONNREFUSED_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EFAULT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EFAULT_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EINPROGRESS_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EINPROGRESS_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EINTR_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EINTR_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EISCONN_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EISCONN_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_ENETUNREACH_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_ENETUNREACH_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_ENOTSOCK_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_ENOTSOCK_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_EPROTOTYPE_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_EPROTOTYPE_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_outputs_ETIMEDOUT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_outputs_ETIMEDOUT_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_returns_error_WhenConnectFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_WhenConnectFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EACCES_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EACCES_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EPERM_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EPERM_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EADDRINUSE_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EADDRINUSE_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EAGAIN_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EAGAIN_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EALREADY_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EALREADY_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EBADF_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EBADF_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_ECONNREFUSED_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ECONNREFUSED_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EFAULT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EFAULT_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EINPROGRESS_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EINPROGRESS_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EINTR_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EINTR_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EISCONN_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EISCONN_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_ENETUNREACH_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENETUNREACH_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_ENOTSOCK_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENOTSOCK_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_EPROTOTYPE_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EPROTOTYPE_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_Outputs_ETIMEDOUT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ETIMEDOUT_errorWhenConnectReturnsThatError");  
 
 }

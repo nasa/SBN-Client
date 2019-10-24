@@ -15,6 +15,8 @@
 /************************************************************************
 ** Type Definitions
 *************************************************************************/
+#define SBN_CLIENT_SUCCESS                      OS_SUCCESS
+
 #define CFE_SBN_CLIENT_NOT_IN_USE               0
 #define CFE_SBN_CLIENT_IN_USE                   1
 #define CFE_SBN_CLIENT_UNUSED_QUEUE             0xFFFF
@@ -24,6 +26,8 @@
 #define CFE_PLATFORM_SBN_CLIENT_MAX_PIPES       5 //CFE_PLATFORM_SB_MAX_PIPES
 #define CFE_SBN_CLIENT_BAD_ARGUMENT             CFE_SB_BAD_ARGUMENT
 #define CFE_SBN_CLIENT_INVALID_PIPE             0xFF
+#define SBN_CLIENT_NO_STATUS_SET                0xFFFF
+#define SBN_CLIENT_BAD_SOCK_FD_EID              0x0100
 #define CFE_SBN_CLIENT_CR_PIPE_BAD_ARG_EID      1002
 #define CFE_SBN_CLIENT_MAX_PIPES_MET            1003
 #define CFE_SBN_CLIENT_MAX_PIPES_MET_EID        1004
@@ -35,6 +39,10 @@
 #define CFE_SBN_CLIENT_PIPE_BROKEN_ERR          1010
 #define CFE_SBN_CLIENT_PIPE_CLOSED_ERR          1011
 #define CFE_SBN_CLIENT_PIPE_CR_ERR              ((int32)0xca001005)
+#define SBN_CLIENT_HEART_THREAD_CREATE_EID      1012
+#define SBN_CLIENT_RECEIVE_THREAD_CREATE_EID    1013
+
+
 #define CFE_SBN_CLIENT_INVALID_MSG_ID           0
 
 #define CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE  32

@@ -110,6 +110,8 @@ WRAP_LOPT :=$(WRAP_LOPT),-wrap,read
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,sleep
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,puts
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,perror
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,exit
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_create
 endif
 
 #WARNINGS = -Wall -W -ansi -Werror -Wstrict-prototypes -Wundef

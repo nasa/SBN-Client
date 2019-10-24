@@ -20,8 +20,10 @@
 
 #define  CFE_SBN_CLIENT_NO_PROTOCOL   0
 
+
+
 // TODO: can this be included instead of duplicated here?
-#define CCSDS_TIME_SIZE 6 // <- see mps_mission_cfg.h
+// #define CCSDS_TIME_SIZE 6 // <- see mps_mission_cfg.h
 
 // Refer to sbn_cont_tbl.c to make sure these match
 // SBN is running here: <- Should be in the platform config
@@ -53,44 +55,97 @@ MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 static void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID, CFE_SB_Qos_t QoS);
 void invalidate_pipe(CFE_SBN_Client_PipeD_t *pipe);
 
+int32 check_pthread_create_status(int status, int32 errorId)
+{
+    int32 thread_status;
+    
+    if (status == 0)
+    {
+        thread_status = SBN_CLIENT_SUCCESS; 
+    }
+    else
+    {
+        switch(status)
+        {
+            case EAGAIN:
+            puts("Create thread error = EAGAIN");
+            break;
+            
+            case EINVAL:
+            puts("Create thread error = EINVAL");
+            break;
+            
+            case EPERM:
+            puts("Create thread error = EPERM");
+            break;
+            
+            default:
+            printf("Unknown thread creation error = %d\n", status);        
+        }
+        
+        perror("pthread_create error");
+        
+        thread_status = errorId;
+    }/* end if */
+    
+    return thread_status;
+}
 
 int32 SBN_ClientInit(void)
 {
-  //puts ("SBN_CLIENT_INIT");
-    // Gets socket file descriptor
-    printf("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
+     /* Gets socket file descriptor */
+    int32 Status = SBN_CLIENT_NO_STATUS_SET;
+    int heart_thread_status = 0;
+    int receive_thread_status = 0;
+    
+    printf("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, 
+        SBN_CLIENT_PORT);
+    
     sockfd = connect_to_server(SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
-    cpuId = 2;
+    cpuId = 2; /* TODO: this is hardcoded, but should be set by cFS's SBN ??*/
 
     if (sockfd < 0)
     {
-        printf("SBN_CLIENT: ERROR Failed to get sockfd, error %d\n", sockfd);
-        exit(sockfd);
+        puts("SBN_CLIENT: ERROR Failed to get sockfd, cannot continue.");
+        Status = SBN_CLIENT_BAD_SOCK_FD_EID;
     }
+    else
+    {
+        /* Create pipe table */
+        CFE_SBN_Client_InitPipeTbl();
+
+        /* Create thread for watchdog and receive */
+        heart_thread_status = pthread_create(&heart_thread_id, NULL, 
+            heartbeatMinder, NULL);
+            
+        Status = check_pthread_create_status(heart_thread_status, 
+            SBN_CLIENT_HEART_THREAD_CREATE_EID);
+        
+        if (Status == SBN_CLIENT_SUCCESS)
+        {    
+            receive_thread_status = pthread_create(&receive_thread_id, NULL, 
+            receiveMinder, NULL);
+        
+            Status = check_pthread_create_status(receive_thread_status, 
+                SBN_CLIENT_RECEIVE_THREAD_CREATE_EID);
+        }/* end if */ 
+        
+    }/* end if */ 
     
-    // Create pipe table
-    CFE_SBN_Client_InitPipeTbl();
-
-    // Receive a message or something?
-    //recv_msg(sockfd);
-    //recv_msg(sockfd);
-
-    // Thread for watchdog?
-    pthread_create(&heart_thread_id, NULL, heartbeatMinder, NULL);
-    pthread_create(&receive_thread_id, NULL, receiveMinder, NULL);
+    if (Status != SBN_CLIENT_SUCCESS)
+    {
+        printf("SBN_ClientInit error %d\n", Status);
+        exit(Status);
+    }/* end if */ 
     
-    // TODO: is thread ever cleaned up?
-    //pthread_join(receive_thread_id, NULL);
-
-    // TODO: return failure?
-    return OS_SUCCESS;
-}
+    return Status;
+}/* end SBN_ClientInit */
 
 
 
-// message_entry_point determines which slot a new message enters the pipe.
-// the mod allows it to go around the bend easily, i.e. 2 + 4 % 5 = 1, 
-// slots 2,3,4,0 are taken so 1 is entry
+/* message_entry_point determines which slot a new message enters the pipe.
+ * the mod allows it to go around the bend easily, i.e. 2 + 4 % 5 = 1, 
+ * slots 2,3,4,0 are taken so 1 is entry */
 int message_entry_point(CFE_SBN_Client_PipeD_t pipe)
 {
     return (pipe.ReadMessage + pipe.NumberOfMessages) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
@@ -136,7 +191,6 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, size_t MsgSz
 
 void CFE_SBN_Client_InitPipeTbl(void)
 {
-    //puts("CFE_SBN_Client_InitPipeTbl");
     uint8  i;
 
     for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++){
@@ -322,9 +376,44 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     // socket error
     if (sockfd < 0)
     {
+        switch(errno)
+        {
+            case EACCES:
+            puts("socket err = EACCES");
+            break; 
+            
+            case EAFNOSUPPORT:
+            puts("socket err = EAFNOSUPPORT");
+            break;  
+            
+            case EINVAL:
+            puts("socket err = EINVAL");
+            break; 
+            
+            case EMFILE:
+            puts("socket err = EMFILE");
+            break; 
+            
+            case ENOBUFS:
+            puts("socket err = ENOBUFS");
+            break; 
+            
+            case ENOMEM:
+            puts("socket err = ENOMEM");
+            break; 
+            
+            case EPROTONOSUPPORT:
+            puts("socket err = EPROTONOSUPPORT");
+            break;  
+            
+            default:
+            printf("Unknown socket error = %d\n", errno);  
+        }
+        
         perror("connect_to_server socket error");
         return SERVER_SOCKET_ERROR;
     }
+    
     printf("sockfd = %d\n", sockfd);
 
     memset(&server_address, '0', sizeof(server_address));
