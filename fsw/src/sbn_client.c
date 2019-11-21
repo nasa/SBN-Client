@@ -12,10 +12,6 @@
 #include <arpa/inet.h>
 #include <math.h>
 
-#include "cfe_platform_cfg.h"
-#include "sbn_constants.h"
-#include "sbn_interfaces.h"
-#include "sbn_pack.h"
 #include "sbn_client.h"
 
 #define  CFE_SBN_CLIENT_NO_PROTOCOL   0
