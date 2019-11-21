@@ -4,8 +4,6 @@
 /************************************************************************
 ** Includes
 *************************************************************************/
-#include "cfe.h"
-
 #include "cfe_platform_cfg.h"
 #include "sbn_constants.h"
 #include "sbn_interfaces.h"
