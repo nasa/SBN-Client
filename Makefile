@@ -15,15 +15,15 @@ PSP_BSP_INC = -I../../psp/fsw/pc-linux/inc
 
 LIBS = -lpthread
 
-all: sbn_client.so
+all: libsbn_client.so
 
-sbn_client.so: sbn_client.o
-	gcc -shared sbn_client.o -o sbn_client.so
+libsbn_client.so: libsbn_client.a
+	gcc -shared libsbn_client.a -o libsbn_client.so
 
-sbn_client.o: Makefile unwrap_symbols.txt
-	gcc -Wall -Werror -c -fPIC $(SBN_CLIENT_SRC)/*.c $(SBN_CLIENT_INC) $(CFE_DEFS) $(CFE_INC) $(OSAL_INC) $(OSAL_BSP_INC) $(PSP_INC) $(PSP_BSP_INC) $(SBN_INC) $(LIBS)
-	objcopy --redefine-syms=unwrap_symbols.txt sbn_client.o
+libsbn_client.a: Makefile unwrap_symbols.txt
+	gcc -Wall -Werror -c -fPIC $(SBN_CLIENT_SRC)/*.c $(SBN_CLIENT_INC) $(CFE_DEFS) $(CFE_INC) $(OSAL_INC) $(OSAL_BSP_INC) $(PSP_INC) $(PSP_BSP_INC) $(SBN_INC) $(LIBS) -o libsbn_client.a
+	objcopy --redefine-syms=unwrap_symbols.txt libsbn_client.a
 
 clean:
-	rm -f sbn_client.o
-	rm -f sbn_client.so
+	rm -f libsbn_client.a
+	rm -f libsbn_client.so
