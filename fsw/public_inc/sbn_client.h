@@ -8,7 +8,6 @@
 #include "sbn_constants.h"
 #include "sbn_interfaces.h"
 #include "sbn_pack.h"
-#include "sbn_client.h"
 
 /************************************************************************
 ** Type Definitions
