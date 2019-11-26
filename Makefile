@@ -19,19 +19,10 @@ all: sbn_client.so
 
 sbn_client.so: sbn_client.o
 	gcc -shared sbn_client.o -o sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_DeletePipe=CFE_SB_DeletePipe sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_RcvMsg=CFE_SB_RcvMsg sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_SendMsg=CFE_SB_SendMsg sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_SubscribeEx=CFE_SB_SubscribeEx sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_Subscribe=CFE_SB_Subscribe sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_SubscribeLocal=CFE_SB_SubscribeLocal sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_Unsubscribe=CFE_SB_Unsubscribe sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_ZeroCopySend=CFE_SB_ZeroCopySend sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_CreatePipe=CFE_SB_CreatePipe sbn_client.so
-	objcopy --redefine-sym __wrap_CFE_SB_UnsubscribeLocal=CFE_SB_UnsubscribeLocal sbn_client.so
 
-sbn_client.o:
+sbn_client.o: Makefile unwrap_symbols.txt
 	gcc -Wall -Werror -c -fPIC $(SBN_CLIENT_SRC)/*.c $(SBN_CLIENT_INC) $(CFE_DEFS) $(CFE_INC) $(OSAL_INC) $(OSAL_BSP_INC) $(PSP_INC) $(PSP_BSP_INC) $(SBN_INC) $(LIBS)
+	objcopy --redefine-syms=unwrap_symbols.txt sbn_client.o
 
 clean:
 	rm -f sbn_client.o
