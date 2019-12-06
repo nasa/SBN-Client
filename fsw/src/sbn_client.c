@@ -32,6 +32,7 @@ int send_heartbeat(int sockfd);
 int recv_msg(int sockfd);
 pthread_mutex_t receive_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  received_condition = PTHREAD_COND_INITIALIZER;
+int connect_to_server(const char *, uint16_t);
 ///////////////////////
 
 

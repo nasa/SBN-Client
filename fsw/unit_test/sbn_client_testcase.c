@@ -121,6 +121,18 @@ extern Ut_OSFILEAPI_HookTable_t         Ut_OSFILEAPI_HookTable;
 extern Ut_CFE_ES_HookTable_t            Ut_CFE_ES_HookTable;
 extern Ut_OSAPI_HookTable_t             Ut_OSAPI_HookTable;
 
+
+extern int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t, 
+                                CFE_SB_PipeId_t, 
+                                CFE_SB_Qos_t, 
+                                uint16);
+extern int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t, uint16);
+extern int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
+extern int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
+extern int connect_to_server(const char *, uint16_t);
+extern int32 check_pthread_create_status(int, int32);
+extern int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *, CFE_SB_ZeroCopyHandle_t);
+
 extern int sockfd;
 extern int cpuId;
 
