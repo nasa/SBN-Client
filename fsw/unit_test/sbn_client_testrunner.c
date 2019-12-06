@@ -9,6 +9,7 @@
 /*
 * Function Definitions
 */
+extern void SBN_Client_Test_AddTestCases(void);
 
 int main(void)
 {   

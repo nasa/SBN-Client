@@ -199,7 +199,7 @@ int __wrap_puts(const char *str)
           puts_expected_string, str));
     }
     
-    __real_puts(str);
+    return __real_puts(str);
 }
 
 void __wrap_perror(const char *str)
@@ -286,7 +286,7 @@ void check_pthread_create_status_OutputsCorrectError(int error,
        const char *error_name)
 {    
     /* Arrange */ 
-    const char *p_e_s[50];
+    char p_e_s[50];
     int status = error;
     int32 errorId = rand() % INT_MIN;
     
@@ -368,18 +368,18 @@ void connect_to_server_socket_fail_check(int32 expected_error,
        const char *error_name)
 {
     /* Arrange */
-    const char *p_e_s[50];
+    char p_e_s[50];
     
     wrap_socket_return_value = -1;
     errno = expected_error;
     sprintf(p_e_s, "socket err = %s", error_name);
     puts_expected_string = p_e_s;
     perror_expected_string = "connect_to_server socket error";
-    
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
+
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT 
-     * are wrapped calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
     
     /* Assert */
     UtAssert_True(result == SERVER_SOCKET_ERROR, 
@@ -391,7 +391,7 @@ void connect_to_server_connect_fail_check(int32 expected_error,
        const char *error_name)
 {
     /* Arrange */
-    const char *p_e_s[50];
+    char p_e_s[50];
     
     wrap_socket_return_value = rand() % INT_MAX;
     wrap_htons_return_value = 0;
@@ -401,11 +401,11 @@ void connect_to_server_connect_fail_check(int32 expected_error,
     sprintf(p_e_s, "connect err = %s", error_name);
     puts_expected_string = p_e_s;
     perror_expected_string = "connect_to_server connect error";
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
 
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT 
-     * are wrapped calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
 
     /* Assert */
     UtAssert_True(result == SERVER_CONNECT_ERROR, 
@@ -426,11 +426,11 @@ void Test_connect_to_server_returns_sockfd_when_successful(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 1;
   wrap_connect_return_value = 0;
-    
+  const char * dummyIp = NULL;
+  uint16_t dummyPort = 0;
+
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped
-  ** calls */
-  int result = connect_to_server(NULL, NULL);
+  int result = connect_to_server(dummyIp, dummyPort);
   
   /* Assert */
   UtAssert_True(result == wrap_socket_return_value, 
@@ -481,11 +481,11 @@ void Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches(void)
     /* TODO: printf is being used not puts, need a better way to check */
     /* puts_expected_string = "Unknown socket error = 65535"; */
     perror_expected_string = "connect_to_server socket error";
-    
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
+
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT 
-     * are wrapped calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
     
     /* Assert */
     UtAssert_True(result == SERVER_SOCKET_ERROR, 
@@ -501,11 +501,11 @@ void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 0;
   errno = SERVER_INET_PTON_SRC_ERROR;
-    
+  const char * dummyIp = NULL;
+  uint16_t dummyPort = 0;
+
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped
-  ** calls */
-  int result = connect_to_server(NULL, NULL);
+  int result = connect_to_server(dummyIp, dummyPort);
   
   /* Assert */
   UtAssert_True(result == SERVER_INET_PTON_SRC_ERROR, 
@@ -521,11 +521,11 @@ void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = -1;
   errno = SERVER_INET_PTON_INVALID_AF_ERROR;
-    
+  const char * dummyIp = NULL;
+  uint16_t dummyPort = 0;
+
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped
-  ** calls */
-  int result = connect_to_server(NULL, NULL);
+  int result = connect_to_server(dummyIp, dummyPort);
   
   /* Assert */
   UtAssert_True(result == SERVER_INET_PTON_INVALID_AF_ERROR, 
@@ -541,11 +541,11 @@ void Test_connect_to_server_returns_error_WhenConnectFails(void)
     wrap_inet_pton_return_value = 1;
     wrap_connect_return_value = CONNECT_ERROR_VALUE;
     errno = -4;
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
 
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT 
-     * are wrapped calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
 
     /* Assert */
     UtAssert_True(result == errno, 
@@ -1601,9 +1601,14 @@ void Test__wrap_CFE_SB_SubscribeEx_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
+    CFE_SB_Qos_t dummyQuality;
+    uint16 dummyMsgLim = 0;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_SubscribeEx();
+    int32 result = __wrap_CFE_SB_SubscribeEx(dummyMsgId, dummyPipeId, 
+      dummyQuality, dummyMsgLim);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1614,9 +1619,13 @@ void Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
+    uint16 dummyMsgLim = 0;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_SubscribeLocal();
+    int32 result = __wrap_CFE_SB_SubscribeLocal(dummyMsgId, dummyPipeId,
+      dummyMsgLim);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1627,9 +1636,11 @@ void Test__wrap_CFE_SB_Unsubscribe_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_Unsubscribe();
+    int32 result = __wrap_CFE_SB_Unsubscribe(dummyMsgId, dummyPipeId);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1640,9 +1651,11 @@ void Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_UnsubscribeLocal();
+    int32 result = __wrap_CFE_SB_UnsubscribeLocal(dummyMsgId, dummyPipeId);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1653,9 +1666,11 @@ void Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_Msg_t *dummyMsg = NULL;
+    CFE_SB_ZeroCopyHandle_t dummyHandle = NULL;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_ZeroCopySend();
+    int32 result = __wrap_CFE_SB_ZeroCopySend(dummyMsg, dummyHandle);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
