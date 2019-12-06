@@ -112,11 +112,23 @@ typedef struct {
 *************************************************************************/
 int32 SBN_ClientInit(void);
 void CFE_SBN_Client_InitPipeTbl(void);
-void InvalidatePipe(CFE_SBN_Client_PipeD_t *pipe);
-void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz);
-CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr);
-uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t MsgPtr);
-
+void InvalidatePipe(CFE_SBN_Client_PipeD_t *);
+void ingest_app_message(int, SBN_MsgSz_t);
+CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t);
+uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t);
+uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t);
+int CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
+CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void);
+int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t, 
+                                CFE_SB_PipeId_t, 
+                                CFE_SB_Qos_t, 
+                                uint16);
+int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t, uint16);
+int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
+int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
+int connect_to_server(const char *, uint16_t);
+int32 check_pthread_create_status(int, int32);
+int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *, CFE_SB_ZeroCopyHandle_t);
 #endif /* _sbn_client_h_ */
 
 /************************/

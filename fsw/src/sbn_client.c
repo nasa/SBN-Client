@@ -20,11 +20,6 @@
 
 #define  CFE_SBN_CLIENT_NO_PROTOCOL   0
 
-
-
-// TODO: can this be included instead of duplicated here?
-// #define CCSDS_TIME_SIZE 6 // <- see mps_mission_cfg.h
-
 // Refer to sbn_cont_tbl.c to make sure these match
 // SBN is running here: <- Should be in the platform config
 #define SBN_CLIENT_PORT    1234
@@ -32,7 +27,6 @@
 
 // Private functions
 int32 SBN_ClientInit(void);
-int connect_to_server(const char *server_ip, uint16_t server_port);
 int send_msg(int sockfd, CFE_SB_Msg_t *msg);
 int send_heartbeat(int sockfd);
 int recv_msg(int sockfd);
