@@ -110,14 +110,28 @@ size_t wrap_read_return_value;
 
 /* SBN variable accessors */
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-extern MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
+extern MsgId_to_pipes_t 
+  MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 
 
 /* UT_Assert external functions */
-extern Ut_CFE_FS_ReturnCodeTable_t      Ut_CFE_FS_ReturnCodeTable[UT_CFE_FS_MAX_INDEX];
+extern Ut_CFE_FS_ReturnCodeTable_t      
+  Ut_CFE_FS_ReturnCodeTable[UT_CFE_FS_MAX_INDEX];
 extern Ut_OSFILEAPI_HookTable_t         Ut_OSFILEAPI_HookTable;
 extern Ut_CFE_ES_HookTable_t            Ut_CFE_ES_HookTable;
 extern Ut_OSAPI_HookTable_t             Ut_OSAPI_HookTable;
+
+
+extern int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t, 
+                                CFE_SB_PipeId_t, 
+                                CFE_SB_Qos_t, 
+                                uint16);
+extern int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t, uint16);
+extern int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
+extern int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
+extern int connect_to_server(const char *, uint16_t);
+extern int32 check_pthread_create_status(int, int32);
+extern int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *, CFE_SB_ZeroCopyHandle_t);
 
 extern int sockfd;
 extern int cpuId;
@@ -155,7 +169,8 @@ void SBN_Client_Setup(void)
   
   memset(PipeTbl, 0, sizeof(PipeTbl));
     
-  /* Global UT CFE resets -- NOTE: not sure if these are required for sbn_client */
+  /* Global UT CFE resets -- 
+   * NOTE: not sure if these are required for sbn_client */
   Ut_OSAPI_Reset();
   Ut_CFE_SB_Reset();
   Ut_CFE_ES_Reset();
@@ -196,7 +211,7 @@ int __wrap_puts(const char *str)
           puts_expected_string, str));
     }
     
-    __real_puts(str);
+    return __real_puts(str);
 }
 
 void __wrap_perror(const char *str)
@@ -283,7 +298,7 @@ void check_pthread_create_status_OutputsCorrectError(int error,
        const char *error_name)
 {    
     /* Arrange */ 
-    const char *p_e_s[50];
+    char p_e_s[50];
     int status = error;
     int32 errorId = rand() % INT_MIN;
     
@@ -339,7 +354,7 @@ void Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero(void)
 }
 
 
-void Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_WhenStatusIsZero(void)
+void Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0(void)
 {
     /* Arrange */ 
     int status = 0;
@@ -365,18 +380,18 @@ void connect_to_server_socket_fail_check(int32 expected_error,
        const char *error_name)
 {
     /* Arrange */
-    const char *p_e_s[50];
+    char p_e_s[50];
     
     wrap_socket_return_value = -1;
     errno = expected_error;
     sprintf(p_e_s, "socket err = %s", error_name);
     puts_expected_string = p_e_s;
     perror_expected_string = "connect_to_server socket error";
-    
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
+
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
     
     /* Assert */
     UtAssert_True(result == SERVER_SOCKET_ERROR, 
@@ -388,7 +403,7 @@ void connect_to_server_connect_fail_check(int32 expected_error,
        const char *error_name)
 {
     /* Arrange */
-    const char *p_e_s[50];
+    char p_e_s[50];
     
     wrap_socket_return_value = rand() % INT_MAX;
     wrap_htons_return_value = 0;
@@ -398,11 +413,11 @@ void connect_to_server_connect_fail_check(int32 expected_error,
     sprintf(p_e_s, "connect err = %s", error_name);
     puts_expected_string = p_e_s;
     perror_expected_string = "connect_to_server connect error";
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
 
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
 
     /* Assert */
     UtAssert_True(result == SERVER_CONNECT_ERROR, 
@@ -423,11 +438,11 @@ void Test_connect_to_server_returns_sockfd_when_successful(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 1;
   wrap_connect_return_value = 0;
-    
+  const char * dummyIp = NULL;
+  uint16_t dummyPort = 0;
+
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped
-  ** calls */
-  int result = connect_to_server(NULL, NULL);
+  int result = connect_to_server(dummyIp, dummyPort);
   
   /* Assert */
   UtAssert_True(result == wrap_socket_return_value, 
@@ -478,11 +493,11 @@ void Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches(void)
     /* TODO: printf is being used not puts, need a better way to check */
     /* puts_expected_string = "Unknown socket error = 65535"; */
     perror_expected_string = "connect_to_server socket error";
-    
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
+
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
     
     /* Assert */
     UtAssert_True(result == SERVER_SOCKET_ERROR, 
@@ -498,11 +513,11 @@ void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 0;
   errno = SERVER_INET_PTON_SRC_ERROR;
-    
+  const char * dummyIp = NULL;
+  uint16_t dummyPort = 0;
+
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped
-  ** calls */
-  int result = connect_to_server(NULL, NULL);
+  int result = connect_to_server(dummyIp, dummyPort);
   
   /* Assert */
   UtAssert_True(result == SERVER_INET_PTON_SRC_ERROR, 
@@ -518,11 +533,11 @@ void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = -1;
   errno = SERVER_INET_PTON_INVALID_AF_ERROR;
-    
+  const char * dummyIp = NULL;
+  uint16_t dummyPort = 0;
+
   /* Act */ 
-  /* NULL can be used in the test call because all usages in the CUT are wrapped
-  ** calls */
-  int result = connect_to_server(NULL, NULL);
+  int result = connect_to_server(dummyIp, dummyPort);
   
   /* Assert */
   UtAssert_True(result == SERVER_INET_PTON_INVALID_AF_ERROR, 
@@ -538,98 +553,99 @@ void Test_connect_to_server_returns_error_WhenConnectFails(void)
     wrap_inet_pton_return_value = 1;
     wrap_connect_return_value = CONNECT_ERROR_VALUE;
     errno = -4;
+    const char * dummyIp = NULL;
+    uint16_t dummyPort = 0;
 
     /* Act */ 
-    /* NULL can be used in the test call because all usages in the CUT are wrapped
-    ** calls */
-    int result = connect_to_server(NULL, NULL);
+    int result = connect_to_server(dummyIp, dummyPort);
 
     /* Assert */
-    UtAssert_True(result == -4, 
-      TestResultMsg("error returned should have been %d and was %d", -4, result));
+    UtAssert_True(result == errno, 
+      TestResultMsg("error returned should have been %d and was %d", 
+      errno, result));
 }
 
-void Test_connect_to_server_Outputs_EACCES_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EACCES_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EACCES, "EACCES");
 }
 
-void Test_connect_to_server_Outputs_EPERM_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EPERM_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EPERM, "EPERM");
 }
 
-void Test_connect_to_server_Outputs_EADDRINUSE_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EADDRINUSE_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EADDRINUSE, "EADDRINUSE");
 }
 
-void Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EADDRNOTAVAIL, "EADDRNOTAVAIL");
 }
 
-void Test_connect_to_server_Outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EAFNOSUPPORT_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EAFNOSUPPORT, "EAFNOSUPPORT");
 }
 
-void Test_connect_to_server_Outputs_EAGAIN_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EAGAIN_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EAGAIN, "EAGAIN");
 }
 
-void Test_connect_to_server_Outputs_EALREADY_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EALREADY_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EALREADY, "EALREADY");
 }
 
-void Test_connect_to_server_Outputs_EBADF_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EBADF_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EBADF, "EBADF");
 }
 
-void Test_connect_to_server_Outputs_ECONNREFUSED_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ECONNREFUSED_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(ECONNREFUSED, "ECONNREFUSED");
 }
 
-void Test_connect_to_server_Outputs_EFAULT_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EFAULT_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EFAULT, "EFAULT");
 }
 
-void Test_connect_to_server_Outputs_EINPROGRESS_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EINPROGRESS_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EINPROGRESS, "EINPROGRESS");
 }
 
-void Test_connect_to_server_Outputs_EINTR_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EINTR_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EINTR, "EINTR");
 }
 
-void Test_connect_to_server_Outputs_EISCONN_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EISCONN_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EISCONN, "EISCONN");
 }
 
-void Test_connect_to_server_Outputs_ENETUNREACH_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ENETUNREACH_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(ENETUNREACH, "ENETUNREACH");
 }
 
-void Test_connect_to_server_Outputs_ENOTSOCK_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ENOTSOCK_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(ENOTSOCK, "ENOTSOCK");
 }
 
-void Test_connect_to_server_Outputs_EPROTOTYPE_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_EPROTOTYPE_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(EPROTOTYPE, "EPROTOTYPE");
 }
 
-void Test_connect_to_server_Outputs_ETIMEDOUT_errorWhenConnectReturnsThatError(void)
+void Test_connect_to_server_Outputs_ETIMEDOUT_errorFromConnectCall(void)
 {
     connect_to_server_connect_fail_check(ETIMEDOUT, "ETIMEDOUT");
 }
@@ -656,16 +672,33 @@ void Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes(void)
     {
         CFE_SBN_Client_PipeD_t test_pipe = PipeTbl[i];
         
-        UtAssert_True(test_pipe.InUse == CFE_SBN_CLIENT_NOT_IN_USE, TestResultMsg("PipeTbl[%d].InUse should equal %d and was %d", i, CFE_SBN_CLIENT_NOT_IN_USE, PipeTbl[i].InUse));
-        UtAssert_True(test_pipe.SysQueueId == CFE_SBN_CLIENT_UNUSED_QUEUE, TestResultMsg("PipeTbl[%d].SysQueueId should equal %d and was %d", i, CFE_SBN_CLIENT_UNUSED_QUEUE, PipeTbl[i].SysQueueId));
-        UtAssert_True(test_pipe.PipeId == CFE_SBN_CLIENT_INVALID_PIPE, TestResultMsg("PipeTbl[%d].PipeId should equal %d and was %d", i, CFE_SBN_CLIENT_INVALID_PIPE, PipeTbl[i].PipeId));
-        UtAssert_True(test_pipe.NumberOfMessages == 1, TestResultMsg("PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 1, PipeTbl[i].NumberOfMessages));
-        UtAssert_True(test_pipe.ReadMessage == (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), TestResultMsg("PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), PipeTbl[i].ReadMessage));
-        UtAssert_True(strcmp(test_pipe.PipeName, "") == 0, TestResultMsg("PipeTbl[%d].PipeId should equal '' and was '%s'", i, PipeTbl[i].PipeName));  
+        UtAssert_True(test_pipe.InUse == CFE_SBN_CLIENT_NOT_IN_USE, 
+          TestResultMsg("PipeTbl[%d].InUse should equal %d and was %d", i, 
+          CFE_SBN_CLIENT_NOT_IN_USE, PipeTbl[i].InUse));
+        UtAssert_True(test_pipe.SysQueueId == CFE_SBN_CLIENT_UNUSED_QUEUE, 
+          TestResultMsg("PipeTbl[%d].SysQueueId should equal %d and was %d", i, 
+          CFE_SBN_CLIENT_UNUSED_QUEUE, PipeTbl[i].SysQueueId));
+        UtAssert_True(test_pipe.PipeId == CFE_SBN_CLIENT_INVALID_PIPE, 
+          TestResultMsg("PipeTbl[%d].PipeId should equal %d and was %d", i, 
+          CFE_SBN_CLIENT_INVALID_PIPE, PipeTbl[i].PipeId));
+        UtAssert_True(test_pipe.NumberOfMessages == 1, TestResultMsg(
+          "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 1, 
+          PipeTbl[i].NumberOfMessages));
+        UtAssert_True(test_pipe.ReadMessage == 
+          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), TestResultMsg(
+          "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 
+          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), 
+          PipeTbl[i].ReadMessage));
+        UtAssert_True(strcmp(test_pipe.PipeName, "") == 0, 
+          TestResultMsg("PipeTbl[%d].PipeId should equal '' and was '%s'", i, 
+          PipeTbl[i].PipeName));  
     
         for(j = 0; j < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; j++)
         {
-            UtAssert_True(test_pipe.SubscribedMsgIds[j] == CFE_SBN_CLIENT_INVALID_MSG_ID, TestResultMsg("PipeTbl[%d].SubscribedMsgIds[%d] should be %d and was %d", i, j, CFE_SBN_CLIENT_INVALID_MSG_ID, test_pipe.SubscribedMsgIds[j]));
+            UtAssert_True(test_pipe.SubscribedMsgIds[j] == 
+              CFE_SBN_CLIENT_INVALID_MSG_ID, TestResultMsg(
+              "PipeTbl[%d].SubscribedMsgIds[%d] should be %d and was %d", i, j, 
+              CFE_SBN_CLIENT_INVALID_MSG_ID, test_pipe.SubscribedMsgIds[j]));
         }
         
     }
@@ -692,10 +725,15 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == pipe, TestResultMsg("CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", pipe, result));
+    UtAssert_True(result == pipe, TestResultMsg(
+      "CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", 
+      pipe, result));
 }
 
-void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_WhenConnectFailspeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)  //NOTE:not sure if this can really ever occur
+/* NOTE:not sure if what happens in 
+ * Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx can really 
+ * ever occur during runtime */
+void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)  
 {
     /* Arrange */
     CFE_SB_PipeId_t pipe = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
@@ -715,7 +753,9 @@ void Test_CFE_SBN_Client_GetPiTest_connect_to_server_returns_error_WhenConnectFa
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == tblIdx, TestResultMsg("CFE_SBN_Client_GetPipeIdx for pipeId %d should have returned %d and was %d", pipe, tblIdx, result));
+    UtAssert_True(result == tblIdx, TestResultMsg(
+      "CFE_SBN_Client_GetPipeIdx for pipeId %d should have been %d and was %d", 
+      pipe, tblIdx, result));
 }
 /* end CFE_SBN_Client_GetPipeIdx Tests */
 
@@ -736,7 +776,9 @@ void Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
   int32 result = CFE_SB_CreatePipe(&pipePtr, depth, pipeName);
   
   /* Assert */
-  UtAssert_True(result == CFE_SUCCESS, TestResultMsg("Pipe creation should have succeeded with (= %d), the result was (= %d)", CFE_SUCCESS, result));
+  UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+    "Pipe creation should have succeeded with (= %d), the result was (= %d)", 
+    CFE_SUCCESS, result));
 }
 
 void Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
@@ -748,13 +790,25 @@ void Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
   CFE_SB_CreatePipe(&pipePtr, depth, pipeName);
   
   /* Assert */
-  UtAssert_True(pipePtr == 0, TestResultMsg("PipePtr should point to pipe 0 (initial pipe) and points to pipe %d.", pipePtr));
-  UtAssert_True(PipeTbl[0].InUse == CFE_SBN_CLIENT_IN_USE, TestResultMsg("PipeTbl[0].InUse should be %d and was %d", CFE_SBN_CLIENT_IN_USE, PipeTbl[0].InUse));
-  UtAssert_True(PipeTbl[0].PipeId == 0, TestResultMsg("PipeTbl[0].PipeID should be %d and was %d", 0, PipeTbl[0].PipeId));
-  UtAssert_True(PipeTbl[0].SendErrors == 0, TestResultMsg("PipeTbl[0].SendErrors should be %d and was %d", 0, PipeTbl[0].SendErrors));
-  UtAssert_True(strcmp(&PipeTbl[0].PipeName[0], pipeName) == 0, TestResultMsg("PipeTbl[0].PipeName should be %s and was %s", pipeName, PipeTbl[0].PipeName));
-  UtAssert_True(PipeTbl[0].NumberOfMessages == 0, TestResultMsg("PipeTbl[0].NumberOfMessages should be %d and was %d", 0, PipeTbl[0].NumberOfMessages));
-  UtAssert_True(PipeTbl[0].ReadMessage == 0, TestResultMsg("PipeTbl[0].ReadMessage should be %d and was %d", 0, PipeTbl[0].ReadMessage));  
+  UtAssert_True(pipePtr == 0, TestResultMsg(
+    "PipePtr should point to pipe 0 (initial pipe) and points to pipe %d.", 
+    pipePtr));
+  UtAssert_True(PipeTbl[0].InUse == CFE_SBN_CLIENT_IN_USE, TestResultMsg(
+    "PipeTbl[0].InUse should be %d and was %d", CFE_SBN_CLIENT_IN_USE, 
+    PipeTbl[0].InUse));
+  UtAssert_True(PipeTbl[0].PipeId == 0, TestResultMsg(
+    "PipeTbl[0].PipeID should be %d and was %d", 0, PipeTbl[0].PipeId));
+  UtAssert_True(PipeTbl[0].SendErrors == 0, TestResultMsg(
+    "PipeTbl[0].SendErrors should be %d and was %d", 0, PipeTbl[0].SendErrors));
+  UtAssert_True(strcmp(&PipeTbl[0].PipeName[0], pipeName) == 0, TestResultMsg(
+    "PipeTbl[0].PipeName should be %s and was %s", pipeName, 
+    PipeTbl[0].PipeName));
+  UtAssert_True(PipeTbl[0].NumberOfMessages == 0, TestResultMsg(
+    "PipeTbl[0].NumberOfMessages should be %d and was %d", 0, 
+    PipeTbl[0].NumberOfMessages));
+  UtAssert_True(PipeTbl[0].ReadMessage == 0, TestResultMsg(
+    "PipeTbl[0].ReadMessage should be %d and was %d", 0, 
+    PipeTbl[0].ReadMessage));  
 }
 
 void Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
@@ -773,7 +827,9 @@ void Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
   //uint32 current_event_q_depth = Ut_CFE_EVS_GetEventQueueDepth();
   
   /* Assert */
-  UtAssert_True(result == CFE_SBN_CLIENT_MAX_PIPES_MET, TestResultMsg("Call to CFE_SB_CreatePipe result should be %d and was %d", CFE_SBN_CLIENT_MAX_PIPES_MET, result));
+  UtAssert_True(result == CFE_SBN_CLIENT_MAX_PIPES_MET, TestResultMsg(
+    "Call to CFE_SB_CreatePipe result should be %d and was %d", 
+    CFE_SBN_CLIENT_MAX_PIPES_MET, result));
   //TODO:set stubs to intercept wraps on CFE calls
   //UtAssert_True(current_event_q_depth == initial_event_q_depth + 1, TestResultMsg("Event queue count should be %d, but was %d", initial_event_q_depth + 1, current_event_q_depth));
   //UtAssert_EventSent(CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg, 
@@ -800,7 +856,9 @@ void Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
   int32 result = CFE_SB_DeletePipe(pipeIdToDelete);
   
   /* Assert */
-  UtAssert_True(result == CFE_SUCCESS, TestResultMsg("Call to CFE_SB_DeletePipe to delete pipe#%d result should be %d and was %d", pipeIdToDelete, CFE_SUCCESS, result));
+  UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+    "Call to CFE_SB_DeletePipe to delete pipe#%d should be %d and was %d", 
+    pipeIdToDelete, CFE_SUCCESS, result));
 }
 /* end __wrap_CFE_SB_DeletePipe Tests */
 
@@ -812,7 +870,7 @@ void Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
 **
 *******************************************************************************/
 
-void Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds(void)
+void Test__wrap_CFE_SB_SubscribePipeIsValidMsgIdUnsubscribedNotAtMaxMsgIds(void)
 {
     /* Arrange */
     int i;
@@ -828,7 +886,8 @@ void Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNot
         PipeTbl[pipe_id].SubscribedMsgIds[i] = other_msg_id + i;
     }  
       
-    for (i = num_msgIds_subscribed; i < (CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE - num_msgIds_subscribed); i++)
+    for (i = num_msgIds_subscribed; i < (
+      CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE - num_msgIds_subscribed); i++)
     {
         PipeTbl[pipe_id].SubscribedMsgIds[i] = CFE_SBN_CLIENT_INVALID_MSG_ID;
     }
@@ -837,9 +896,14 @@ void Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNot
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
     
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg("Call to CFE_SB_Subscribe should return %d and was %d", CFE_SUCCESS, result));
-    UtAssert_True(PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed] == msg_id, TestResultMsg("PipeTble[%d].SubscribedMsgIds[%d] should be %d and was %d", pipe_id, num_msgIds_subscribed, msg_id, PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed]));
-    
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "Call to CFE_SB_Subscribe should return %d and was %d", CFE_SUCCESS, 
+      result));
+    UtAssert_True(PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed] == 
+      msg_id, TestResultMsg(
+      "PipeTble[%d].SubscribedMsgIds[%d] should be %d and was %d", 
+      pipe_id, num_msgIds_subscribed, msg_id, 
+      PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed]));    
 }
 
 void Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
@@ -854,7 +918,9 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
         
     /* Assert */
-    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg("Call to CFE_SB_Subscribe with pipeId %d should return error %d and was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
+    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg(
+      "Call to CFE_SB_Subscribe with pipeId %d should be error %d and was %d", 
+      pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
     
 }
 
@@ -871,14 +937,17 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
     for (i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
     {
         PipeTbl[pipe_id].SubscribedMsgIds[i] = other_msg_id + i;
-        printf("PipeTbl[%d].SubscribedMsgIds[%d] = %d\n", pipe_id,i,PipeTbl[pipe_id].SubscribedMsgIds[i]);
+        printf("PipeTbl[%d].SubscribedMsgIds[%d] = %d\n", pipe_id, i, 
+          PipeTbl[pipe_id].SubscribedMsgIds[i]);
     }
     
     /* Act */ 
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
         
     /* Assert */
-    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg("Call to CFE_SB_Subscribe with pipeId %d should return error %d and was %d", pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
+    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg(
+      "Call to CFE_SB_Subscribe with pipeId %d should be error %d and was %d", 
+      pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
 }
 /* end __wrap_CFE_SB_Subscribe Tests */
 
@@ -932,10 +1001,19 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
     
     for(i = 0; i < msgSize; i++)
     {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d ", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[msg_slot][i]));
+        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
+          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d ", 
+          pipe_assigned, msg_slot, i, msg[i], 
+          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
     }  
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, TestResultMsg("PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));  
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
+      PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));  
 }
 
 void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
@@ -950,7 +1028,8 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     printf("msg_id_slot = %d\n", msg_id_slot);
     int read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
     printf("read_msg = %d\n", read_msg);
-    int num_msg = (rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1) + 1; /* from 1 to CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH */
+    /* from 1 to CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH */
+    int num_msg = (rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1) + 1; 
     printf("num_msg = %d\n", num_msg);
     int msg_slot;
     
@@ -979,10 +1058,18 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     
     for(i = 0; i < msgSize; i++)
     {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[msg_slot][i]));
+        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
+          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
+          pipe_assigned, msg_slot, i, msg[i], 
+          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, TestResultMsg("PipeTbl[%d].NumberOfMessages should have increased by 1 to %d and was %d", pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
+      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
 }
 
 void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
@@ -1026,10 +1113,18 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     
     for(i = 0; i < msgSize; i++)
     {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", pipe_assigned, msg_slot, i, msg[i], PipeTbl[pipe_assigned].Messages[msg_slot][i]));
+        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
+          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
+          pipe_assigned, msg_slot, i, msg[i], 
+          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, TestResultMsg("PipeTbl[%d].NumberOfMessages should have increased by 1 to %d and was %d", pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
+      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
 }
 
 void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
@@ -1070,8 +1165,13 @@ void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
     
     /* Assert */
     /* TODO:add failure assert here */
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg, TestResultMsg("PipeTbl[%d].NumberOfMessages %d should not increase because of failure and was %d", pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should not have changed from %d and was %d", pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages %d should not increase and was %d", 
+      pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
 }
 
 //void Test_ingest_app_message_SuccessCausesPipeNumberOfMessagesToIncreaseBy1
@@ -1098,7 +1198,8 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
     printf("msg_id_slot = %d\n", msg_id_slot);
     int previous_read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
     printf("previous_read_msg = %d\n", previous_read_msg);
-    int current_read_msg = (previous_read_msg + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
+    int current_read_msg = (previous_read_msg + 1) % 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
     printf("current_read_msg = %d\n", current_read_msg);
     int num_msg = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; 
     printf("num_msg = %d\n", num_msg);
@@ -1120,13 +1221,26 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg("__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], TestResultMsg("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
+        Messages[current_read_msg][i], TestResultMsg(
+        "buffer[%d] should = %d and was %d", i, 
+        PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
+        ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, TestResultMsg("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));
 }
 
 void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
@@ -1140,7 +1254,8 @@ void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
     printf("msg_id_slot = %d\n", msg_id_slot);
     int previous_read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
     printf("previous_read_msg = %d\n", previous_read_msg);
-    int current_read_msg = (previous_read_msg + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
+    int current_read_msg = (previous_read_msg + 1) % 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
     printf("current_read_msg = %d\n", current_read_msg);
     int num_msg = (rand() % (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1)) + 2; 
     printf("num_msg = %d\n", num_msg);
@@ -1162,13 +1277,26 @@ void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
+      CFE_SUCCESS, result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], TestResultMsg("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
+        Messages[current_read_msg][i], TestResultMsg(
+        "buffer[%d] should = %d and was %d", i, 
+        PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
+        ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, TestResultMsg("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should decrease by 1 to %d and is %d", 
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should progress to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));
 }
 
 void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
@@ -1182,7 +1310,8 @@ void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
     printf("msg_id_slot = %d\n", msg_id_slot);
     int previous_read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
     printf("previous_read_msg = %d\n", previous_read_msg);
-    int current_read_msg = (previous_read_msg + 1) % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
+    int current_read_msg = (previous_read_msg + 1) % 
+    CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
     printf("current_read_msg = %d\n", current_read_msg);
     int num_msg = 2; 
     printf("num_msg = %d\n", num_msg);
@@ -1204,13 +1333,26 @@ void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
+      CFE_SUCCESS, result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], TestResultMsg("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
+        Messages[current_read_msg][i], 
+        TestResultMsg("buffer[%d] should = %d and was %d", i, 
+        PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
+        ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, TestResultMsg("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should decrease by 1 to %d and is %d", 
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should progress to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));
 }
 
 void Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
@@ -1246,13 +1388,26 @@ void Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg("__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
+      CFE_SUCCESS, result));
     for(i = 0; i < msgSize; i++)
     {
-      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].Messages[current_read_msg][i], TestResultMsg("buffer[%d] should = %d and was %d", i, PipeTbl[pipe_assigned].Messages[current_read_msg][i], ((unsigned char *)buffer)[i]));
+      UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
+        Messages[current_read_msg][i], TestResultMsg(
+        "buffer[%d] should = %d and was %d", i, 
+        PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
+        ((unsigned char *)buffer)[i]));
     }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, TestResultMsg("PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, TestResultMsg("PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", pipe_assigned, current_read_msg, previous_read_msg, PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should decrease by 1 to %d and is %d", 
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should progress to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));
 }
 
 //TODO: Test__wrap_CFE_SB_RcvMsgSuccess when num messages = 1
@@ -1354,7 +1509,8 @@ void Test_SBN_ClientInit_Success(void)
     int32 result = SBN_ClientInit();
 
     /* Assert */
-    UtAssert_True(result == OS_SUCCESS, TestResultMsg("SBN_ClientInit result should be %d, but was %d", OS_SUCCESS, result));
+    UtAssert_True(result == OS_SUCCESS, TestResultMsg(
+      "SBN_ClientInit result should be %d, but was %d", OS_SUCCESS, result));
 }
 /* end SBN_ClientInit Tests */
 
@@ -1373,7 +1529,7 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken(void)
     
     /* Assert */
     UtAssert_True(result == CFE_SBN_CLIENT_PIPE_BROKEN_ERR, 
-        "CFE_SBN_CLIENT_ReadBytes should have returned CFE_SBN_CLIENT_PIPE_BROKEN_ERR, but did not.");
+      "CFE_SBN_CLIENT_ReadBytes should return CFE_SBN_CLIENT_PIPE_BROKEN_ERR");
 } /* end Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken */
 
 void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed(void)
@@ -1436,7 +1592,8 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
 {
     /* Arrange */
     int i;
-    int available_index = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; /* 0 to CFE_PLATFORM_SBN_CLIENT_MAX_PIPES */
+    /* 0 to CFE_PLATFORM_SBN_CLIENT_MAX_PIPES */
+    int available_index = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; 
     CFE_SB_PipeId_t result;
     for(i = 0; i < available_index; i++)
     {
@@ -1447,17 +1604,23 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
     result = CFE_SBN_Client_GetAvailPipeIdx();
     
     /* Assert */
-    UtAssert_True(result == available_index, TestResultMsg("CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", available_index, result));
-    
+    UtAssert_True(result == available_index, TestResultMsg(
+      "CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", 
+      available_index, result));
 }
 
 void Test__wrap_CFE_SB_SubscribeEx_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
+    CFE_SB_Qos_t dummyQuality;
+    uint16 dummyMsgLim = 0;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_SubscribeEx();
+    int32 result = __wrap_CFE_SB_SubscribeEx(dummyMsgId, dummyPipeId, 
+      dummyQuality, dummyMsgLim);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1468,9 +1631,13 @@ void Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
+    uint16 dummyMsgLim = 0;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_SubscribeLocal();
+    int32 result = __wrap_CFE_SB_SubscribeLocal(dummyMsgId, dummyPipeId,
+      dummyMsgLim);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1481,9 +1648,11 @@ void Test__wrap_CFE_SB_Unsubscribe_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_Unsubscribe();
+    int32 result = __wrap_CFE_SB_Unsubscribe(dummyMsgId, dummyPipeId);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1494,9 +1663,11 @@ void Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_MsgId_t dummyMsgId = NULL;
+    CFE_SB_PipeId_t dummyPipeId = NULL;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_UnsubscribeLocal();
+    int32 result = __wrap_CFE_SB_UnsubscribeLocal(dummyMsgId, dummyPipeId);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1507,9 +1678,11 @@ void Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails(void)
 {
     /* Arrange */
     int32 expectedResult = -1;
+    CFE_SB_Msg_t *dummyMsg = NULL;
+    CFE_SB_ZeroCopyHandle_t dummyHandle = NULL;
     
     /* Act */ 
-    int32 result = __wrap_CFE_SB_ZeroCopySend();
+    int32 result = __wrap_CFE_SB_ZeroCopySend(dummyMsg, dummyHandle);
     
     /* Assert */
     UtAssert_True(result = expectedResult, 
@@ -1537,112 +1710,243 @@ void SBN_Client_Test_AddTestCases(void)
     UtGroupTeardown_Add(Test_Group_Teardown);
     
     /* check_pthread_create_status Tests */
-    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN");
-    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL");
-    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM");
-    UtTest_Add(Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero");
-    UtTest_Add(Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_WhenStatusIsZero, SBN_Client_Setup, SBN_Client_Teardown, "Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_WhenStatusIsZero");
-    
+    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN,
+       SBN_Client_Setup, SBN_Client_Teardown, 
+       "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN");
+    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL,
+       SBN_Client_Setup, SBN_Client_Teardown, 
+       "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL");
+    UtTest_Add(Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM");
+    UtTest_Add(Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero");
+    UtTest_Add(Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0");
     
     /* SBN_ClientInit Tests */
-    UtTest_Add(Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server");
-    UtTest_Add(Test_SBN_ClientInit_FailsBecauseCreateHeartThreadFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_FailsBecauseCreateHeartThreadFails");
-    UtTest_Add(Test_SBN_ClientInit_FailsBecauseCreateReceiveThreadFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_FailsBecauseCreateReceiveThreadFails");
-    UtTest_Add(Test_SBN_ClientInit_Success, SBN_Client_Setup, SBN_Client_Teardown, "Test_SBN_ClientInit_Success");
+    UtTest_Add(Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server");
+    UtTest_Add(Test_SBN_ClientInit_FailsBecauseCreateHeartThreadFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_SBN_ClientInit_FailsBecauseCreateHeartThreadFails");
+    UtTest_Add(Test_SBN_ClientInit_FailsBecauseCreateReceiveThreadFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_SBN_ClientInit_FailsBecauseCreateReceiveThreadFails");
+    UtTest_Add(Test_SBN_ClientInit_Success, SBN_Client_Setup, 
+      SBN_Client_Teardown, "Test_SBN_ClientInit_Success");
     
     /* connect_to_server Tests */
     add_connect_to_server_tests();
     
     /* CFE_SBN_Client_InitPipeTbl Tests */
-    UtTest_Add(Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes");
+    UtTest_Add(Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes");
     
     /* CFE_SBN_Client_GetPipeIdx Tests */
-    UtTest_Add(Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx");
-    //UtTest_Add(Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx");
+    UtTest_Add(Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx");
+    UtTest_Add(Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx");
     
     /* Wrap_CFE_SB_CreatePipe Tests */
-    /* create pipe tests will not run with SBN_ClientInit enabled, needs more setup */
-    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS");
-    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly");
-    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull");
+    /* create pipe tests will not run with SBN_ClientInit enabled, 
+     * needs more setup */
+    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS");
+    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly");
+    UtTest_Add(Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull");
     
     /* WRAP_CFE_SB_DeletePipe Tests */
-    UtTest_Add(Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse");
+    UtTest_Add(Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse");
     
     /* Wrap_CFE_SB_Subscribe Tests */
-    UtTest_Add(Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeSuccessWhenPipeIsValidAndMsgIdUnsubscribedAndNotAtMaxMsgIds");
-    UtTest_Add(Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid");
-    UtTest_Add(Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
+    UtTest_Add(
+      Test__wrap_CFE_SB_SubscribePipeIsValidMsgIdUnsubscribedNotAtMaxMsgIds, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_SubscribePipeIsValidMsgIdUnsubscribedNotAtMaxMsgIds");
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid");
+    UtTest_Add(
+      Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
     
     /* ingest_app_message Tests */
-    UtTest_Add(Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft");
-    UtTest_Add(Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable");
-    UtTest_Add(Test_ingest_app_message_SuccessAllSlotsAvailable, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message_SuccessAllSlotsAvailable");
-    UtTest_Add(Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull, SBN_Client_Setup, SBN_Client_Teardown, "Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull");
+    UtTest_Add(Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft");
+    UtTest_Add(Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable");
+    UtTest_Add(Test_ingest_app_message_SuccessAllSlotsAvailable, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_ingest_app_message_SuccessAllSlotsAvailable");
+    UtTest_Add(Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull");
     
     /* Wrap_CFE_SB_RcvMsg Tests */
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe");
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Setup, 
+      SBN_Client_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
     
     /* CFE_SBN_CLIENT_ReadBytes Tests*/
-    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken");
-    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed");
-    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived");
+    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken");
+    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed");
+    UtTest_Add(
+      Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived");
     
     /* CFE_SBN_Client_GetAvailPipeIdx Tests*/
-    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
-    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, SBN_Client_Setup, SBN_Client_Teardown, "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
+    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
+    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
 
     /* __wrap_CFE_SB_SubscribeEx Tests */
-    UtTest_Add(Test__wrap_CFE_SB_SubscribeEx_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeEx_AlwaysFails");
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeEx_AlwaysFails, SBN_Client_Setup, 
+      SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeEx_AlwaysFails");
 
     /* __wrap_CFE_SB_SubscribeLocal Tests */
-    UtTest_Add(Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails");
+    UtTest_Add(Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails, SBN_Client_Setup, 
+      SBN_Client_Teardown, "Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails");
 
     /* __wrap_CFE_SB_Unsubscribe Tests */
-    UtTest_Add(Test__wrap_CFE_SB_Unsubscribe_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_Unsubscribe_AlwaysFails");
+    UtTest_Add(Test__wrap_CFE_SB_Unsubscribe_AlwaysFails, SBN_Client_Setup, 
+      SBN_Client_Teardown, "Test__wrap_CFE_SB_Unsubscribe_AlwaysFails");
 
     /* __wrap_CFE_SB_UnsubscribeLocal Tests */
-    UtTest_Add(Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails");
+    UtTest_Add(Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails, SBN_Client_Setup, 
+      SBN_Client_Teardown, "Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails");
     
     /* __wrap_CFE_SB_ZeroCopySend Tests */
-    UtTest_Add(Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails, SBN_Client_Setup, SBN_Client_Teardown, "Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails");
+    UtTest_Add(Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails, SBN_Client_Setup, 
+      SBN_Client_Teardown, "Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails");
 }
 
 /* Helper Functions */
 
 void add_connect_to_server_tests(void)
 {
-    UtTest_Add(Test_connect_to_server_returns_sockfd_when_successful, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_sockfd_when_successful");
-    UtTest_Add(Test_connect_to_server_Outputs_EACCES_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EACCES_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outputs_EAFNOSUPPORT_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EAFNOSUPPORT_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outputs_EINVAL_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EINVAL_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outputs_EMFILE_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EMFILE_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outputs_ENOBUFS_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENOBUFS_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outputs_ENOMEM_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENOMEM_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outputs_EPROTONOSUPPORT_WhenSocketFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EPROTONOSUPPORT_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches");
-    UtTest_Add(Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid");
-    UtTest_Add(Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid");
-    UtTest_Add(Test_connect_to_server_returns_error_WhenConnectFails, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_returns_error_WhenConnectFails");
-    UtTest_Add(Test_connect_to_server_Outputs_EACCES_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EACCES_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EPERM_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EPERM_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EADDRINUSE_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EADDRINUSE_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EAFNOSUPPORT_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EAGAIN_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EAGAIN_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EALREADY_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EALREADY_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EBADF_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EBADF_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_ECONNREFUSED_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ECONNREFUSED_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EFAULT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EFAULT_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EINPROGRESS_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EINPROGRESS_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EINTR_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EINTR_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EISCONN_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EISCONN_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_ENETUNREACH_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENETUNREACH_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_ENOTSOCK_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ENOTSOCK_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_EPROTOTYPE_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_EPROTOTYPE_errorWhenConnectReturnsThatError");  
-    UtTest_Add(Test_connect_to_server_Outputs_ETIMEDOUT_errorWhenConnectReturnsThatError, SBN_Client_Setup, SBN_Client_Teardown, "Test_connect_to_server_Outputs_ETIMEDOUT_errorWhenConnectReturnsThatError");  
+    UtTest_Add(Test_connect_to_server_returns_sockfd_when_successful, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_returns_sockfd_when_successful");
+    UtTest_Add(Test_connect_to_server_Outputs_EACCES_WhenSocketFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EACCES_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EAFNOSUPPORT_WhenSocketFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EAFNOSUPPORT_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EINVAL_WhenSocketFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EINVAL_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EMFILE_WhenSocketFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EMFILE_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_ENOBUFS_WhenSocketFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_ENOBUFS_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_ENOMEM_WhenSocketFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_ENOMEM_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EPROTONOSUPPORT_WhenSocketFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EPROTONOSUPPORT_WhenSocketFails");
+    UtTest_Add(Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_OutputsUnknownErrorWhenNoCaseMatches");
+    UtTest_Add(
+      Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid");
+    UtTest_Add(
+      Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid");
+    UtTest_Add(Test_connect_to_server_returns_error_WhenConnectFails, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_returns_error_WhenConnectFails");
+    UtTest_Add(Test_connect_to_server_Outputs_EACCES_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EACCES_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EPERM_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EPERM_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EADDRINUSE_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EADDRINUSE_errorFromConnectCall");  
+    UtTest_Add(
+      Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EADDRNOTAVAIL_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EAFNOSUPPORT_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EAFNOSUPPORT_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EAGAIN_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EAGAIN_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EALREADY_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EALREADY_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EBADF_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EBADF_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_ECONNREFUSED_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_ECONNREFUSED_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EFAULT_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EFAULT_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EINPROGRESS_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EINPROGRESS_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EINTR_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EINTR_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EISCONN_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EISCONN_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_ENETUNREACH_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_ENETUNREACH_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_ENOTSOCK_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_ENOTSOCK_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_EPROTOTYPE_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_EPROTOTYPE_errorFromConnectCall");  
+    UtTest_Add(Test_connect_to_server_Outputs_ETIMEDOUT_errorFromConnectCall, 
+      SBN_Client_Setup, SBN_Client_Teardown, 
+      "Test_connect_to_server_Outputs_ETIMEDOUT_errorFromConnectCall");  
 
 }
