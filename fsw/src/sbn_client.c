@@ -18,37 +18,38 @@
 #include "sbn_pack.h"
 #include "sbn_client.h"
 
-#define  CFE_SBN_CLIENT_NO_PROTOCOL   0
+#define  CFE_SBN_CLIENT_NO_PROTOCOL    0
+#define  SBN_TCP_HEARTBEAT_MSG         0xA0
 
-// Refer to sbn_cont_tbl.c to make sure these match
-// SBN is running here: <- Should be in the platform config
+/* Refer to sbn_cont_tbl.c to make sure port and ip_addr match
+ * SBN is running here: <- Should be in the platform config */
 #define SBN_CLIENT_PORT    1234
 #define SBN_CLIENT_IP_ADDR "127.0.0.1"
 
-// Private functions
+
+
+/* Private functions */
 int32 SBN_ClientInit(void);
-int send_msg(int sockfd, CFE_SB_Msg_t *msg);
-int send_heartbeat(int sockfd);
-int recv_msg(int sockfd);
+int send_msg(int, CFE_SB_Msg_t *);
+int send_heartbeat(int);
+int recv_msg(int);
+int connect_to_server(const char *, uint16_t);
+void *heartbeatMinder(void *);
+void *receiveMinder(void *);
+static void SendSubToSbn(int, CFE_SB_MsgId_t, CFE_SB_Qos_t);
+void invalidate_pipe(CFE_SBN_Client_PipeD_t *);
+
+pthread_t receive_thread_id;
+pthread_t heart_thread_id;
 pthread_mutex_t receive_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  received_condition = PTHREAD_COND_INITIALIZER;
-int connect_to_server(const char *, uint16_t);
-///////////////////////
-
+CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
+MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 
 // TODO: Our use of sockfd is not uniform. Should pass to each function XOR use as global
 int sockfd = 0;
 int cpuId = 0;
 struct sockaddr_in server_address;
-
-void *heartbeatMinder(void *vargp);
-pthread_t heart_thread_id;
-void *receiveMinder(void *vargp);
-pthread_t receive_thread_id;
-CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
-static void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID, CFE_SB_Qos_t QoS);
-void invalidate_pipe(CFE_SBN_Client_PipeD_t *pipe);
 
 int32 check_pthread_create_status(int status, int32 errorId)
 {
@@ -151,20 +152,20 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, size_t MsgSz
     int bytes_received = 0;
     int total_bytes_recd = 0;
     
-    //TODO:Some kind of timeout on this?
+    /* TODO:Some kind of timeout on this? */
     while (total_bytes_recd != MsgSz)
     {
         bytes_received = read(sockfd, msg_buffer + total_bytes_recd, MsgSz - total_bytes_recd);
         
         if (bytes_received < 0)
         {
-            //TODO:ERROR socket is dead somehow        
+            /* TODO:ERROR socket is dead somehow */       
             puts("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_BROKEN_ERR\n");
             return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
         }
         else if (bytes_received == 0)
         {
-            //TODO:ERROR closed remotely 
+            /* TODO:ERROR closed remotely */
             puts("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
             return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
         }
@@ -246,9 +247,9 @@ size_t write_message(char *buffer, size_t size)
   return result;
 }
 
-//NOTE:using memcpy to move message into pipe. What about pointer passing?
-//    :can we only look to msgId then memcpy only that then read directly
-//    : into pipe? This could speed things up...
+/* NOTE: Using memcpy to move message into pipe. What about pointer passing?
+ *    Can we only look to msgId then memcpy only that then read directly
+ *    into pipe? This could speed things up... */
 void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
 {
     //puts("Ingesting APP message");
@@ -264,13 +265,13 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
 
     MsgId = CFE_SBN_Client_GetMsgId((CFE_SB_MsgPtr_t)msg_buffer);
     
-    //TODO: check that msgid is valid - How?
+    /* TODO: check that msgid is valid - How? */
     
-    // take mutex
+    /* Take mutex */
     pthread_mutex_lock(&receive_mutex);
     //puts("\n\nRECEIVED LOCK!\n\n");
     
-    // put message into pipe
+    /*Put message into pipe */
     
     int i;
     
@@ -320,7 +321,7 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     
 uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
 {
-  // Quick check because PipeId should match PipeIdx
+  /* Quick check because PipeId should match PipeIdx */
     if (PipeTbl[PipeId].PipeId == PipeId && PipeTbl[PipeId].InUse == CFE_SBN_CLIENT_IN_USE)
     {
         return PipeId;
@@ -339,7 +340,8 @@ uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
 
         } /* end for */
     
-        // Pipe ID not found. TODO: error event? No, lets have caller do that...
+        /* Pipe ID not found. 
+         * TODO: error event? No, lets have caller do that... */
         return CFE_SBN_CLIENT_INVALID_PIPE;
     }/* end if */
   
@@ -365,10 +367,10 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     sleep(5);
     int address_converted, connection;
 
-    // Create an ipv4 TCP socket
+    /* Create an ipv4 TCP socket */
     sockfd = socket(AF_INET, SOCK_STREAM, CFE_SBN_CLIENT_NO_PROTOCOL);
 
-    // socket error
+    /* Socket error */
     if (sockfd < 0)
     {
         switch(errno)
@@ -419,7 +421,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     address_converted = inet_pton(AF_INET, server_ip, &server_address.sin_addr);
     
     printf("address_converted = %d\n", address_converted);
-    // inet_pton can have two separate errors, a value of 1 is success.
+    /* inet_pton can have two separate errors, a value of 1 is success. */
     if (address_converted == 0)
     {
         perror("connect_to_server inet_pton 0 error");
@@ -435,7 +437,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     connection = connect(sockfd, (struct sockaddr *)&server_address,
                          sizeof(server_address));
     
-    // connect error
+    /* Connect error */
     if (connection < 0)
     {
         switch(errno)
@@ -518,8 +520,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
 }
 
 
-// Deal with sending out heartbeat messages
-#define SBN_TCP_HEARTBEAT_MSG 0xA0
+/* Deal with sending out heartbeat messages */
 void *heartbeatMinder(void *vargp)
 {
   //puts("heartbeatMinder started");
