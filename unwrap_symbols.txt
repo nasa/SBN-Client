@@ -1,0 +1,10 @@
+__wrap_CFE_SB_DeletePipe        CFE_SB_DeletePipe
+__wrap_CFE_SB_RcvMsg            CFE_SB_RcvMsg
+__wrap_CFE_SB_SendMsg           CFE_SB_SendMsg
+__wrap_CFE_SB_SubscribeEx       CFE_SB_SubscribeEx
+__wrap_CFE_SB_Subscribe         CFE_SB_Subscribe
+__wrap_CFE_SB_SubscribeLocal    CFE_SB_SubscribeLocal
+__wrap_CFE_SB_Unsubscribe       CFE_SB_Unsubscribe
+__wrap_CFE_SB_ZeroCopySend      CFE_SB_ZeroCopySend
+__wrap_CFE_SB_CreatePipe        CFE_SB_CreatePipe
+__wrap_CFE_SB_UnsubscribeLocal  CFE_SB_UnsubscribeLocal
