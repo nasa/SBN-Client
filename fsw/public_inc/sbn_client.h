@@ -4,8 +4,6 @@
 /************************************************************************
 ** Includes
 *************************************************************************/
-#include "cfe.h"
-
 #include "cfe_platform_cfg.h"
 #include "sbn_constants.h"
 #include "sbn_interfaces.h"
@@ -53,6 +51,11 @@
 #define SERVER_INET_PTON_SRC_ERROR   -2
 #define SERVER_INET_PTON_INVALID_AF_ERROR   -3
 #define SERVER_CONNECT_ERROR       -4
+
+// defines to replace items normally created in CFE  TODO:figure out the best way to get these defined per app using sbn_client
+#define APP_ID  99
+#define APP_NAME "Test_Peer"
+
 /******************************************************************************
 **  Typedef:  CFE_SB_BufferD_t
 **
@@ -102,10 +105,6 @@ typedef struct {
   int  msgId;
   int  pipeIds[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 } MsgId_to_pipes_t;
-
-// defines to replace items normally created in CFE  TODO:figure out the best way to get these defined per app using sbn_client
-#define APP_ID  99
-#define APP_NAME "Test_Peer"
 
 /*************************************************************************
 ** Exported Functions

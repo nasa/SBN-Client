@@ -116,22 +116,25 @@ extern MsgId_to_pipes_t
 
 /* UT_Assert external functions */
 extern Ut_CFE_FS_ReturnCodeTable_t      
-  Ut_CFE_FS_ReturnCodeTable[UT_CFE_FS_MAX_INDEX];
+   Ut_CFE_FS_ReturnCodeTable[UT_CFE_FS_MAX_INDEX];
 extern Ut_OSFILEAPI_HookTable_t         Ut_OSFILEAPI_HookTable;
 extern Ut_CFE_ES_HookTable_t            Ut_CFE_ES_HookTable;
 extern Ut_OSAPI_HookTable_t             Ut_OSAPI_HookTable;
 
 
 extern int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t, 
-                                CFE_SB_PipeId_t, 
-                                CFE_SB_Qos_t, 
-                                uint16);
-extern int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t, uint16);
+                                       CFE_SB_PipeId_t, 
+                                       CFE_SB_Qos_t, 
+                                       uint16);
+extern int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t, 
+                                          CFE_SB_PipeId_t, 
+                                          uint16);
 extern int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
 extern int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
-extern int connect_to_server(const char *, uint16_t);
+extern int   connect_to_server(const char *, uint16_t);
 extern int32 check_pthread_create_status(int, int32);
-extern int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *, CFE_SB_ZeroCopyHandle_t);
+extern int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *, 
+                                        CFE_SB_ZeroCopyHandle_t);
 
 extern int sockfd;
 extern int cpuId;
@@ -327,15 +330,13 @@ void Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EAGAIN(void)
 }
 
 void Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EINVAL(void)
-{
-    
-        check_pthread_create_status_OutputsCorrectError(EINVAL, "EINVAL");
+{    
+    check_pthread_create_status_OutputsCorrectError(EINVAL, "EINVAL");
 }
 
 void Test_check_pthread_create_status_OutputsErrorWhenStatusIs_EPERM(void)
-{
-    
-        check_pthread_create_status_OutputsCorrectError(EPERM, "EPERM");
+{    
+    check_pthread_create_status_OutputsCorrectError(EPERM, "EPERM");
 }
 
 void Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero(void)
@@ -353,7 +354,6 @@ void Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero(void)
         "check_pthread_create_status returned the errorId argument");
 }
 
-
 void Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0(void)
 {
     /* Arrange */ 
@@ -367,8 +367,6 @@ void Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0(void)
     UtAssert_True(result == SBN_CLIENT_SUCCESS, 
         "check_pthread_create_status returned SBN_CLIENT_SUCCESS");
 }
-
-
 
 /*******************************************************************************
 **
@@ -651,8 +649,6 @@ void Test_connect_to_server_Outputs_ETIMEDOUT_errorFromConnectCall(void)
 }
 /* end connect_to_server Tests */
 
-
-
 /*******************************************************************************
 **
 **  CFE_SBN_Client_InitPipeTbl Tests
@@ -706,8 +702,6 @@ void Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes(void)
 }
 /* end CFE_SBN_Client_InitPipeTbl Tests */
 
-
-
 /*******************************************************************************
 **
 **  CFE_SBN_Client_GetPipeIdx Tests
@@ -759,8 +753,6 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)
 }
 /* end CFE_SBN_Client_GetPipeIdx Tests */
 
-
-
 /*******************************************************************************
 **
 **  __wrap_CFE_SB_CreatePipe Tests
@@ -769,9 +761,7 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)
 
 void Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
 {
-  /* Arrange */
-  
-  
+  /* Arrange - none required */
   /* Act */ 
   int32 result = CFE_SB_CreatePipe(&pipePtr, depth, pipeName);
   
@@ -783,9 +773,7 @@ void Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
 
 void Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
 {
-  /* Arrange */
-  
-  
+  /* Arrange - none required */
   /* Act */ 
   CFE_SB_CreatePipe(&pipePtr, depth, pipeName);
   
@@ -837,8 +825,6 @@ void Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
 }
 /* end __wrap_CFE_SB_CreatePipe Tests */
 
-
-
 /*******************************************************************************
 **
 **  __wrap_CFE_SB_DeletePipe Tests
@@ -861,8 +847,6 @@ void Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
     pipeIdToDelete, CFE_SUCCESS, result));
 }
 /* end __wrap_CFE_SB_DeletePipe Tests */
-
-
 
 /*******************************************************************************
 **
@@ -921,7 +905,6 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
     UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg(
       "Call to CFE_SB_Subscribe with pipeId %d should be error %d and was %d", 
       pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
-    
 }
 
 void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
@@ -950,8 +933,6 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
       pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
 }
 /* end __wrap_CFE_SB_Subscribe Tests */
-
-
 
 /*******************************************************************************
 **
