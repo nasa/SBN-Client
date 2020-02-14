@@ -59,7 +59,12 @@ INCLUDES += -I$(PSP_PATH)/fsw/pc-linux/inc
 #
 # CF_OBJS specifies flight software object files.
 #
-CF_OBJS := sbn_client.o
+CF_OBJS := sbn_client_init.o 
+CF_OBJS += sbn_client_wrappers.o 
+CF_OBJS += sbn_client.o  
+CF_OBJS += sbn_client_minders.o 
+CF_OBJS += sbn_client_ingest.o 
+CF_OBJS += sbn_client_utils.o 
 
 #
 # UT_OBJS specifies unit test object files.

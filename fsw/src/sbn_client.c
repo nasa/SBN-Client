@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -17,32 +16,23 @@
 #define  CFE_SBN_CLIENT_NO_PROTOCOL    0
 #define  SBN_TCP_HEARTBEAT_MSG         0xA0
 
-/* Refer to sbn_cont_tbl.c to make sure port and ip_addr match
- * SBN is running here: <- Should be in the platform config */
-#define SBN_CLIENT_PORT    1234
-#define SBN_CLIENT_IP_ADDR "127.0.0.1"
-
 /* Private functions */
 int send_msg(int, CFE_SB_Msg_t *);
 int send_heartbeat(int);
 int32 recv_msg(int32);
-int connect_to_server(const char *, uint16_t);
-void *heartbeatMinder(void *);
-void *receiveMinder(void *);
 static void SendSubToSbn(int, CFE_SB_MsgId_t, CFE_SB_Qos_t);
 void invalidate_pipe(CFE_SBN_Client_PipeD_t *);
 
 /* Global variables */
-pthread_t receive_thread_id;
-pthread_t heart_thread_id;
 pthread_mutex_t receive_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  received_condition = PTHREAD_COND_INITIALIZER;
 CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 MsgId_to_pipes_t MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
 
 // TODO: Our use of sockfd is not uniform. Should pass to each function XOR use as global
-int sockfd = 0;
-int cpuId = 0;
+
+int sbn_client_sockfd = 0;
+int sbn_client_cpuId = 0;
 struct sockaddr_in server_address;
 
 int32 check_pthread_create_status(int status, int32 errorId)
@@ -80,56 +70,6 @@ int32 check_pthread_create_status(int status, int32 errorId)
     
     return thread_status;
 }
-
-int32 SBN_ClientInit(void)
-{
-     /* Gets socket file descriptor */
-    int32 Status = SBN_CLIENT_NO_STATUS_SET;
-    int heart_thread_status = 0;
-    int receive_thread_status = 0;
-    
-    printf("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, 
-        SBN_CLIENT_PORT);
-    
-    sockfd = connect_to_server(SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
-    cpuId = 2; /* TODO: this is hardcoded, but should be set by cFS's SBN ??*/
-
-    if (sockfd < 0)
-    {
-        puts("SBN_CLIENT: ERROR Failed to get sockfd, cannot continue.");
-        Status = SBN_CLIENT_BAD_SOCK_FD_EID;
-    }
-    else
-    {
-        /* Create pipe table */
-        CFE_SBN_Client_InitPipeTbl();
-
-        /* Create thread for watchdog and receive */
-        heart_thread_status = pthread_create(&heart_thread_id, NULL, 
-            heartbeatMinder, NULL);
-            
-        Status = check_pthread_create_status(heart_thread_status, 
-            SBN_CLIENT_HEART_THREAD_CREATE_EID);
-        
-        if (Status == SBN_CLIENT_SUCCESS)
-        {    
-            receive_thread_status = pthread_create(&receive_thread_id, NULL, 
-            receiveMinder, NULL);
-        
-            Status = check_pthread_create_status(receive_thread_status, 
-                SBN_CLIENT_RECEIVE_THREAD_CREATE_EID);
-        }/* end if */ 
-        
-    }/* end if */ 
-    
-    if (Status != SBN_CLIENT_SUCCESS)
-    {
-        printf("SBN_ClientInit error %d\n", Status);
-        exit(Status);
-    }/* end if */ 
-    
-    return Status;
-}/* end SBN_ClientInit */
 
 
 
@@ -235,7 +175,7 @@ size_t write_message(char *buffer, size_t size)
 {
   size_t result;
   
-  result = write(sockfd, buffer, size);
+  result = write(sbn_client_sockfd, buffer, size);
   
   return result;
 }
@@ -362,7 +302,7 @@ uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
 
 int connect_to_server(const char *server_ip, uint16_t server_port)
 {
-    int address_converted, connection;
+    int sockfd, address_converted, connection;
         
     sleep(5);
 
@@ -521,9 +461,9 @@ void *heartbeatMinder(void *vargp)
 {
     while(1) // TODO: check run state?
     {
-        if (sockfd != 0)
+        if (sbn_client_sockfd != 0)
         {
-            send_heartbeat(sockfd);
+            send_heartbeat(sbn_client_sockfd);
         }
         
         sleep(3);
@@ -786,7 +726,7 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 
     Pack_UInt16(&Pack, msg_size);
     Pack_UInt8(&Pack, SBN_APP_MSG);
-    Pack_UInt32(&Pack, cpuId);
+    Pack_UInt32(&Pack, sbn_client_cpuId);
 
     memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
     
@@ -906,7 +846,7 @@ void *receiveMinder(void *vargp)
     
     while(1) // TODO: check run state?
     {
-        status = recv_msg(sockfd); // TODO: pass message pointer?
+        status = recv_msg(sbn_client_sockfd); // TODO: pass message pointer?
         // On heartbeats, need to update known liveness state of SBN
         // On other messages, need to make available for next CFE_SB_RcvMsg call
         if (status != CFE_SUCCESS)

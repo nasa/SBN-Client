@@ -37,7 +37,6 @@
  */
 
 
-#define MIN_INT                 -2147483648
 #define MAX_ERROR_MESSAGE_SIZE  120
 #define CONNECT_ERROR_VALUE     -1
 
@@ -136,8 +135,8 @@ extern int32 check_pthread_create_status(int, int32);
 extern int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *, 
                                         CFE_SB_ZeroCopyHandle_t);
 
-extern int sockfd;
-extern int cpuId;
+extern int sbn_client_sockfd;
+extern int sbn_client_cpuId;
 
 /* Test Setup and Teardown */
 void Test_Group_Setup(void)
@@ -156,15 +155,15 @@ void Test_Group_Teardown(void)
 void SBN_Client_Setup(void)
 {
   /* SBN_Client resets */
-  sockfd = 0;
-  cpuId = 0;
+  sbn_client_sockfd = 0;
+  sbn_client_cpuId = 0;
   pipePtr = 0;
   depth = 5;
   wrap_socket_return_value = (rand() % INT_MIN) * -1;
   wrap_htons_return_value = 0;
   wrap_inet_pton_return_value = 1;
   wrap_connect_return_value = -1;
-  wrap_read_return_value = MIN_INT;
+  wrap_read_return_value = INT_MIN;
   wrap_exit_expected_status = 0;   
   error_on_pthread_call_number = -1;
   pthread_call_number = 0;
@@ -244,14 +243,14 @@ int __wrap_inet_pton(int af, const char *src, void *dst)
   return wrap_inet_pton_return_value;
 }
 
-int __wrap_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+int __wrap_connect(int sbn_client_sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
   return wrap_connect_return_value;
 }
 
 size_t __wrap_read(int fd, void* buf, size_t cnt)
 {
-    if (wrap_read_return_value != MIN_INT)
+    if (wrap_read_return_value != INT_MIN)
     {
         return wrap_read_return_value;
     }
@@ -429,7 +428,7 @@ void connect_to_server_connect_fail_check(int32 expected_error,
 **
 *******************************************************************************/
 
-void Test_connect_to_server_returns_sockfd_when_successful(void)
+void Test_connect_to_server_returns_sbn_client_sockfd_when_successful(void)
 {
   /* Arrange */
   wrap_socket_return_value = rand() % INT_MAX;
@@ -1416,7 +1415,7 @@ void Test_SBN_ClientInit_FailsBecauseReturnValueOf_connect_to_server(void)
     int32 result = SBN_ClientInit();
 
     /* Assert */
-    /* Note during a live run of this function it will exit(sockfd); however
+    /* Note during a live run of this function it will exit(sbn_client_sockfd); however
      * during a test, exit() is wrapped and the value passed to it is checked
      * in the wrapped function.  The check for a result is ONLY put here to 
      * show that the Status gets set correctly in the function.  If the exit()
@@ -1839,9 +1838,9 @@ void SBN_Client_Test_AddTestCases(void)
 
 void add_connect_to_server_tests(void)
 {
-    UtTest_Add(Test_connect_to_server_returns_sockfd_when_successful, 
+    UtTest_Add(Test_connect_to_server_returns_sbn_client_sockfd_when_successful, 
       SBN_Client_Setup, SBN_Client_Teardown, 
-      "Test_connect_to_server_returns_sockfd_when_successful");
+      "Test_connect_to_server_returns_sbn_client_sockfd_when_successful");
     UtTest_Add(Test_connect_to_server_Outputs_EACCES_WhenSocketFails, 
       SBN_Client_Setup, SBN_Client_Teardown, 
       "Test_connect_to_server_Outputs_EACCES_WhenSocketFails");
