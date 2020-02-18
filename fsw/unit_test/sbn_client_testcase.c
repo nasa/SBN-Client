@@ -4,20 +4,24 @@
  * Includes
  */
 
+/* Test case only includes */
 #include <time.h>
-#include <unistd.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <limits.h>
+
+#include "uttest.h"
+
+/* sbn_client includes required to manipulate tests */
+#include <unistd.h>
+#include <arpa/inet.h>
 #include <errno.h>
 
-#include "cfe.h"
-#include "utassert.h"
-#include "uttest.h"
-#include "utlist.h"
+#include "sbn_client_version.h"
 #include "sbn_client.h"
+#include "sbn_client_init.h"
+#include "sbn_client_minders.h"
+#include "sbn_client_utils.h"
 
+/* UT includes */
 #include "ut_cfe_tbl_stubs.h"
 #include "ut_cfe_tbl_hooks.h"
 #include "ut_cfe_evs_stubs.h"
@@ -29,7 +33,6 @@
 #include "ut_osfileapi_stubs.h"
 #include "ut_cfe_fs_stubs.h"
 
-#include "sbn_client_version.h"
 
 
 /*

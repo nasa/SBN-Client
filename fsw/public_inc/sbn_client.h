@@ -4,15 +4,11 @@
 /************************************************************************
 ** Includes
 *************************************************************************/
-#include <stdint.h>
 
-#include "cfe_platform_cfg.h"
-#include "sbn_constants.h"
 #include "sbn_interfaces.h"
-#include "sbn_pack.h"
 
 /************************************************************************
-** Type Definitions
+** Comstants Definitions
 *************************************************************************/
 #define SBN_CLIENT_SUCCESS                      OS_SUCCESS
 
@@ -57,72 +53,16 @@
 #define APP_ID  99
 #define APP_NAME "Test_Peer"
 
-/******************************************************************************
-**  Typedef:  CFE_SB_BufferD_t
-**
-**  Purpose:
-**     This structure defines a BUFFER DESCRIPTOR used to specify the MsgId
-**     and address of each packet buffer.
-**
-**     Note: Changing the size of this structure may require the memory pool
-**     block sizes to change.
-*/
-
-typedef struct {
-     CFE_SB_MsgId_t    MsgId;
-     uint16            UseCount;
-     uint32            Size;
-     void              *Buffer;
-     CFE_SB_SenderId_t Sender;
-} CFE_SBN_Client_BufferD_t;
-
-typedef struct {
-    uint8              InUse;
-    CFE_SB_PipeId_t    PipeId;
-    char               PipeName[OS_MAX_API_NAME];
-    char               AppName[OS_MAX_API_NAME];
-    uint8              Opts;
-    uint8              Spare;
-    uint32             AppId;
-    uint32             SysQueueId;
-    uint32             LastSender;
-    uint16             QueueDepth;
-    uint16             SendErrors;
-    uint32     NumberOfMessages;
-    uint32     ReadMessage;
-    unsigned char  Messages[CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH][CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
-    CFE_SB_MsgId_t     SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE];
-} CFE_SBN_Client_PipeD_t;
-
-// SBN header // TODO: from include?
-typedef struct
-{
-    uint16 SBN_MsgSz;
-    uint8  SBN_MsgType;
-    uint32 SBN_ProcessorID;
-} SBN_Hdr_t;
-
-typedef struct {
-  int  msgId;
-  int  pipeIds[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-} MsgId_to_pipes_t;
+#define  CFE_SBN_CLIENT_NO_PROTOCOL    0
+#define  SBN_TCP_HEARTBEAT_MSG         0xA0
 
 /*************************************************************************
 ** Exported Functions
 *************************************************************************/
 
-int connect_to_server(const char *, uint16_t);
-int32 check_pthread_create_status(int, int32);
-int32 SBN_ClientInit(void);
 void CFE_SBN_Client_InitPipeTbl(void);
-void InvalidatePipe(CFE_SBN_Client_PipeD_t *);
-void ingest_app_message(int, SBN_MsgSz_t);
-CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t);
-uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t);
-uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t);
-int CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
 CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void);
-int send_heartbeat(int);
+void ingest_app_message(int, SBN_MsgSz_t);
 int32 recv_msg(int32);
 
 
