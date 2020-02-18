@@ -19,6 +19,7 @@
 #include "sbn_client.h"
 #include "sbn_client_init.h"
 #include "sbn_client_minders.h"
+#include "sbn_client_ingest.h"
 #include "sbn_client_utils.h"
 
 /* UT includes */

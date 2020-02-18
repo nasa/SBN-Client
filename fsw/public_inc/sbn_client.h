@@ -49,7 +49,8 @@
 #define SERVER_INET_PTON_INVALID_AF_ERROR   -3
 #define SERVER_CONNECT_ERROR       -4
 
-// defines to replace items normally created in CFE  TODO:figure out the best way to get these defined per app using sbn_client
+/* defines to replace items normally created in CFE  
+* TODO:figure out the best way to get these defined per app using sbn_client */
 #define APP_ID  99
 #define APP_NAME "Test_Peer"
 
@@ -62,14 +63,8 @@
 
 void CFE_SBN_Client_InitPipeTbl(void);
 CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void);
-void ingest_app_message(int, SBN_MsgSz_t);
 int32 recv_msg(int32);
 void SendSubToSbn(int, CFE_SB_MsgId_t, CFE_SB_Qos_t);
-
-
-/*************************************************************************
-** Exported Globals
-*************************************************************************/
 
 #endif /* _sbn_client_h_ */
 
