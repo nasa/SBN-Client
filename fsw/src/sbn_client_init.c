@@ -1,5 +1,6 @@
 
 #include <pthread.h>
+#include "sbn_client_minders.h"
 #include "sbn_client.h"
 
 

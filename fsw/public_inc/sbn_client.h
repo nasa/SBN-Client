@@ -112,8 +112,6 @@ typedef struct {
 *************************************************************************/
 
 int connect_to_server(const char *, uint16_t);
-void *heartbeatMinder(void *);
-void *receiveMinder(void *);
 int32 check_pthread_create_status(int, int32);
 int32 SBN_ClientInit(void);
 void CFE_SBN_Client_InitPipeTbl(void);
@@ -124,6 +122,8 @@ uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t);
 uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t);
 int CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
 CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void);
+int send_heartbeat(int);
+int32 recv_msg(int32);
 
 
 /*************************************************************************

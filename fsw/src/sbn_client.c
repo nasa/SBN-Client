@@ -456,22 +456,6 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
 }
 
 
-/* Deal with sending out heartbeat messages */
-void *heartbeatMinder(void *vargp)
-{
-    while(1) // TODO: check run state?
-    {
-        if (sbn_client_sockfd != 0)
-        {
-            send_heartbeat(sbn_client_sockfd);
-        }
-        
-        sleep(3);
-    }
-    
-    return NULL;
-}
-
 // TODO: return value?
 int send_heartbeat(int sockfd)
 {
@@ -838,24 +822,6 @@ int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr,
 {
     printf ("SBN_CLIENT: ERROR CFE_SB_ZeroCopySend not yet implemented\n");
     return -1;
-}
-
-void *receiveMinder(void *vargp)
-{
-    int32 status;
-    
-    while(1) // TODO: check run state?
-    {
-        status = recv_msg(sbn_client_sockfd); // TODO: pass message pointer?
-        // On heartbeats, need to update known liveness state of SBN
-        // On other messages, need to make available for next CFE_SB_RcvMsg call
-        if (status != CFE_SUCCESS)
-        {
-            printf("Recieve message returned error 0x%08X\n", status);
-        }/* end if */
-        
-    }
-    
 }
 
 int32 recv_msg(int32 sockfd)
