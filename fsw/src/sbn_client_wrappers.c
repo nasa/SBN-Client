@@ -18,7 +18,7 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
     uint8 i;
     int32 status = CFE_SBN_CLIENT_MAX_PIPES_MET;
     
-    //SBN_ClientInit();
+    //SBN_Client_Init();
     
     /* AppId is static for now */
     
