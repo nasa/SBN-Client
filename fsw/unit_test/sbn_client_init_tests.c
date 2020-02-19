@@ -14,7 +14,7 @@
 
 /* sbn_client includes required to manipulate tests */
 
-#include "sbn_client_tests_common.h"
+#include "sbn_client_common_test_utils.h"
 #include "sbn_client.h"
 #include "sbn_client_version.h"
 #include "sbn_client_init.h"

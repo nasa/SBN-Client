@@ -87,7 +87,7 @@ UT_OBJS += uttest.o
 UT_OBJS += uttools.o
 UT_OBJS += sbn_client_testcase.o
 UT_OBJS += sbn_client_init_tests.o
-UT_OBJS += sbn_client_tests_common.o
+UT_OBJS += sbn_client_common_test_utils.o
 
 ###############################################################################
 

@@ -1,5 +1,5 @@
-#ifndef _sbn_client_tests_common_h_
-#define _sbn_client_tests_common_h_
+#ifndef _sbn_client_common_test_utils_h_
+#define _sbn_client_common_test_utils_h_
 
 /*
  * Defines
@@ -17,4 +17,4 @@ int Any_Negative_Integer(void);
 int Any_Positive_int_Or_Zero(void);
 int Any_int_Except(int exception);
 
-#endif /* _sbn_client_tests_common_h_ */
+#endif /* _sbn_client_common_test_utils_h_ */
