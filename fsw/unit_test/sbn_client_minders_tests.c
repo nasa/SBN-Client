@@ -1,0 +1,253 @@
+#include <limits.h>
+
+#include "uttest.h"
+
+#include "sbn_client_minders.h"
+#include "sbn_client_utils.h"
+#include "sbn_client_common_test_utils.h"
+
+extern int sbn_client_sockfd;
+extern boolean continue_heartbeat;
+extern boolean continue_receive_check;
+
+extern const char *puts_expected_string;
+extern void (*wrap_puts_call_func)(void);
+extern void (*wrap_sleep_call_func)(void);
+
+boolean use_wrap_send_heartbeat = FALSE;
+int     wrap_send_heartbeat_return_value = SBN_CLIENT_SUCCESS;
+uint8   send_hearbeat_call_number = 0;
+uint8   send_heartbeat_discontinue_on_call_number = 0;
+
+boolean use_wrap_recv_msg = FALSE;
+int     wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
+uint8   recv_msg_call_number = 0;
+uint8   recv_msg_discontiue_on_call_number = 0;
+
+
+int   __wrap_send_heartbeat(int);
+int32 __wrap_recv_msg(int32);
+
+int   __real_send_heartbeat(int);
+int32 __real_recv_msg(int32);
+
+void wrap_sleep_set_continue_heartbeat_false(void)
+{
+    continue_heartbeat = FALSE;
+}
+
+void wrap_puts_set_continue_recv_check_false(void)
+{
+    continue_receive_check = FALSE;
+}
+
+/* NOTE: wrapper will auto discontinue after send_hearbeat_call_number
+ * rolls over from 255, this is by design so any test using the wrapper cannot
+ * run in an infinite loop */ 
+int __wrap_send_heartbeat(int sockfd)
+{
+    int result;
+    
+    send_hearbeat_call_number += 1;
+    
+    if (use_wrap_send_heartbeat)
+    {
+        if (send_hearbeat_call_number == 
+            send_heartbeat_discontinue_on_call_number)
+        {
+            continue_heartbeat = FALSE;
+        }
+        
+        return wrap_send_heartbeat_return_value;
+    }
+    else
+    {
+        result = __real_send_heartbeat(sockfd);
+    }
+    
+    return result;
+} 
+
+/* NOTE: wrapper will auto discontinue after recv_msg_call_number
+ * rolls over from 255, this is by design so any test using the wrapper cannot
+ * run in an infinite loop */
+int32 __wrap_recv_msg(int sockfd)
+{
+    int32 result;
+    
+    recv_msg_call_number += 1;
+    
+    if (use_wrap_recv_msg)
+    {
+        if (recv_msg_call_number == recv_msg_discontiue_on_call_number)
+        {
+            continue_receive_check = FALSE;
+        }
+        
+        return wrap_recv_msg_return_value;
+    }
+    else
+    {
+        result = __real_recv_msg(sockfd);
+    }
+    
+    return result;
+}
+
+
+void Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse(void)
+{
+    /* Arrange */
+    void * result;
+    
+    continue_heartbeat = FALSE;
+    
+    /* Act */
+    result = SBN_Client_HeartbeatMinder(NULL);
+    
+    /* Assert */
+    UtAssert_True(result == NULL, "SBN_Client_HeartbeatMinder returned NULL");
+}
+
+void Test_SBN_Client_HeartbeatMinder_HeartbeatWithSockfdZero(void)
+{
+    /* Arrange */
+    void * result;
+    sbn_client_sockfd = 0;
+    
+    wrap_sleep_call_func = &wrap_sleep_set_continue_heartbeat_false;
+
+    /* Act */
+    result = SBN_Client_HeartbeatMinder(NULL);
+
+    /* Assert */
+    UtAssert_True(result == NULL, "SBN_Client_HeartbeatMinder returned NULL");
+}
+
+void Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse(void)
+{
+    /* Arrange */
+    void * result;
+    sbn_client_sockfd = Any_Non_Zero_int();
+    
+    send_heartbeat_discontinue_on_call_number = (rand() % UCHAR_MAX) + 1; /* 1 to 255 */
+    
+    use_wrap_send_heartbeat = TRUE;
+    wrap_send_heartbeat_return_value = Any_int();
+
+    /* Act */
+    result = SBN_Client_HeartbeatMinder(NULL);
+
+    /* Assert */
+    UtAssert_True(result == NULL, "SBN_Client_HeartbeatMinder returned NULL");
+    UtAssert_True(send_hearbeat_call_number == 
+      send_heartbeat_discontinue_on_call_number,
+      "send_heartbeat was called the expected number of times");
+}
+
+void Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse(void)
+{
+    /* Arrange */
+    void * result;
+    
+    continue_receive_check = FALSE;
+    
+    /* Act */
+    result = SBN_Client_ReceiveMinder(NULL);
+    
+    /* Assert */
+    UtAssert_True(result == NULL, "SBN_Client_HeartbeatMinder returned NULL");
+
+}
+
+void Test_SBN_Client_ReceiveMinder_OutputsError(void)
+{
+    /* Arrange */
+    char err_msg[50];
+    void * result;
+    
+    use_wrap_recv_msg = TRUE;
+    
+    wrap_recv_msg_return_value = Any_int32_Except(CFE_SUCCESS);
+    snprintf(err_msg, 50, "Recieve message returned error 0x%08X\n", 
+      wrap_recv_msg_return_value);
+    
+    puts_expected_string = err_msg;
+    wrap_puts_call_func = &wrap_puts_set_continue_recv_check_false;
+    
+    /* Act */
+    result = SBN_Client_ReceiveMinder(NULL);
+    
+    /* Assert */
+    UtAssert_True(result == NULL, "SBN_Client_HeartbeatMinder returned NULL"); 
+}
+
+void Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse(void)
+{
+    /* Arrange */
+    void * result;
+    
+    recv_msg_discontiue_on_call_number = (rand() % UCHAR_MAX) + 1; /* 1 to 255 */
+    
+    use_wrap_recv_msg = TRUE;
+    wrap_recv_msg_return_value = CFE_SUCCESS;
+    
+    /* Act */
+    result = SBN_Client_ReceiveMinder(NULL);
+    
+    /* Assert */
+    UtAssert_True(result == NULL, "SBN_Client_HeartbeatMinder returned NULL"); 
+    UtAssert_True(recv_msg_call_number == recv_msg_discontiue_on_call_number,
+      "recv_msg was called the expected number of times");
+}
+
+void SBN_Client_Minders_Tests_Setup(void)
+{
+    SBN_Client_Setup();
+}
+
+void SBN_Client_Minders_Tests_Teardown(void)
+{
+    SBN_Client_Teardown();
+    continue_heartbeat = TRUE;
+    continue_receive_check = TRUE;
+    
+    use_wrap_send_heartbeat = FALSE;
+    wrap_send_heartbeat_return_value = SBN_CLIENT_SUCCESS;
+    send_hearbeat_call_number = 0;
+    send_heartbeat_discontinue_on_call_number = 0;
+
+    use_wrap_recv_msg = FALSE;
+    wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
+    recv_msg_call_number = 0;
+    recv_msg_discontiue_on_call_number = 0;
+    
+    wrap_puts_call_func = NULL;
+    wrap_sleep_call_func = NULL;
+}
+
+void SBN_Client_Minders_Tests_AddTestCases(void)
+{
+    UtTest_Add(Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse,
+               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+              "Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse");
+    UtTest_Add(Test_SBN_Client_HeartbeatMinder_HeartbeatWithSockfdZero,
+               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+              "Test_SBN_Client_HeartbeatMinder_HeartbeatWithSockfdZero");
+    UtTest_Add(Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse,
+               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+              "Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse");
+
+    
+    
+    
+    UtTest_Add(Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse,
+               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+              "Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse");
+    UtTest_Add(Test_SBN_Client_ReceiveMinder_OutputsError,
+               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+              "Test_SBN_Client_ReceiveMinder_OutputsError");
+    UtTest_Add(Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse,
+               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+              "Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse");
+}

@@ -41,7 +41,7 @@ int32 SBN_Client_Init(void)
 
         /* Create thread for watchdog and receive */
         heart_thread_status = pthread_create(&heart_thread_id, NULL, 
-            heartbeatMinder, NULL);
+            SBN_Client_HeartbeatMinder, NULL);
             
         status = check_pthread_create_status(heart_thread_status, 
             SBN_CLIENT_HEART_THREAD_CREATE_EID);
@@ -49,7 +49,7 @@ int32 SBN_Client_Init(void)
         if (status == SBN_CLIENT_SUCCESS)
         {    
             receive_thread_status = pthread_create(&receive_thread_id, NULL, 
-            receiveMinder, NULL);
+            SBN_Client_ReceiveMinder, NULL);
         
             status = check_pthread_create_status(receive_thread_status, 
                 SBN_CLIENT_RECEIVE_THREAD_CREATE_EID);

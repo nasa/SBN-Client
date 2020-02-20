@@ -51,7 +51,28 @@ int Any_Negative_Integer(void)
 
 int Any_Positive_int_Or_Zero(void)
 {
-    int random_val = rand() % INT_MAX;
+    int random_val = rand();
+    
+    return random_val;
+}
+
+int Any_Non_Zero_int(void)
+{
+    return Any_int_Except(0);
+}
+
+int Any_int(void)
+{
+    int random_val = Any_Positive_int_Or_Zero();
+    
+    int coin_toss = rand() % 2;
+    
+    if (coin_toss == 1)
+    {
+        /* 0 to INT_MAX becomes -1 to INT_MIN */
+        random_val *= -1; /* flip sign */
+        random_val += -1; /* subtract 1 */ 
+    }
     
     return random_val;
 }
@@ -59,6 +80,18 @@ int Any_Positive_int_Or_Zero(void)
 int Any_int_Except(int exception)
 {
     int random_val = exception;
+    
+    while (random_val == exception)
+    {
+        random_val = Any_int();
+    }
+    
+    return random_val;
+}
+
+int32 Any_int32_Except(int32 exception)
+{
+    int32 random_val = exception;
     
     while (random_val == exception)
     {

@@ -54,6 +54,9 @@ int wrap_inet_pton_return_value;
 int wrap_connect_return_value;
 size_t wrap_read_return_value;
 
+void (*wrap_puts_call_func)(void) = NULL;
+void (*wrap_sleep_call_func)(void) = NULL;
+
 void SBN_Client_Testcase_Setup(void)
 {
     SBN_Client_Setup();
@@ -147,6 +150,11 @@ int __wrap_puts(const char *str)
           puts_expected_string, str));
     }
     
+    if (wrap_puts_call_func != NULL)
+    {
+        (*wrap_puts_call_func)();
+    }
+    
     return __real_puts(str);
 }
 
@@ -196,6 +204,11 @@ size_t __wrap_read(int fd, void* buf, size_t cnt)
 
 unsigned int __wrap_sleep(unsigned int seconds)
 {
+    if (wrap_sleep_call_func != NULL)
+    {
+        (*wrap_sleep_call_func)();
+    }
+    
     return 0;
 }
 
