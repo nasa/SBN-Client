@@ -142,7 +142,38 @@ void Test_ingest_app_message_ReadBytesFails(void)
       "pthread_cond_signal should not have been called");
 }
 
-void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
+void Test_ingest_app_message_FailsWhenNoPipesInUse(void)
+{
+    /* Arrange */ 
+    char err_msg[60] = "SBN_CLIENT: No pipes are in use";
+    unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
+    int msgSize = sizeof(msg);
+    int sockfd = Any_int();
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
+    wrap_pthread_cond_signal_should_be_called = FALSE;
+    use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
+    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
+    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+
+    puts_expected_string = err_msg;
+
+    /* Act */
+    ingest_app_message(sockfd, msgSize);
+
+    /* Assert */
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
+      "pthread_mutex_lock should not have been called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
+      "pthread_mutex_unlock should not have been called");
+    UtAssert_True(wrap_pthread_cond_signal_was_called == FALSE,
+      "pthread_cond_signal should not have been called");
+}
+
+void Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull(void)
 {
     /* Arrange */
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
@@ -158,14 +189,14 @@ void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
     wrap_pthread_cond_signal_should_be_called = FALSE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
-    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 & msg[1];
+    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
     use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 & msg[1];
+    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
     PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
     PipeTbl[pipe_assigned].ReadMessage = read_msg;
     
@@ -192,12 +223,14 @@ void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
     UtAssert_True(wrap_pthread_cond_signal_was_called == FALSE,
       "pthread_cond_signal should not have been called");
 }
+
 void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
 {
     /* Arrange */
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
     int msgSize = sizeof(msg);
     int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;  
+    int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
     int read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
     int num_msg = 0;
     int msg_slot= read_msg + num_msg;
@@ -213,10 +246,16 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
     wrap_pthread_cond_signal_should_be_called = FALSE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
-    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 & msg[1];
+    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
     use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+    
+    PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
+    PipeTbl[pipe_assigned].PipeId = pipe_assigned;
+    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = 0x0000;
+    PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
+    PipeTbl[pipe_assigned].ReadMessage = read_msg;
     
     if (msg_slot >= CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
     {
@@ -231,7 +270,7 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
       "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
       CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
       PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == 0, TestResultMsg(
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
       "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
@@ -258,14 +297,14 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
     wrap_pthread_cond_signal_should_be_called = TRUE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
-    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 & msg[1];
+    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
     use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 & msg[1];
+    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
     PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
     PipeTbl[pipe_assigned].ReadMessage = read_msg;
     
@@ -319,14 +358,14 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
     wrap_pthread_cond_signal_should_be_called = TRUE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
-    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 & msg[1];
+    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
     use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 & msg[1];
+    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
     PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
     PipeTbl[pipe_assigned].ReadMessage = read_msg;
     
@@ -379,14 +418,14 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
     wrap_pthread_cond_signal_should_be_called = TRUE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
-    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 & msg[1];
+    wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
     use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 & msg[1];
+    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
     PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
     PipeTbl[pipe_assigned].ReadMessage = read_msg;
     
@@ -460,12 +499,15 @@ void SBN_Client_Ingest_Tests_AddTestCases(void)
     UtTest_Add(Test_ingest_app_message_ReadBytesFails, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_ReadBytesFails");
-    UtTest_Add(Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull, 
+    UtTest_Add(Test_ingest_app_message_FailsWhenNoPipesInUse, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
-      "Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull");
+      "Test_ingest_app_message_FailsWhenNoPipesInUse");
+    UtTest_Add(Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull, 
+      SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
+      "Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull");
     UtTest_Add(Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
-      "Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull");
+      "Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId");
     UtTest_Add(Test_ingest_app_message_SuccessAllSlotsAvailable, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_SuccessAllSlotsAvailable");

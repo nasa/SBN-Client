@@ -13,6 +13,7 @@ extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
 {
     int status;
+    boolean at_least_1_pipe_in_use = FALSE;    
     unsigned char msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
     CFE_SB_MsgId_t MsgId;
     
@@ -44,11 +45,12 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
         {
             int j;
             
+            at_least_1_pipe_in_use = TRUE;
+            
             for(j = 0; j < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; j++)
             {
                 if (PipeTbl[i].SubscribedMsgIds[j] == MsgId)
                 {
-                    
                     if (PipeTbl[i].NumberOfMessages == 
                         CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
                     {
@@ -78,7 +80,15 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     
     } /* end for */
     
-    puts("SBN_CLIENT: ERROR no subscription for this msgid");  
+    if (at_least_1_pipe_in_use)
+    {
+        puts("SBN_CLIENT: ERROR no subscription for this msgid");  
+    }
+    else
+    {
+        puts("SBN_CLIENT: No pipes are in use");
+    }
+    
     pthread_mutex_unlock(&receive_mutex);
     return;
 }
