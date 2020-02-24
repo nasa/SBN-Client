@@ -8,7 +8,7 @@
 #include "sbn_client_ingest.h"
 #include "sbn_client_common_test_utils.h"
 
-extern const char *puts_expected_string;
+extern const char *log_message_expected_string;
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 
 int __real_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
@@ -128,7 +128,7 @@ void Test_ingest_app_message_ReadBytesFails(void)
       "CFE_SBN_CLIENT_ReadBytes returned a bad status = 0x%08X\n", 
       wrap_CFE_SBN_CLIENT_ReadBytes_return_value);
     
-    puts_expected_string = err_msg;
+    log_message_expected_string = err_msg;
     
     /* Act */
     ingest_app_message(sockfd, msgSize);
@@ -159,7 +159,7 @@ void Test_ingest_app_message_FailsWhenNoPipesInUse(void)
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
 
-    puts_expected_string = err_msg;
+    log_message_expected_string = err_msg;
 
     /* Act */
     ingest_app_message(sockfd, msgSize);
@@ -240,7 +240,7 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);
     
-    puts_expected_string = err_msg;
+    log_message_expected_string = err_msg;
     
     wrap_pthread_mutex_lock_should_be_called = TRUE;
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
@@ -488,7 +488,7 @@ void SBN_Client_Ingest_Teardown(void)
     use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
     
-    puts_expected_string = "";
+    log_message_expected_string = "";
 }
 
 

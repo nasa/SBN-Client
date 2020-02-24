@@ -209,13 +209,13 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
     memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
     
     // int i = 0;
-    // puts("SUB MSG: ");
+    // log_message("SUB MSG: ");
     // for (i;i < Pack.BufUsed; i++)
     // {
     //   printf("0x%02x ", (unsigned char)Buf[i]);
     // }
     // printf("i = %d\n", i);
-    // puts("");
+    // log_message("");
 
     write_result = write_message(sbn_client_sockfd, buffer, total_size);
 
@@ -233,7 +233,7 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, 
                            int32 TimeOut)
 {
-    //puts("SBN_CLIENT: Checking for messages...");
+    //log_message("SBN_CLIENT: Checking for messages...");
     // Oh my.
     // Need to have multiple pipes... so the subscribe thing
     // Need to coordinate with the recv_msg thread... so locking?
@@ -248,7 +248,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
     
     if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
     {
-        puts("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
+        log_message("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
         //TODO: don't know if this is a valid error return value;
         status = CFE_SBN_CLIENT_INVALID_PIPE;
     }

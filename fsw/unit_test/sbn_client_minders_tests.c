@@ -10,8 +10,8 @@ extern int sbn_client_sockfd;
 extern boolean continue_heartbeat;
 extern boolean continue_receive_check;
 
-extern const char *puts_expected_string;
-extern void (*wrap_puts_call_func)(void);
+extern const char *log_message_expected_string;
+extern void (*wrap_log_message_call_func)(void);
 extern void (*wrap_sleep_call_func)(void);
 
 boolean use_wrap_send_heartbeat = FALSE;
@@ -36,7 +36,7 @@ void wrap_sleep_set_continue_heartbeat_false(void)
     continue_heartbeat = FALSE;
 }
 
-void wrap_puts_set_continue_recv_check_false(void)
+void wrap_log_message_set_continue_recv_check_false(void)
 {
     continue_receive_check = FALSE;
 }
@@ -160,7 +160,7 @@ void Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse(void)
 
 }
 
-void Test_SBN_Client_ReceiveMinder_OutputsError(void)
+void Test_SBN_Client_ReceiveMinder_Outlog_messageError(void)
 {
     /* Arrange */
     char err_msg[50];
@@ -172,8 +172,8 @@ void Test_SBN_Client_ReceiveMinder_OutputsError(void)
     snprintf(err_msg, 50, "Recieve message returned error 0x%08X\n", 
       wrap_recv_msg_return_value);
     
-    puts_expected_string = err_msg;
-    wrap_puts_call_func = &wrap_puts_set_continue_recv_check_false;
+    log_message_expected_string = err_msg;
+    wrap_log_message_call_func = &wrap_log_message_set_continue_recv_check_false;
     
     /* Act */
     result = SBN_Client_ReceiveMinder(NULL);
@@ -222,7 +222,7 @@ void SBN_Client_Minders_Tests_Teardown(void)
     recv_msg_call_number = 0;
     recv_msg_discontiue_on_call_number = 0;
     
-    wrap_puts_call_func = NULL;
+    wrap_log_message_call_func = NULL;
     wrap_sleep_call_func = NULL;
 }
 
@@ -244,9 +244,9 @@ void SBN_Client_Minders_Tests_AddTestCases(void)
     UtTest_Add(Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse,
                SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
               "Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse");
-    UtTest_Add(Test_SBN_Client_ReceiveMinder_OutputsError,
+    UtTest_Add(Test_SBN_Client_ReceiveMinder_Outlog_messageError,
                SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
-              "Test_SBN_Client_ReceiveMinder_OutputsError");
+              "Test_SBN_Client_ReceiveMinder_Outlog_messageError");
     UtTest_Add(Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse,
                SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
               "Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse");

@@ -31,7 +31,7 @@ int32 SBN_Client_Init(void)
 
     if (sbn_client_sockfd < 0)
     {
-        puts("SBN_CLIENT: ERROR Failed to get sbn_client_sockfd, cannot continue.");
+        log_message("SBN_CLIENT: ERROR Failed to get sbn_client_sockfd, cannot continue.");
         status = SBN_CLIENT_BAD_SOCK_FD_EID;
     }
     else

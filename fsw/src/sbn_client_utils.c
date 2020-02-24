@@ -22,15 +22,15 @@ int32 check_pthread_create_status(int status, int32 errorId)
         switch(status)
         {
             case EAGAIN:
-            puts("Create thread error = EAGAIN");
+            log_message("Create thread error = EAGAIN");
             break;
             
             case EINVAL:
-            puts("Create thread error = EINVAL");
+            log_message("Create thread error = EINVAL");
             break;
             
             case EPERM:
-            puts("Create thread error = EPERM");
+            log_message("Create thread error = EPERM");
             break;
             
             default:
@@ -69,20 +69,20 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer,
         if (bytes_received < 0)
         {
             /* TODO:ERROR socket is dead somehow */       
-            puts("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_BROKEN_ERR\n");
+            log_message("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_BROKEN_ERR\n");
             return CFE_SBN_CLIENT_PIPE_BROKEN_ERR;
         }
         else if (bytes_received == 0)
         {
             /* TODO:ERROR closed remotely */
-            puts("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
+            log_message("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
             return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
         }
         
         total_bytes_recd += bytes_received;
     }
     // 
-    // puts("CFE_SBN_CLIENT_ReadBytes THIS MESSAGE:");
+    // log_message("CFE_SBN_CLIENT_ReadBytes THIS MESSAGE:");
     // int i =0;
     // for (i = 0; i < MsgSz; i++)
     // {
@@ -240,31 +240,31 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
         switch(errno)
         {
             case EACCES:
-            puts("socket err = EACCES");
+            log_message("socket err = EACCES");
             break; 
             
             case EAFNOSUPPORT:
-            puts("socket err = EAFNOSUPPORT");
+            log_message("socket err = EAFNOSUPPORT");
             break;  
             
             case EINVAL:
-            puts("socket err = EINVAL");
+            log_message("socket err = EINVAL");
             break; 
             
             case EMFILE:
-            puts("socket err = EMFILE");
+            log_message("socket err = EMFILE");
             break; 
             
             case ENOBUFS:
-            puts("socket err = ENOBUFS");
+            log_message("socket err = ENOBUFS");
             break; 
             
             case ENOMEM:
-            puts("socket err = ENOMEM");
+            log_message("socket err = ENOMEM");
             break; 
             
             case EPROTONOSUPPORT:
-            puts("socket err = EPROTONOSUPPORT");
+            log_message("socket err = EPROTONOSUPPORT");
             break;  
             
             default:
@@ -304,71 +304,71 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
         switch(errno)
         {
             case EACCES:
-            puts("connect err = EACCES");
+            log_message("connect err = EACCES");
             break;
             
             case EPERM:
-            puts("connect err = EPERM");
+            log_message("connect err = EPERM");
             break;
             
             case EADDRINUSE:
-            puts("connect err = EADDRINUSE");
+            log_message("connect err = EADDRINUSE");
             break;
             
             case EADDRNOTAVAIL:
-            puts("connect err = EADDRNOTAVAIL");
+            log_message("connect err = EADDRNOTAVAIL");
             break;
             
             case EAFNOSUPPORT:
-            puts("connect err = EAFNOSUPPORT");
+            log_message("connect err = EAFNOSUPPORT");
             break;
             
             case EAGAIN:
-            puts("connect err = EAGAIN");
+            log_message("connect err = EAGAIN");
             break;
             
             case EALREADY:
-            puts("connect err = EALREADY");
+            log_message("connect err = EALREADY");
             break;
             
             case EBADF:
-            puts("connect err = EBADF");
+            log_message("connect err = EBADF");
             break;
             
             case ECONNREFUSED:
-            puts("connect err = ECONNREFUSED");
+            log_message("connect err = ECONNREFUSED");
             break;
             
             case EFAULT:
-            puts("connect err = EFAULT");
+            log_message("connect err = EFAULT");
             break;
             
             case EINPROGRESS:
-            puts("connect err = EINPROGRESS");
+            log_message("connect err = EINPROGRESS");
             break;
             
             case EINTR:
-            puts("connect err = EINTR");
+            log_message("connect err = EINTR");
             break;
             
             case EISCONN:
-            puts("connect err = EISCONN");
+            log_message("connect err = EISCONN");
             break;
             
             case ENETUNREACH:
-            puts("connect err = ENETUNREACH");
+            log_message("connect err = ENETUNREACH");
             break;
             
             case ENOTSOCK:
-            puts("connect err = ENOTSOCK");
+            log_message("connect err = ENOTSOCK");
             break;
             
             case EPROTOTYPE:
-            puts("connect err = EPROTOTYPE");
+            log_message("connect err = EPROTOTYPE");
             break;
             
             case ETIMEDOUT:
-            puts("connect err = ETIMEDOUT");
+            log_message("connect err = ETIMEDOUT");
             break;        
         }
         
@@ -378,4 +378,9 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     }
 
     return sockfd;
+}
+
+void log_message(const char * message)
+{
+    puts(message);
 }

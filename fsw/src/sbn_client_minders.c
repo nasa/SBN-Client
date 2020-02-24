@@ -44,7 +44,7 @@ void *SBN_Client_ReceiveMinder(void *vargp)
             snprintf(err_msg, 50, "Recieve message returned error 0x%08X\n", 
               status);
             
-            puts(err_msg);
+            log_message(err_msg);
         }/* end if */
         
     }
