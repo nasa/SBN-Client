@@ -38,6 +38,10 @@
 
 extern void SBN_Client_Setup(void);
 extern void SBN_Client_Teardown(void);
+extern boolean wrap_pthread_mutex_lock_should_be_called;
+extern boolean wrap_pthread_mutex_lock_was_called;
+extern boolean wrap_pthread_mutex_unlock_should_be_called;
+extern boolean wrap_pthread_mutex_unlock_was_called;
 void add_connect_to_server_tests(void);
 
 CFE_SB_PipeId_t pipePtr;
@@ -77,6 +81,11 @@ void SBN_Client_Testcase_Teardown(void)
     
     puts_expected_string = "";
     perror_expected_string = "";
+    
+    wrap_pthread_mutex_lock_should_be_called = FALSE;
+    wrap_pthread_mutex_lock_was_called = FALSE;
+    wrap_pthread_mutex_unlock_should_be_called = FALSE;
+    wrap_pthread_mutex_unlock_was_called = FALSE;
 }
 
 /*
@@ -855,232 +864,6 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
 }
 /* end __wrap_CFE_SB_Subscribe Tests */
 
-/*******************************************************************************
-**
-**  ingest_app_message Tests
-**
-*******************************************************************************/
-
-/* ingest_app_message Tests */
-void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
-{
-    /* Arrange */
-    int p[2]; pipe(p);
-    unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
-    int msgSize = sizeof(msg);
-    int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
-    printf("pipe_assigned = %d\n", pipe_assigned);
-    int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
-    printf("msg_id_slot = %d\n", msg_id_slot);
-    int read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    printf("read_msg = %d\n", read_msg);
-    int num_msg = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1; /* 1 slot left */
-    printf("num_msg = %d\n", num_msg);
-    int msg_slot;
-    
-    write(p[1], msg, msgSize);
-    close(p[1]);
-    
-    PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
-    PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = 0x1881;
-    PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
-    PipeTbl[pipe_assigned].ReadMessage = read_msg;
-    
-    msg_slot = read_msg + num_msg;
-    
-    if (msg_slot >= CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
-    {
-        msg_slot = msg_slot - CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    } 
-    printf("msg_slot = %d\n", msg_slot);
-    
-    /* Act */ 
-    ingest_app_message(p[0], msgSize);
-    
-    /* Assert */
-    int i;
-    
-    for(i = 0; i < msgSize; i++)
-    {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
-          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d ", 
-          pipe_assigned, msg_slot, i, msg[i], 
-          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
-    }  
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 
-      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, TestResultMsg(
-      "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
-      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
-      PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));  
-}
-
-void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
-{
-    /* Arrange */
-    int p[2]; pipe(p);
-    unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
-    int msgSize = sizeof(msg);
-    int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
-    printf("pipe_assigned = %d\n", pipe_assigned);
-    int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
-    printf("msg_id_slot = %d\n", msg_id_slot);
-    int read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    printf("read_msg = %d\n", read_msg);
-    /* from 1 to CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH */
-    int num_msg = (rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1) + 1; 
-    printf("num_msg = %d\n", num_msg);
-    int msg_slot;
-    
-    write(p[1], msg, msgSize);
-    close(p[1]);
-    
-    PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
-    PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = 0x1881;
-    PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
-    PipeTbl[pipe_assigned].ReadMessage = read_msg;
-    
-    msg_slot = read_msg + num_msg;
-    
-    if (msg_slot >= CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
-    {
-        msg_slot = msg_slot - CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    } 
-    printf("msg_slot = %d\n", msg_slot);
-    
-    /* Act */ 
-    ingest_app_message(p[0], msgSize);
-    
-    /* Assert */
-    int i;
-    
-    for(i = 0; i < msgSize; i++)
-    {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
-          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
-          pipe_assigned, msg_slot, i, msg[i], 
-          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
-    }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
-      TestResultMsg(
-      "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
-      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
-}
-
-void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
-{
-    /* Arrange */
-    int p[2]; pipe(p);
-    unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
-    int msgSize = sizeof(msg);
-    int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
-    printf("pipe_assigned = %d\n", pipe_assigned);
-    int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
-    printf("msg_id_slot = %d\n", msg_id_slot);
-    int read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    printf("read_msg = %d\n", read_msg);
-    int num_msg = 0;
-    printf("num_msg = %d\n", num_msg);
-    int msg_slot;
-    
-    write(p[1], msg, msgSize);
-    close(p[1]);
-    
-    PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
-    PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = 0x1881;
-    PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
-    PipeTbl[pipe_assigned].ReadMessage = read_msg;
-    
-    msg_slot = read_msg + num_msg;
-    
-    if (msg_slot >= CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
-    {
-        msg_slot = msg_slot - CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    } 
-    printf("msg_slot = %d\n", msg_slot);
-    
-    /* Act */ 
-    ingest_app_message(p[0], msgSize);
-    
-    /* Assert */
-    int i;
-    
-    for(i = 0; i < msgSize; i++)
-    {
-        UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
-          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
-          pipe_assigned, msg_slot, i, msg[i], 
-          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
-    }
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
-      TestResultMsg(
-      "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
-      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
-}
-
-void Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull(void)
-{
-    /* Arrange */
-    int p[2]; pipe(p);
-    unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
-    int msgSize = sizeof(msg);
-    int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
-    printf("pipe_assigned = %d\n", pipe_assigned);
-    int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
-    printf("msg_id_slot = %d\n", msg_id_slot);
-    int read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    printf("read_msg = %d\n", read_msg);
-    int num_msg = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    printf("num_msg = %d\n", num_msg);
-    int msg_slot;
-    
-    write(p[1], msg, msgSize);
-    close(p[1]);
-    
-    PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
-    PipeTbl[pipe_assigned].PipeId = pipe_assigned;
-    PipeTbl[pipe_assigned].SubscribedMsgIds[msg_id_slot] = 0x1881;
-    PipeTbl[pipe_assigned].NumberOfMessages = num_msg;
-    PipeTbl[pipe_assigned].ReadMessage = read_msg;
-    
-    msg_slot = read_msg + num_msg;
-    
-    if (msg_slot >= CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
-    {
-        msg_slot = msg_slot - CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    } 
-    printf("msg_slot = %d\n", msg_slot);
-    
-    /* Act */ 
-    ingest_app_message(p[0], msgSize);
-    
-    /* Assert */
-    /* TODO:add failure assert here */
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg, 
-      TestResultMsg(
-      "PipeTbl[%d].NumberOfMessages %d should not increase and was %d", 
-      pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage)); 
-}
-
-//void Test_ingest_app_message_SuccessCausesPipeNumberOfMessagesToIncreaseBy1
-//void Test_ingest_app_message_FailsWhenNoPipesInUse
-//void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId
-/* end ingest_app_message Tests */
-
 
 
 /*******************************************************************************
@@ -1108,6 +891,9 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
     CFE_SB_MsgPtr_t buffer;
 
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
 
     pipe->InUse = CFE_SBN_CLIENT_IN_USE;
     pipe->PipeId = pipe_assigned;
@@ -1164,6 +950,9 @@ void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
     CFE_SB_MsgPtr_t buffer;
 
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
 
     pipe->InUse = CFE_SBN_CLIENT_IN_USE;
     pipe->PipeId = pipe_assigned;
@@ -1221,6 +1010,9 @@ void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
 
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
 
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
+
     pipe->InUse = CFE_SBN_CLIENT_IN_USE;
     pipe->PipeId = pipe_assigned;
     pipe->SubscribedMsgIds[msg_id_slot] = 0x1881;
@@ -1275,6 +1067,9 @@ void Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
     CFE_SB_MsgPtr_t buffer;
 
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
 
     pipe->InUse = CFE_SBN_CLIENT_IN_USE;
     pipe->PipeId = pipe_assigned;
@@ -1580,20 +1375,6 @@ void SBN_Client_Test_AddTestCases(void)
       SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
       "Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
     
-    /* ingest_app_message Tests */
-    UtTest_Add(Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft, 
-      SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
-      "Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft");
-    UtTest_Add(Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable, 
-      SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
-      "Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable");
-    UtTest_Add(Test_ingest_app_message_SuccessAllSlotsAvailable, 
-      SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
-      "Test_ingest_app_message_SuccessAllSlotsAvailable");
-    UtTest_Add(Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull, 
-      SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
-      "Test_ingest_app_message_FailsWhenNumberOfMessagesIsFull");
-    
     /* Wrap_CFE_SB_RcvMsg Tests */
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Testcase_Setup, 
       SBN_Client_Testcase_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
@@ -1605,7 +1386,7 @@ void SBN_Client_Test_AddTestCases(void)
       "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
     UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe, 
       SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
-      "Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe");
+      "Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe");
     
     /* CFE_SBN_CLIENT_ReadBytes Tests*/
     UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, 

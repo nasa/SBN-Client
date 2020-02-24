@@ -20,7 +20,12 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     
     if (status != CFE_SUCCESS)
     {
-      printf("CFE_SBN_CLIENT_ReadBytes returned a bad status = %d\n", status);
+        char error_message[60];
+        
+        snprintf(error_message, 60, 
+          "CFE_SBN_CLIENT_ReadBytes returned a bad status = 0x%08X\n", status);
+        puts(error_message);
+        return;
     }
 
     MsgId = CFE_SBN_Client_GetMsgId((CFE_SB_MsgPtr_t)msg_buffer);
@@ -29,10 +34,8 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
     
     /* Take mutex */
     pthread_mutex_lock(&receive_mutex);
-    //puts("\n\nRECEIVED LOCK!\n\n");
     
-    /*Put message into pipe */
-    
+    /*Put message into pipe */    
     int i;
     
     for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
