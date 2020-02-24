@@ -18,7 +18,7 @@ extern void SBN_Client_Init_Tests_AddTestCases(void);
 extern void SBN_Client_Test_AddTestCases(void);
 extern void SBN_Client_Minders_Tests_AddTestCases(void);
 extern void SBN_Client_Ingest_Tests_AddTestCases(void);
-
+extern void SBN_Client_Wrappers_Tests_AddTestCases(void);
 
 
 int main(int argc, char *argv[])
@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
     SBN_Client_Test_AddTestCases();
     SBN_Client_Minders_Tests_AddTestCases();
     SBN_Client_Ingest_Tests_AddTestCases();
+    SBN_Client_Wrappers_Tests_AddTestCases();
     
     result = UtTest_Run();
     
