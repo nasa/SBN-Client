@@ -105,8 +105,8 @@ int32 recv_msg(int32 sockfd)
         Unpack_UInt8(&Unpack, &MsgType);
         Unpack_UInt32(&Unpack, &CpuID);
 
-        printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz, 
-               MsgType, CpuID);
+        // printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz,
+        //       MsgType, CpuID);
 
         //TODO: check cpuID to see if it is correct for this location?
 
