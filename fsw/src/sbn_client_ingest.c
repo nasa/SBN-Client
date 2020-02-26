@@ -57,7 +57,7 @@ void ingest_app_message(int sockfd, SBN_MsgSz_t MsgSz)
                     }
                     else /* message is put into pipe */
                     {    
-                        puts("message received");
+                        // puts("message received");
                         memcpy(PipeTbl[i].Messages[message_entry_point(
                             PipeTbl[i])], msg_buffer, MsgSz);
                         PipeTbl[i].NumberOfMessages++;
