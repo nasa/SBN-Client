@@ -1,12 +1,16 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <errno.h>
 
 #include <uttest.h>
 
 #include "sbn_client_utils.h"
 #include "sbn_client_ingest.h"
 #include "sbn_client_common_test_utils.h"
+
+#define PTHREAD_MUTEX_UNLOCK_SUCCESS  0
+#define PTHREAD_MUTEX_UNLOCK_FAILURE  EPERM
 
 extern const char *log_message_expected_string;
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
@@ -67,15 +71,29 @@ int __wrap_pthread_mutex_lock(pthread_mutex_t *mutex)
 
 int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
+    int result;
+    
     wrap_pthread_mutex_unlock_was_called = TRUE;
     
     if (!wrap_pthread_mutex_unlock_should_be_called)
     {
         UtAssert_Failed(
           "pthread_mutex_unlock called, but should not have been");
+          
+        if (wrap_pthread_mutex_lock_was_called == TRUE)
+        {
+          UtAssert_Failed(
+            "pthread_mutex_unlock called before calling pthread_mutex_lock");
+        }
+        
+        result = PTHREAD_MUTEX_UNLOCK_FAILURE;
+    }
+    else
+    {
+        result =  PTHREAD_MUTEX_UNLOCK_SUCCESS;
     }
     
-    return 0;
+    return result;
 }
 
 int __wrap_pthread_cond_signal(pthread_cond_t *cond)

@@ -132,6 +132,7 @@ WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_mutex_lock
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_mutex_unlock
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_cond_signal
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SBN_Client_GetMsgId
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SBN_Client_GetPipeIdx
 endif
 
 #WARNINGS = -Wall -W -ansi -Werror -Wstrict-prototypes -Wundef

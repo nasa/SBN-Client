@@ -1,3 +1,5 @@
+#include <limits.h>
+
 #include "uttest.h"
 
 #include "sbn_client_common_test_utils.h"
@@ -9,12 +11,36 @@ extern boolean wrap_pthread_mutex_lock_should_be_called;
 extern boolean wrap_pthread_mutex_lock_was_called;
 extern boolean wrap_pthread_mutex_unlock_should_be_called;
 extern boolean wrap_pthread_mutex_unlock_was_called;
+extern const char *log_message_expected_string;
+extern boolean log_message_was_called;
 
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 
 CFE_SB_PipeId_t pipePtr;
 uint16 pipe_depth = 5;
 const char *pipeName = "TestPipe";
+
+/*******************************************************************************
+**
+**  Wrappers for stubbed and hooked functions
+**
+*******************************************************************************/
+
+uint8 __real_CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t);
+boolean use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
+uint8 wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
+uint8 __wrap_CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
+{
+    if (use_wrap_CFE_SBN_Client_GetPipeIdx)
+    {
+        return wrap_CFE_SBN_Client_GetPipeIdx_return_value;
+    }
+    else
+    {
+        return __real_CFE_SBN_Client_GetPipeIdx(PipeId);
+    }
+}
+
 /*******************************************************************************
 **
 **  __wrap_CFE_SB_CreatePipe Tests
@@ -203,6 +229,68 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
 **  __wrap_CFE_SB_RcvMsg Tests
 **
 *******************************************************************************/
+
+void Test__wrap_CFE_SB_RcvMsg_FailsBufferPointerIsNull(void)
+{
+    /* Arrange */
+    CFE_SB_MsgPtr_t *buffer_ptr = NULL;
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
+    int32 timeout = Any_Positive_int32();
+    int32 result;
+    
+    log_message_expected_string = "SBN_CLIENT: BUFFER POINTER IS NULL!";
+    
+    /* Act */
+    result = CFE_SB_RcvMsg(buffer_ptr, pipe_assigned, timeout);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SB_BAD_ARGUMENT,
+      "__wrap_CFE_SB_RcvMsg returned CFE_SB_BAD_ARGUMENT");
+    UtAssert_True(log_message_was_called, "log_message was called");
+}
+
+void Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne(void)
+{
+    /* Arrange */
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
+    int32 timeout = Any_Negative_int32_Except(CFE_SB_PEND_FOREVER);
+    int32 result;
+    
+    log_message_expected_string = "SBN_CLIENT: TIMEOUT IS LESS THAN -1!";
+    
+    /* Act */
+    result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SB_BAD_ARGUMENT,
+      "__wrap_CFE_SB_RcvMsg returned CFE_SB_BAD_ARGUMENT");
+    UtAssert_True(log_message_was_called, "log_message was called");
+}
+
+
+void Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx(void)
+{
+    /* Arrange */
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
+    int32 timeout = Any_Positive_int32();
+    int32 result;
+    /* No control on clock_gettime; its value does not affect this test */
+    
+    use_wrap_CFE_SBN_Client_GetPipeIdx = TRUE;
+    wrap_CFE_SBN_Client_GetPipeIdx_return_value = CFE_SBN_CLIENT_INVALID_PIPE;
+    
+    log_message_expected_string = "SBN_CLIENT: ERROR INVALID PIPE ERROR!";
+        
+    /* Act */
+    result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SB_BAD_ARGUMENT, 
+      "__wrap_CFE_SB_RcvMsg returned CFE_SB_BAD_ARGUMENT");
+    UtAssert_True(log_message_was_called, "log_message was called");
+}
 
 void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
 {
@@ -539,7 +627,12 @@ void SBN_Client_Wrappers_Tests_Teardown(void)
     wrap_pthread_mutex_lock_was_called = FALSE;
     wrap_pthread_mutex_unlock_should_be_called = FALSE;
     wrap_pthread_mutex_unlock_was_called = FALSE;  
-        
+    
+    log_message_expected_string = "";
+    
+    use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
+    wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
+    
     pipePtr = 0;
     pipe_depth = 5;
 }
@@ -579,7 +672,16 @@ void SBN_Client_Wrappers_Tests_AddTestCases(void)
       "Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded");
     
     /* Wrap_CFE_SB_RcvMsg Tests */
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Wrappers_Tests_Setup, 
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailsBufferPointerIsNull, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsg_FailsBufferPointerIsNull");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx");
+      UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Wrappers_Tests_Setup, 
       SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
     UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
@@ -594,15 +696,15 @@ void SBN_Client_Wrappers_Tests_AddTestCases(void)
     /* __wrap_CFE_SB_SubscribeEx Tests */
     UtTest_Add(Test__wrap_CFE_SB_SubscribeEx_AlwaysFails, SBN_Client_Wrappers_Tests_Setup, 
       SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_SubscribeEx_AlwaysFails");
-
+    
     /* __wrap_CFE_SB_SubscribeLocal Tests */
     UtTest_Add(Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails, SBN_Client_Wrappers_Tests_Setup, 
       SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_SubscribeLocal_AlwaysFails");
-
+    
     /* __wrap_CFE_SB_Unsubscribe Tests */
     UtTest_Add(Test__wrap_CFE_SB_Unsubscribe_AlwaysFails, SBN_Client_Wrappers_Tests_Setup, 
       SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_Unsubscribe_AlwaysFails");
-
+    
     /* __wrap_CFE_SB_UnsubscribeLocal Tests */
     UtTest_Add(Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails, SBN_Client_Wrappers_Tests_Setup, 
       SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails");

@@ -238,74 +238,88 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
     // Need to have multiple pipes... so the subscribe thing
     // Need to coordinate with the recv_msg thread... so locking?
     // Also, what about messages that get split? Is that an issue?
-    int8            pipe_idx;
-    int32           status;
+    uint8           pipe_idx;
+    int32           status = CFE_EVS_ERROR;
     struct timespec enter_time;
     
     clock_gettime(CLOCK_REALTIME, &enter_time);
-      
-    pipe_idx = CFE_SBN_Client_GetPipeIdx(PipeId);
     
-    if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
+    if (BufPtr == NULL)
+    {  
+        log_message("SBN_CLIENT: BUFFER POINTER IS NULL!");
+        status = CFE_SB_BAD_ARGUMENT;
+    }
+    else if (TimeOut < -1)
     {
-        log_message("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
-        //TODO: don't know if this is a valid error return value;
-        status = CFE_SBN_CLIENT_INVALID_PIPE;
+        log_message("SBN_CLIENT: TIMEOUT IS LESS THAN -1!");
+        status = CFE_SB_BAD_ARGUMENT;
     }
     else
-    {
-        CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
+    {          
+        pipe_idx = CFE_SBN_Client_GetPipeIdx(PipeId);
         
-        pthread_mutex_lock(&receive_mutex);
-        
-        if (pipe->NumberOfMessages > 1)
+        if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
         {
-            /* must progress to next message in pipe */
-            uint32 next_msg = (pipe->ReadMessage + 1) % 
-              CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-            pipe->ReadMessage = next_msg;
-            
-            *BufPtr = (CFE_SB_MsgPtr_t)(&(pipe->Messages[next_msg]));
-            
-            pipe->NumberOfMessages -= 1;
-            status = CFE_SUCCESS;
+            log_message("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
+            //TODO: don't know if this is a valid error return value;
+            status = CFE_SB_BAD_ARGUMENT;
         }
         else
         {
-          int wait_result;
-          struct timespec future_timeout;
-          
-          /* set future time for timeout check to entry time + timeout 
-           * milliseconds */
-          future_timeout.tv_sec = enter_time.tv_sec;
-          future_timeout.tv_nsec = enter_time.tv_nsec + (TimeOut * pow(10, 6));
+            CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
+            
+            pthread_mutex_lock(&receive_mutex);
+            
+            if (pipe->NumberOfMessages > 1)
+            {
+                /* must progress to next message in pipe */
+                uint32 next_msg = (pipe->ReadMessage + 1) % 
+                  CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+                pipe->ReadMessage = next_msg;
+                
+                *BufPtr = (CFE_SB_MsgPtr_t)(&(pipe->Messages[next_msg]));
+                
+                pipe->NumberOfMessages -= 1;
+                status = CFE_SUCCESS;
+            }
+            else
+            {
+              int wait_result;
+              struct timespec future_timeout;
+              
+              /* set future time for timeout check to entry time + timeout 
+               * milliseconds */
+              future_timeout.tv_sec = enter_time.tv_sec;
+              future_timeout.tv_nsec = enter_time.tv_nsec + (TimeOut * pow(10, 6));
 
-          /* when nsec greater than 1 second perform update to seconds and 
-           * nanoseconds */
-          if (future_timeout.tv_nsec >= pow(10, 9))
-          {
-            future_timeout.tv_sec += future_timeout.tv_nsec / pow(10, 9);
-            future_timeout.tv_nsec = future_timeout.tv_nsec % (long) pow(10, 9);
-          }
-          
-          wait_result = pthread_cond_timedwait(&received_condition, 
-                                               &receive_mutex, 
-                                               &future_timeout);
-               
-          if (wait_result == ETIMEDOUT)
-          {
-            status = CFE_EVS_EventType_ERROR;
-          } /* end if */
-          
+              /* when nsec greater than 1 second perform update to seconds and 
+               * nanoseconds */
+              if (future_timeout.tv_nsec >= pow(10, 9))
+              {
+                future_timeout.tv_sec += future_timeout.tv_nsec / pow(10, 9);
+                future_timeout.tv_nsec = future_timeout.tv_nsec % (long) pow(10, 9);
+              }
+              
+              wait_result = pthread_cond_timedwait(&received_condition, 
+                                                   &receive_mutex, 
+                                                   &future_timeout);
+                   
+              if (wait_result == ETIMEDOUT)
+              {
+                status = CFE_EVS_EventType_ERROR;
+              } /* end if */
+              
+            } /* end if */
+            
+            int pmu = pthread_mutex_unlock(&receive_mutex);
+            
+            if (pmu != 0)
+            {
+              status =  CFE_EVS_ERROR;
+            } /* end if */
+        
         } /* end if */
-    
-    } /* end if */
-    
-    int pmu = pthread_mutex_unlock(&receive_mutex);
-    
-    if (pmu != 0)
-    {
-      status =  CFE_EVS_ERROR;
+        
     } /* end if */
     
     return status;

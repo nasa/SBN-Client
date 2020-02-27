@@ -42,6 +42,7 @@ void add_connect_to_server_tests(void);
 
 /* Wrapped function override variables */
 const char *log_message_expected_string = "";
+boolean log_message_was_called = FALSE;
 const char *perror_expected_string = "";
 
 /* Wrapped function return value settings */
@@ -70,6 +71,7 @@ void SBN_Client_Testcase_Teardown(void)
     SBN_Client_Teardown();
     
     log_message_expected_string = "";
+    log_message_was_called = FALSE;
     perror_expected_string = "";
 }
 
@@ -124,6 +126,8 @@ extern int sbn_client_cpuId;
 
 int __wrap_log_message(const char *str)
 {
+    log_message_was_called = TRUE;
+    
     if (strlen(log_message_expected_string) > 0)
     {
         UtAssert_StrCmp(str, log_message_expected_string, 
