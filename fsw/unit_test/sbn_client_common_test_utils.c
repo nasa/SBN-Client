@@ -42,16 +42,35 @@ char *TestResultMsg(const char *format, ...)
   return em;
 }
 
-int Any_Negative_Integer(void)
+int Any_Negative_int(void)
 {
     int random_val = (rand() % INT_MAX) + 1;
     
     return random_val * -1;
 }
 
+int32 Any_Negative_int32_Except(int exception)
+{
+    int32 random_val = exception;
+    
+    while (random_val == exception)
+    {
+        random_val = Any_Negative_int();
+    }
+    
+    return random_val;
+}
+
 int Any_Positive_int_Or_Zero(void)
 {
     int random_val = rand();
+    
+    return random_val;
+}
+
+int32 Any_Positive_int32(void)
+{
+    int32 random_val = (rand() % INT_MAX) + 1;
     
     return random_val;
 }
@@ -76,6 +95,19 @@ int Any_int(void)
     
     return random_val;
 }
+
+int32 Any_int32(void)
+{
+    return Any_int();
+}
+
+CFE_SB_PipeId_t Any_CFE_SB_PipeId_t(void)
+{
+    CFE_SB_PipeId_t random_val = rand() % (UCHAR_MAX + 1);
+    
+    return random_val;
+}
+
 
 int Any_int_Except(int exception)
 {
@@ -107,6 +139,35 @@ int32 Any_int32_Except(int32 exception)
     }
     
     return random_val;
+}
+
+
+int32 Any_int32_ExceptThese(int32 * exceptions, size_t length)
+{
+    int32   random_value = 0;
+    boolean value_is_in_exceptions = TRUE;
+    
+    while (value_is_in_exceptions)
+    {
+        int index;
+        
+        random_value = Any_int();
+        
+        value_is_in_exceptions = FALSE;
+        
+        for(index = 0; index < length; index++)
+        {
+            
+            if (exceptions[index] == random_value)
+            {
+                value_is_in_exceptions = TRUE;
+            }
+            
+        }   
+         
+    }
+    
+    return random_value;
 }
 
 void SBN_Client_Setup(void)

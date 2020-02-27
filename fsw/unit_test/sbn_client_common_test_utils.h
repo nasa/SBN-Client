@@ -25,12 +25,17 @@
 #define SECOND_CALL    2
 
 char *TestResultMsg(const char *, ...);
-int Any_Negative_Integer(void);
+int Any_Negative_int(void);
+int32 Any_Negative_int32_Except(int);
 int Any_Positive_int_Or_Zero(void);
-int Any_int_Except(int exception);
+int32 Any_Positive_int32(void);
+int Any_int_Except(int);
 int Any_int(void);
+int32 Any_int32(void);
 int Any_Non_Zero_int(void);
-int32 Any_int32_Except(int32 exception);
+int32 Any_int32_Except(int32);
+int32 Any_int32_ExceptThese(int32 *, size_t);
+CFE_SB_PipeId_t Any_CFE_SB_PipeId_t(void);
 void SBN_Client_Setup(void);
 void SBN_Client_Teardown(void);
 

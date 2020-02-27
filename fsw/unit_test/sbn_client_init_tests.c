@@ -197,7 +197,7 @@ void Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails(void)
     /* Arrange */
     /* connect_to_server call control */
     use_wrap_connect_to_server = TRUE;
-    wrap_connect_to_server_return_value = Any_Negative_Integer();
+    wrap_connect_to_server_return_value = Any_Negative_int();
     wrap_exit_expected_status = SBN_CLIENT_BAD_SOCK_FD_EID;
 
     /* Act */ 
