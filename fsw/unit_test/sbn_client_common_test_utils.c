@@ -103,7 +103,7 @@ int32 Any_int32(void)
 
 CFE_SB_PipeId_t Any_CFE_SB_PipeId_t(void)
 {
-    CFE_SB_PipeId_t random_val = rand() % (UCHAR_MAX + 1);
+    CFE_SB_PipeId_t random_val = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
     
     return random_val;
 }
