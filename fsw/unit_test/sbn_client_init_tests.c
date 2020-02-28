@@ -1,37 +1,7 @@
-
-
-/*
- * Includes
- */
-
-/* Test case only includes */
-#include <arpa/inet.h>
-
-#include "uttest.h"
-
-/* sbn_client includes required to manipulate tests */
-
-#include "sbn_client_common_test_utils.h"
-#include "sbn_client.h"
-#include "sbn_client_version.h"
-#include "sbn_client_init.h"
-#include "sbn_client_wrapped_functions.h"
-
-/* UT includes */
-#include "ut_cfe_tbl_stubs.h"
-#include "ut_cfe_tbl_hooks.h"
-#include "ut_cfe_evs_stubs.h"
-#include "ut_cfe_evs_hooks.h"
-#include "ut_cfe_sb_stubs.h"
-#include "ut_cfe_sb_hooks.h"
-#include "ut_cfe_es_stubs.h"
-#include "ut_osapi_stubs.h"
-#include "ut_osfileapi_stubs.h"
-#include "ut_cfe_fs_stubs.h"
+#include "sbn_client_tests_includes.h"
 
 extern void SBN_Client_Setup(void);
 extern void SBN_Client_Teardown(void);
-
 
 /*
  * Globals

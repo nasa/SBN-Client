@@ -1,7 +1,7 @@
 #ifndef _sbn_client_wrapped_functions_h_
 #define _sbn_client_wrapped_functions_h_
 
-#include <sys/socket.h>
+#include "sbn_client_tests_includes.h"
 
 int __real_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
 int __real_pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, 

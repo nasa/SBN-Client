@@ -1,9 +1,4 @@
-#include <time.h>
-
-#include "uttest.h"
-#include "sbn_client_common_test_utils.h"
-#include "sbn_client_utils.h"
-
+#include "sbn_client_tests_includes.h"
 
 /*
  * Globals

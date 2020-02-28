@@ -1,11 +1,4 @@
-#include <limits.h>
-
-#include "uttest.h"
-
-#include "sbn_client_minders.h"
-#include "sbn_client_utils.h"
-#include "sbn_client_common_test_utils.h"
-#include "sbn_client_wrapped_functions.h"
+#include "sbn_client_tests_includes.h"
 
 extern int sbn_client_sockfd;
 extern boolean continue_heartbeat;

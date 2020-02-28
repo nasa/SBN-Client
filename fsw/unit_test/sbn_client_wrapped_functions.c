@@ -1,14 +1,4 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <errno.h>
-#include <arpa/inet.h>
-
-#include <uttest.h>
-
-#include "sbn_client_common_test_utils.h"
-#include "sbn_client_wrapped_functions.h"
-#include "sbn_client.h"
+#include "sbn_client_tests_includes.h"
 
 #define PTHREAD_MUTEX_UNLOCK_SUCCESS  0
 #define PTHREAD_MUTEX_UNLOCK_FAILURE  EPERM

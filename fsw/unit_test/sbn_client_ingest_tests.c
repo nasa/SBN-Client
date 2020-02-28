@@ -1,16 +1,5 @@
-// #include <unistd.h>
-// #include <stdlib.h>
-#include <limits.h>
-// #include <errno.h>
-// 
-#include <uttest.h>
+#include "sbn_client_tests_includes.h"
 
-#include "sbn_client_utils.h"
-#include "sbn_client_ingest.h"
-#include "sbn_client_common_test_utils.h"
-#include "sbn_client_wrapped_functions.h"
-
-extern const char *log_message_expected_string;
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 
 /*******************************************************************************

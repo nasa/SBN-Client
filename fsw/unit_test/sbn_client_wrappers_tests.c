@@ -1,13 +1,4 @@
-#include "uttest.h"
-
-#include "sbn_client_common_test_utils.h"
-#include "sbn_client_utils.h"
-#include "sbn_client_wrapped_functions.h"
-
-extern void SBN_Client_Setup(void);
-extern void SBN_Client_Teardown(void);
-extern const char *log_message_expected_string;
-extern boolean log_message_was_called;
+#include "sbn_client_tests_includes.h"
 
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 
