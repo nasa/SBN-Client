@@ -157,6 +157,8 @@ int __wrap_pthread_cond_timedwait(pthread_cond_t * cond,
     {
         result = __real_pthread_cond_timedwait(cond, mutex, abstime);
     }
+    
+    return result;
 }
 
 CFE_SB_MsgId_t __wrap_CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)

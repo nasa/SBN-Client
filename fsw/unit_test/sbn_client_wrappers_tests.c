@@ -298,28 +298,33 @@ void Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage(void)
     UtAssert_True(buffer == NULL, "__wrap_CFE_SB_RcvMsg set *BufPtr to NULL");
 }
 
-// void Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires(void)
-// {
-//     /* Arrange */
-//     CFE_SB_MsgPtr_t buffer;
-//     CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
-//     int32 timeout = Any_Positive_int32();
-//     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
-//     int32 result;
-// 
-//     wrap_pthread_mutex_lock_should_be_called = TRUE;
-//     wrap_pthread_mutex_unlock_should_be_called = TRUE;
-//     wrap_pthread_cond_timedwait_should_be_called = FALSE;
-//     use_wrap_pthread_cond_timedwait = TRUE;
-//     wrap_pthread_cond_return_value = ETIMEDOUT;
-// 
-//     pipe->NumberOfMessages = 0;
-// 
-//     /* Act */
-// 
-//     /* Assert */
-// 
-// }
+void Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires(void)
+{
+    /* Arrange */
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
+    int32 timeout = Any_Positive_int32();
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    int32 result;
+
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
+    wrap_pthread_cond_timedwait_should_be_called = TRUE;
+    use_wrap_pthread_cond_timedwait = TRUE;
+    wrap_pthread_cond_return_value = ETIMEDOUT;
+    use_wrap_CFE_SBN_Client_GetPipeIdx = TRUE;
+    wrap_CFE_SBN_Client_GetPipeIdx_return_value = pipe_assigned;
+
+    pipe->NumberOfMessages = 0;
+
+    /* Act */
+    result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+
+    /* Assert */
+    UtAssert_True(result == CFE_SB_TIME_OUT, 
+      "__wrap_CFE_SB_RcvMsg returned CFE_SB_NO_MESSAGE, pipe empty, poll rqst");
+    UtAssert_True(buffer == NULL, "__wrap_CFE_SB_RcvMsg set *BufPtr to NULL");
+}
 
 void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
 {
@@ -689,6 +694,9 @@ void SBN_Client_Wrappers_Tests_AddTestCases(void)
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires");
     // UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Wrappers_Tests_Setup, 
     //   SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
     // UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, 

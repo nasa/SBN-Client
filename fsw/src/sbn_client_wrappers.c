@@ -311,7 +311,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
         
               if (wait_result == ETIMEDOUT)
               {
-                status = CFE_EVS_EventType_ERROR;
+                status = CFE_SB_TIME_OUT;
               } /* end if */
         
             } /* end if */
