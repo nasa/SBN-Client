@@ -8,7 +8,7 @@
 #include "sbn_interfaces.h"
 
 /************************************************************************
-** Comstants Definitions
+** Constants Definitions
 *************************************************************************/
 #define SBN_CLIENT_SUCCESS                      OS_SUCCESS
 
