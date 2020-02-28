@@ -1,7 +1,5 @@
 #include "sbn_client_tests_includes.h"
 
-extern void SBN_Client_Setup(void);
-extern void SBN_Client_Teardown(void);
 void add_connect_to_server_tests(void);
 
 void SBN_Client_Testcase_Setup(void)
@@ -23,25 +21,6 @@ void SBN_Client_Testcase_Teardown(void)
     log_message_was_called = FALSE;
     perror_expected_string = "";
 }
-
-/* SBN variable accessors */
-extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-extern MsgId_to_pipes_t 
-  MsgId_Subscriptions[CFE_SBN_CLIENT_MSG_ID_TO_PIPE_ID_MAP_SIZE];
-
-
-/* UT_Assert external functions */
-extern Ut_CFE_FS_ReturnCodeTable_t      
-   Ut_CFE_FS_ReturnCodeTable[UT_CFE_FS_MAX_INDEX];
-extern Ut_OSFILEAPI_HookTable_t         Ut_OSFILEAPI_HookTable;
-extern Ut_CFE_ES_HookTable_t            Ut_CFE_ES_HookTable;
-extern Ut_OSAPI_HookTable_t             Ut_OSAPI_HookTable;
-
-extern int   connect_to_server(const char *, uint16_t);
-extern int32 check_pthread_create_status(int, int32);
-
-extern int sbn_client_sockfd;
-extern int sbn_client_cpuId;
 
 /*******************************************************************************
 **

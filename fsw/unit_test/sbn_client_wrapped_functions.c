@@ -4,9 +4,6 @@
 #define PTHREAD_MUTEX_UNLOCK_FAILURE  EPERM
 
 
-extern boolean continue_heartbeat;
-extern boolean continue_receive_check;
-
 boolean use_wrap_CFE_SBN_CLIENT_ReadBytes = FALSE;
 unsigned char *wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
 int wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;

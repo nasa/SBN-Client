@@ -37,4 +37,12 @@
 #include "sbn_client_common_test_utils.h"
 #include "sbn_client_wrapped_functions.h"
 
+/* SBN_Client variable access */
+extern int sbn_client_sockfd;
+extern int sbn_client_cpuId;
+extern boolean continue_heartbeat;
+extern boolean continue_receive_check;
+extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
+
+
 #endif /* _sbn_client_tests_includes_h_ */

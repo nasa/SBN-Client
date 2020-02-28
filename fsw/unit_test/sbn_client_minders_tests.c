@@ -1,13 +1,5 @@
 #include "sbn_client_tests_includes.h"
 
-extern int sbn_client_sockfd;
-extern boolean continue_heartbeat;
-extern boolean continue_receive_check;
-
-extern const char *log_message_expected_string;
-extern void (*wrap_log_message_call_func)(void);
-extern void (*wrap_sleep_call_func)(void);
-
 void Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse(void)
 {
     /* Arrange */

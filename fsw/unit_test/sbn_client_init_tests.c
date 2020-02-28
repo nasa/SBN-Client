@@ -1,15 +1,5 @@
 #include "sbn_client_tests_includes.h"
 
-extern void SBN_Client_Setup(void);
-extern void SBN_Client_Teardown(void);
-
-/*
- * Globals
- */
-
-extern int sbn_client_sockfd;
-extern int sbn_client_cpuId;
-
 void SBN_Client_Init_Setup(void)
 {
     SBN_Client_Setup();

@@ -1,9 +1,5 @@
 #include "sbn_client_tests_includes.h"
 
-/*
- * Globals
- */
- 
 int random_gen;
 
 /*

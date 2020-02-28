@@ -1,7 +1,5 @@
 #include "sbn_client_tests_includes.h"
 
-extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-
 /*******************************************************************************
 **
 **  ingest_app_message Tests

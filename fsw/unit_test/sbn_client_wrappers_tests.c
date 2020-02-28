@@ -1,7 +1,5 @@
 #include "sbn_client_tests_includes.h"
 
-extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-
 CFE_SB_PipeId_t pipePtr;
 uint16 pipe_depth = 5;
 const char *pipeName = "TestPipe";
