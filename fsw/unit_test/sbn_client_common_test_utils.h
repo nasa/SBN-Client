@@ -25,6 +25,11 @@ int Any_Non_Zero_int(void);
 int32 Any_int32_Except(int32);
 int32 Any_int32_ExceptThese(int32 *, size_t);
 CFE_SB_PipeId_t Any_CFE_SB_PipeId_t(void);
+int Any_Message_Id_Slot(void);
+int Any_Pipe_Message_Location(void);
+
+
+
 void SBN_Client_Setup(void);
 void SBN_Client_Teardown(void);
 

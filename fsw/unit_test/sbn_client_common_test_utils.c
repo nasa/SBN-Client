@@ -146,6 +146,18 @@ int32 Any_int32_ExceptThese(int32 * exceptions, size_t length)
     return random_value;
 }
 
+int Any_Message_Id_Slot(void)
+{
+    return rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
+}
+
+int Any_Pipe_Message_Location(void)
+{
+    return rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+}
+
+
+
 void SBN_Client_Setup(void)
 {
     /* SBN_Client resets */
