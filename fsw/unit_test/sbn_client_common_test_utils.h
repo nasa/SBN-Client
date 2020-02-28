@@ -27,6 +27,9 @@ int32 Any_int32_ExceptThese(int32 *, size_t);
 CFE_SB_PipeId_t Any_CFE_SB_PipeId_t(void);
 int Any_Message_Id_Slot(void);
 int Any_Pipe_Message_Location(void);
+unsigned char Any_unsigned_char(void);
+unsigned char * Any_Pipe_Message(size_t length);
+size_t Any_Message_Size(void);
 
 
 

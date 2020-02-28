@@ -5,6 +5,11 @@
  */
 
 char error_message[MAX_ERROR_MESSAGE_SIZE];
+unsigned char message[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+
+/*
+ * Functions
+ */
 
 char *TestResultMsg(const char *format, ...)
 {
@@ -154,6 +159,32 @@ int Any_Message_Id_Slot(void)
 int Any_Pipe_Message_Location(void)
 {
     return rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+}
+
+unsigned char Any_unsigned_char(void)
+{
+    unsigned char random_val = rand();
+    
+    return random_val;
+}
+
+unsigned char * Any_Pipe_Message(size_t length)
+{
+    int i;
+    
+    for(i = 0; i < length; i++)
+    {
+        message[i] = Any_unsigned_char();
+    }
+
+    return message;
+}
+
+size_t Any_Message_Size(void)
+{
+    size_t random_val = (rand() % CFE_SBN_CLIENT_MAX_MESSAGE_SIZE - 7) + 8;
+
+    return random_val;
 }
 
 
