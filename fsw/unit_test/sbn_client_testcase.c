@@ -22,6 +22,7 @@
 #include "sbn_client_minders.h"
 #include "sbn_client_ingest.h"
 #include "sbn_client_utils.h"
+#include "sbn_client_wrapped_functions.h"
 
 /* UT includes */
 #include "ut_cfe_tbl_stubs.h"
@@ -39,21 +40,6 @@
 extern void SBN_Client_Setup(void);
 extern void SBN_Client_Teardown(void);
 void add_connect_to_server_tests(void);
-
-/* Wrapped function override variables */
-const char *log_message_expected_string = "";
-boolean log_message_was_called = FALSE;
-const char *perror_expected_string = "";
-
-/* Wrapped function return value settings */
-int wrap_socket_return_value;
-uint16_t wrap_htons_return_value;
-int wrap_inet_pton_return_value;
-int wrap_connect_return_value;
-size_t wrap_read_return_value;
-
-void (*wrap_log_message_call_func)(void) = NULL;
-void (*wrap_sleep_call_func)(void) = NULL;
 
 void SBN_Client_Testcase_Setup(void)
 {
@@ -75,30 +61,6 @@ void SBN_Client_Testcase_Teardown(void)
     perror_expected_string = "";
 }
 
-/*
- * Wrapped function definitions
- */
-
-
-/* Real Functions */
-int    __real_log_message(const char *str);
-void   __real_perror(const char *s);
-size_t __real_read(int fd, void* buf, size_t cnt);
-
-
-/* Wrapped Functions */
-int __wrap_log_message(const char *str);
-void __wrap_perror(const char *s);
-int __wrap_socket(int, int, int);
-uint16_t __wrap_htons(uint16_t);
-int __wrap_inet_pton(int, const char *, void*);
-int __wrap_connect(int, const struct sockaddr *, socklen_t);
-int __wrap_connect_to_server(const char *, uint16_t);
-size_t __wrap_read(int fd, void* buf, size_t cnt); 
-unsigned int __wrap_sleep(unsigned int seconds);
-
-
-
 /* SBN variable accessors */
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 extern MsgId_to_pipes_t 
@@ -117,85 +79,6 @@ extern int32 check_pthread_create_status(int, int32);
 
 extern int sbn_client_sockfd;
 extern int sbn_client_cpuId;
-
-/*******************************************************************************
-**
-**  Wrapped Functions
-**
-*******************************************************************************/
-
-int __wrap_log_message(const char *str)
-{
-    log_message_was_called = TRUE;
-    
-    if (strlen(log_message_expected_string) > 0)
-    {
-        UtAssert_StrCmp(str, log_message_expected_string, 
-          TestResultMsg("log_message expected string '%s' == '%s' string recieved",
-          log_message_expected_string, str));
-    }
-    
-    if (wrap_log_message_call_func != NULL)
-    {
-        (*wrap_log_message_call_func)();
-    }
-    
-    return __real_log_message(str);
-}
-
-void __wrap_perror(const char *str)
-{
-    if (strlen(perror_expected_string) > 0)
-    {
-        UtAssert_StrCmp(str, perror_expected_string, 
-          TestResultMsg("perror expected string '%s' == '%s' string recieved",
-          perror_expected_string, str));
-    }
-    
-    __real_perror(str);
-}
-
-int __wrap_socket(int domain, int type, int protocol)
-{
-  return wrap_socket_return_value;
-}
-
-uint16_t __wrap_htons(uint16_t hostshort)
-{
-  return wrap_htons_return_value;
-}
-
-int __wrap_inet_pton(int af, const char *src, void *dst)
-{
-  return wrap_inet_pton_return_value;
-}
-
-int __wrap_connect(int sbn_client_sockfd, const struct sockaddr *addr, socklen_t addrlen)
-{
-  return wrap_connect_return_value;
-}
-
-size_t __wrap_read(int fd, void* buf, size_t cnt)
-{
-    if (wrap_read_return_value != INT_MIN)
-    {
-        return wrap_read_return_value;
-    }
-    else
-    {
-        return __real_read(fd, buf, cnt);
-    }
-}
-
-unsigned int __wrap_sleep(unsigned int seconds)
-{
-    if (wrap_sleep_call_func != NULL)
-    {
-        (*wrap_sleep_call_func)();
-    }
-    
-    return 0;
-}
 
 /*******************************************************************************
 **

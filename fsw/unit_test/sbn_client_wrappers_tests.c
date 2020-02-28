@@ -1,16 +1,11 @@
-#include <limits.h>
-
 #include "uttest.h"
 
 #include "sbn_client_common_test_utils.h"
 #include "sbn_client_utils.h"
+#include "sbn_client_wrapped_functions.h"
 
 extern void SBN_Client_Setup(void);
 extern void SBN_Client_Teardown(void);
-extern boolean wrap_pthread_mutex_lock_should_be_called;
-extern boolean wrap_pthread_mutex_lock_was_called;
-extern boolean wrap_pthread_mutex_unlock_should_be_called;
-extern boolean wrap_pthread_mutex_unlock_was_called;
 extern const char *log_message_expected_string;
 extern boolean log_message_was_called;
 
@@ -19,27 +14,6 @@ extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 CFE_SB_PipeId_t pipePtr;
 uint16 pipe_depth = 5;
 const char *pipeName = "TestPipe";
-
-/*******************************************************************************
-**
-**  Wrappers for stubbed and hooked functions
-**
-*******************************************************************************/
-
-uint8 __real_CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t);
-boolean use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
-uint8 wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
-uint8 __wrap_CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
-{
-    if (use_wrap_CFE_SBN_Client_GetPipeIdx)
-    {
-        return wrap_CFE_SBN_Client_GetPipeIdx_return_value;
-    }
-    else
-    {
-        return __real_CFE_SBN_Client_GetPipeIdx(PipeId);
-    }
-}
 
 /*******************************************************************************
 **
@@ -315,6 +289,29 @@ void Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage(void)
       "__wrap_CFE_SB_RcvMsg returned CFE_SB_NO_MESSAGE, pipe empty, poll rqst");
     UtAssert_True(buffer == NULL, "__wrap_CFE_SB_RcvMsg set *BufPtr to NULL");
 }
+
+// void Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires(void)
+// {
+//     /* Arrange */
+//     CFE_SB_MsgPtr_t buffer;
+//     CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
+//     int32 timeout = Any_Positive_int32();
+//     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+//     int32 result;
+// 
+//     wrap_pthread_mutex_lock_should_be_called = TRUE;
+//     wrap_pthread_mutex_unlock_should_be_called = TRUE;
+//     wrap_pthread_cond_timedwait_should_be_called = FALSE;
+//     use_wrap_pthread_cond_timedwait = TRUE;
+//     wrap_pthread_cond_return_value = ETIMEDOUT;
+// 
+//     pipe->NumberOfMessages = 0;
+// 
+//     /* Act */
+// 
+//     /* Assert */
+// 
+// }
 
 void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
 {
@@ -647,15 +644,7 @@ void SBN_Client_Wrappers_Tests_Teardown(void)
 {
     SBN_Client_Teardown();  
     
-    wrap_pthread_mutex_lock_should_be_called = FALSE;
-    wrap_pthread_mutex_lock_was_called = FALSE;
-    wrap_pthread_mutex_unlock_should_be_called = FALSE;
-    wrap_pthread_mutex_unlock_was_called = FALSE;  
-    
     log_message_expected_string = "";
-    
-    use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
-    wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
     
     pipePtr = 0;
     pipe_depth = 5;

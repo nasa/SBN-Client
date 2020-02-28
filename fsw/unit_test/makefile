@@ -91,6 +91,7 @@ UT_OBJS += sbn_client_minders_tests.o
 UT_OBJS += sbn_client_ingest_tests.o
 UT_OBJS += sbn_client_wrappers_tests.o
 UT_OBJS += sbn_client_common_test_utils.o
+UT_OBJS += sbn_client_wrapped_functions.o
 
 ###############################################################################
 
@@ -133,6 +134,7 @@ WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_mutex_unlock
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_cond_signal
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SBN_Client_GetMsgId
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SBN_Client_GetPipeIdx
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_cond_timedwait
 endif
 
 #WARNINGS = -Wall -W -ansi -Werror -Wstrict-prototypes -Wundef

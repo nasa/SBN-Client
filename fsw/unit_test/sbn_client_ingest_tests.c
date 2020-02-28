@@ -1,130 +1,17 @@
-#include <unistd.h>
-#include <stdlib.h>
+// #include <unistd.h>
+// #include <stdlib.h>
 #include <limits.h>
-#include <errno.h>
-
+// #include <errno.h>
+// 
 #include <uttest.h>
 
 #include "sbn_client_utils.h"
 #include "sbn_client_ingest.h"
 #include "sbn_client_common_test_utils.h"
-
-#define PTHREAD_MUTEX_UNLOCK_SUCCESS  0
-#define PTHREAD_MUTEX_UNLOCK_FAILURE  EPERM
+#include "sbn_client_wrapped_functions.h"
 
 extern const char *log_message_expected_string;
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-
-int __real_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
-CFE_SB_MsgId_t __real_CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t);
-
-int __wrap_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
-int __wrap_pthread_mutex_lock(pthread_mutex_t *);
-int __wrap_pthread_mutex_unlock(pthread_mutex_t *);
-int __wrap_pthread_cond_signal(pthread_cond_t *);
-CFE_SB_MsgId_t __wrap_CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t);
-
-boolean use_wrap_CFE_SBN_CLIENT_ReadBytes = FALSE;
-unsigned char *wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
-int wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
-boolean wrap_pthread_mutex_lock_should_be_called = FALSE;
-boolean wrap_pthread_mutex_lock_was_called = FALSE;
-boolean wrap_pthread_mutex_unlock_should_be_called = FALSE;
-boolean wrap_pthread_mutex_unlock_was_called = FALSE;
-boolean wrap_pthread_cond_signal_should_be_called = FALSE;
-boolean wrap_pthread_cond_signal_was_called = FALSE;
-boolean use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
-CFE_SB_MsgId_t wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
-
-int __wrap_CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, 
-                                    size_t MsgSz)
-{
-    int result;
-    
-    if (use_wrap_CFE_SBN_CLIENT_ReadBytes)
-    {
-        if (wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer != NULL)
-        {
-            memcpy(msg_buffer, wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer, MsgSz);
-        }
-        result = wrap_CFE_SBN_CLIENT_ReadBytes_return_value;
-    }
-    else
-    {
-        result = __real_CFE_SBN_CLIENT_ReadBytes(sockfd, msg_buffer, MsgSz);
-    }
-    
-    return result;
-}
-
-int __wrap_pthread_mutex_lock(pthread_mutex_t *mutex)
-{
-    wrap_pthread_mutex_lock_was_called = TRUE;
-    
-    if (!wrap_pthread_mutex_lock_should_be_called)
-    {
-        UtAssert_Failed("pthread_mutex_lock called, but should not have been");
-    }
-    
-    return 0;
-}
-
-int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
-{
-    int result;
-    
-    wrap_pthread_mutex_unlock_was_called = TRUE;
-    
-    if (!wrap_pthread_mutex_unlock_should_be_called)
-    {
-        UtAssert_Failed(
-          "pthread_mutex_unlock called, but should not have been");
-          
-        if (wrap_pthread_mutex_lock_was_called == TRUE)
-        {
-          UtAssert_Failed(
-            "pthread_mutex_unlock called before calling pthread_mutex_lock");
-        }
-        
-        result = PTHREAD_MUTEX_UNLOCK_FAILURE;
-    }
-    else
-    {
-        result =  PTHREAD_MUTEX_UNLOCK_SUCCESS;
-    }
-    
-    return result;
-}
-
-int __wrap_pthread_cond_signal(pthread_cond_t *cond)
-{
-    wrap_pthread_cond_signal_was_called = TRUE;
-    
-    if (!wrap_pthread_cond_signal_should_be_called)
-    {
-        UtAssert_Failed(
-          "pthread_cond_signal called, but should not have been");
-    }
-    
-    return 0;
-}
-
-CFE_SB_MsgId_t __wrap_CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)
-{
-    CFE_SB_MsgId_t result;
-    
-    if (use_wrap_CFE_SBN_Client_GetMsgId)
-    {
-        result = wrap_CFE_SBN_Client_GetMsgId_return_value;
-    }
-    else
-    {
-        result = __real_CFE_SBN_Client_GetMsgId(MsgPtr);
-    }
-    
-    return result;
-}                       
-
 
 /*******************************************************************************
 **
@@ -493,18 +380,6 @@ void SBN_Client_Ingest_Setup(void)
 void SBN_Client_Ingest_Teardown(void)
 {
     SBN_Client_Teardown();
-
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = FALSE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
-    wrap_pthread_mutex_lock_should_be_called = FALSE;
-    wrap_pthread_mutex_lock_was_called = FALSE;
-    wrap_pthread_mutex_unlock_should_be_called = FALSE;
-    wrap_pthread_mutex_unlock_was_called = FALSE;
-    wrap_pthread_cond_signal_should_be_called = FALSE;
-    wrap_pthread_cond_signal_was_called = FALSE;
-    use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
-    wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
     
     log_message_expected_string = "";
 }

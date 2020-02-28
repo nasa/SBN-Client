@@ -5,6 +5,7 @@
 #include "sbn_client_minders.h"
 #include "sbn_client_utils.h"
 #include "sbn_client_common_test_utils.h"
+#include "sbn_client_wrapped_functions.h"
 
 extern int sbn_client_sockfd;
 extern boolean continue_heartbeat;
@@ -13,87 +14,6 @@ extern boolean continue_receive_check;
 extern const char *log_message_expected_string;
 extern void (*wrap_log_message_call_func)(void);
 extern void (*wrap_sleep_call_func)(void);
-
-boolean use_wrap_send_heartbeat = FALSE;
-int     wrap_send_heartbeat_return_value = SBN_CLIENT_SUCCESS;
-uint8   send_hearbeat_call_number = 0;
-uint8   send_heartbeat_discontinue_on_call_number = 0;
-
-boolean use_wrap_recv_msg = FALSE;
-int     wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
-uint8   recv_msg_call_number = 0;
-uint8   recv_msg_discontiue_on_call_number = 0;
-
-
-int   __wrap_send_heartbeat(int);
-int32 __wrap_recv_msg(int32);
-
-int   __real_send_heartbeat(int);
-int32 __real_recv_msg(int32);
-
-void wrap_sleep_set_continue_heartbeat_false(void)
-{
-    continue_heartbeat = FALSE;
-}
-
-void wrap_log_message_set_continue_recv_check_false(void)
-{
-    continue_receive_check = FALSE;
-}
-
-/* NOTE: wrapper will auto discontinue after send_hearbeat_call_number
- * rolls over from 255, this is by design so any test using the wrapper cannot
- * run in an infinite loop */ 
-int __wrap_send_heartbeat(int sockfd)
-{
-    int result;
-    
-    send_hearbeat_call_number += 1;
-    
-    if (use_wrap_send_heartbeat)
-    {
-        if (send_hearbeat_call_number == 
-            send_heartbeat_discontinue_on_call_number)
-        {
-            continue_heartbeat = FALSE;
-        }
-        
-        return wrap_send_heartbeat_return_value;
-    }
-    else
-    {
-        result = __real_send_heartbeat(sockfd);
-    }
-    
-    return result;
-} 
-
-/* NOTE: wrapper will auto discontinue after recv_msg_call_number
- * rolls over from 255, this is by design so any test using the wrapper cannot
- * run in an infinite loop */
-int32 __wrap_recv_msg(int sockfd)
-{
-    int32 result;
-    
-    recv_msg_call_number += 1;
-    
-    if (use_wrap_recv_msg)
-    {
-        if (recv_msg_call_number == recv_msg_discontiue_on_call_number)
-        {
-            continue_receive_check = FALSE;
-        }
-        
-        return wrap_recv_msg_return_value;
-    }
-    else
-    {
-        result = __real_recv_msg(sockfd);
-    }
-    
-    return result;
-}
-
 
 void Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse(void)
 {
@@ -209,21 +129,6 @@ void SBN_Client_Minders_Tests_Setup(void)
 void SBN_Client_Minders_Tests_Teardown(void)
 {
     SBN_Client_Teardown();
-    continue_heartbeat = TRUE;
-    continue_receive_check = TRUE;
-    
-    use_wrap_send_heartbeat = FALSE;
-    wrap_send_heartbeat_return_value = SBN_CLIENT_SUCCESS;
-    send_hearbeat_call_number = 0;
-    send_heartbeat_discontinue_on_call_number = 0;
-
-    use_wrap_recv_msg = FALSE;
-    wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
-    recv_msg_call_number = 0;
-    recv_msg_discontiue_on_call_number = 0;
-    
-    wrap_log_message_call_func = NULL;
-    wrap_sleep_call_func = NULL;
 }
 
 void SBN_Client_Minders_Tests_AddTestCases(void)

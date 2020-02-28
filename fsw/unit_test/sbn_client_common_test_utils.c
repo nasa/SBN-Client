@@ -6,6 +6,7 @@
 
 #include "sbn_client_common_test_utils.h"
 #include "sbn_client_utils.h"
+#include "sbn_client_wrapped_functions.h"
 
 /* UT includes */
 #include "ut_cfe_tbl_stubs.h"
@@ -172,23 +173,25 @@ int32 Any_int32_ExceptThese(int32 * exceptions, size_t length)
 
 void SBN_Client_Setup(void)
 {
-  /* SBN_Client resets */
-  sbn_client_sockfd = 0;
-  sbn_client_cpuId = 0;
-  
-  memset(PipeTbl, 0, sizeof(PipeTbl));
+    /* SBN_Client resets */
+    sbn_client_sockfd = 0;
+    sbn_client_cpuId = 0;
+
+    memset(PipeTbl, 0, sizeof(PipeTbl));
+
+    /* Global UT CFE resets -- 
+    * NOTE: not sure if these are required for sbn_client */
+    Ut_OSAPI_Reset();
+    Ut_CFE_SB_Reset();
+    Ut_CFE_ES_Reset();
+    Ut_CFE_EVS_Reset();
+    Ut_CFE_TBL_Reset();
     
-  /* Global UT CFE resets -- 
-   * NOTE: not sure if these are required for sbn_client */
-  Ut_OSAPI_Reset();
-  Ut_CFE_SB_Reset();
-  Ut_CFE_ES_Reset();
-  Ut_CFE_EVS_Reset();
-  Ut_CFE_TBL_Reset();
+    SBN_CLient_Wrapped_Functions_Setup();
 } /* end SBN_Client_Setup */
 
 void SBN_Client_Teardown(void)
 {
-    ; /* SBN_Client_Teardown is currently empty by design */
+    SBN_CLient_Wrapped_Functions_Teardown();
 } /* end SBN_Client_Teardown */
 

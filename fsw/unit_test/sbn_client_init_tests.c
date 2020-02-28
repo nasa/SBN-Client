@@ -5,10 +5,7 @@
  */
 
 /* Test case only includes */
-#include <unistd.h>
 #include <arpa/inet.h>
-#include <errno.h>
-#include <limits.h>
 
 #include "uttest.h"
 
@@ -18,6 +15,7 @@
 #include "sbn_client.h"
 #include "sbn_client_version.h"
 #include "sbn_client_init.h"
+#include "sbn_client_wrapped_functions.h"
 
 /* UT includes */
 #include "ut_cfe_tbl_stubs.h"
@@ -34,134 +32,13 @@
 extern void SBN_Client_Setup(void);
 extern void SBN_Client_Teardown(void);
 
-/* Wrap Functions */
-int __wrap_connect_to_server(const char *, uint16_t);
-void __wrap_exit(int);
-int __wrap_pthread_create(pthread_t *, const pthread_attr_t *,
-                          void *(*) (void *), void *);
-
-
-/* Real Functions */
-int __real_connect_to_server(const char *, uint16_t);
-void __real_CFE_SBN_Client_InitPipeTbl(void);
-int __real_pthread_create(pthread_t *, const pthread_attr_t *,
-                          void *(*) (void *), void *);
-int32 __real_check_pthread_create_status(int, int32);
-
 
 /*
  * Globals
  */
 
-/* Wrapped function override variables */
-boolean use_wrap_connect_to_server = FALSE;
-int wrap_connect_to_server_return_value = INT_MIN;
-
-int wrap_exit_expected_status = INT_MIN;  
-
-boolean use_wrap_CFE_SBN_Client_InitPipeTbl = FALSE;
-
-int pthread_create_errors_on_call_number = INT_MIN;
-uint8 pthread_create_call_number = 0;
-int pthread_create_error_value = INT_MIN;
-
-boolean use_wrap_check_pthread_create_status = FALSE;
-boolean wrap_check_pthread_create_status_fail_call = FALSE;
-uint8 check_pthread_create_status_call_number = 0;
-int check_pthread_create_status_errors_on_call_number = INT_MIN;
-
-
 extern int sbn_client_sockfd;
 extern int sbn_client_cpuId;
-
-/*
- * Wrapped function definitions
- */
-int __wrap_connect_to_server(const char *server_ip, uint16_t server_port)
-{
-    int result = INT_MIN;
-
-    if (use_wrap_connect_to_server)
-    {
-        result = wrap_connect_to_server_return_value;
-    }
-    else
-    {
-        result = __real_connect_to_server(server_ip, server_port);
-    } /* end if */
-
-    return result;
-}
- 
-void __wrap_exit(int status)
-{
-    UtAssert_True(status == wrap_exit_expected_status,
-      TestResultMsg("exit() status should be %d, and was %d", 
-      wrap_exit_expected_status, status));
-}
- 
-void __wrap_CFE_SBN_Client_InitPipeTbl(void)
-{
-    if (use_wrap_CFE_SBN_Client_InitPipeTbl)
-    {
-        ; /* CFE_SBN_Client_InitPipeTbl is a void so do nothing */
-    }
-    else
-    {
-        __real_CFE_SBN_Client_InitPipeTbl();
-    }
-}
-
-int __wrap_pthread_create(pthread_t *thread, const pthread_attr_t *attr,
-                          void *(*start_routine) (void *), void *arg)
-{
-    pthread_create_call_number += 1;
-    int result;
-    
-    if (pthread_create_errors_on_call_number == pthread_create_call_number)
-    {
-        result = pthread_create_error_value;
-    }
-    else
-    {
-        result = 0;
-    }
-    
-    return result;
-}
-
-int32 __wrap_check_pthread_create_status(int status, int32 errorId)
-{
-    int32 result = INT_MIN;
-    
-    check_pthread_create_status_call_number += 1;
-    
-    if (use_wrap_check_pthread_create_status)
-    {
-        if (wrap_check_pthread_create_status_fail_call &&
-            check_pthread_create_status_call_number == 
-            check_pthread_create_status_errors_on_call_number)
-        {
-            UtAssert_True(status == pthread_create_error_value, 
-              "check_pthread_create_status received expected error value "
-              "returned by pthread_create");
-            result = errorId;
-        }
-        else
-        {
-            result = SBN_CLIENT_SUCCESS;
-        }
-    }
-    else
-    {
-        result = __real_check_pthread_create_status(status, errorId);
-    }
-    
-    return result;
-}
-
-
-
 
 void SBN_Client_Init_Setup(void)
 {
@@ -171,19 +48,6 @@ void SBN_Client_Init_Setup(void)
 void SBN_Client_Init_Teardown(void)
 {
     SBN_Client_Teardown();
-    
-    /* varibles to reset after use in tests so other tests are not affected */
-    use_wrap_connect_to_server = FALSE;
-    wrap_connect_to_server_return_value = INT_MIN;
-    wrap_exit_expected_status = INT_MIN;
-    use_wrap_CFE_SBN_Client_InitPipeTbl = FALSE;
-    pthread_create_errors_on_call_number = INT_MIN;
-    pthread_create_call_number = 0;
-    pthread_create_error_value = INT_MIN;
-    use_wrap_check_pthread_create_status = FALSE;
-    wrap_check_pthread_create_status_fail_call = FALSE;
-    check_pthread_create_status_call_number = 0;
-    check_pthread_create_status_errors_on_call_number = INT_MIN;
 }
 
 /*******************************************************************************
@@ -315,19 +179,6 @@ void Test_SBN_Client_Init_Success(void)
       "sbn_client_cpuId to 2");
 }
 /* end SBN_Client_Init Tests */
-
-
-// void Test_starter(void)
-// {
-//     /* Arrange */
-// 
-// 
-//     /* Act */ 
-// 
-// 
-//     /* Assert */
-// 
-// }
 
 
 /*************************************************/
