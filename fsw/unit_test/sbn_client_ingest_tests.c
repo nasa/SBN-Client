@@ -2,6 +2,23 @@
 
 /*******************************************************************************
 **
+**  SBN_Client_Ingest_Tests Setup and Teardown
+**
+*******************************************************************************/
+
+void SBN_Client_Ingest_Setup(void)
+{
+    SBN_Client_Setup();
+}
+
+void SBN_Client_Ingest_Teardown(void)
+{
+    SBN_Client_Teardown();
+}
+
+
+/*******************************************************************************
+**
 **  ingest_app_message Tests
 **
 *******************************************************************************/
@@ -358,18 +375,6 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
 //void Test_ingest_app_message_SuccessCausesPipeNumberOfMessagesToIncreaseBy1
 //void Test_ingest_app_message_FailsWhenNoPipesInUse
 /* end ingest_app_message Tests */
-
-void SBN_Client_Ingest_Setup(void)
-{
-    SBN_Client_Setup();
-}
-
-void SBN_Client_Ingest_Teardown(void)
-{
-    SBN_Client_Teardown();
-    
-    log_message_expected_string = "";
-}
 
 
 

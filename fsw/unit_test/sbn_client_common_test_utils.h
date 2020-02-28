@@ -7,7 +7,6 @@
  * Defines
  */
 
-
 #define MAX_ERROR_MESSAGE_SIZE  120
 #define CONNECT_ERROR_VALUE     -1
 

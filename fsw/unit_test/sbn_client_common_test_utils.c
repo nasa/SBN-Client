@@ -4,23 +4,18 @@
  * Globals
  */
 
-extern int sbn_client_sockfd;
-extern int sbn_client_cpuId;
-
-extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
-
-char em[MAX_ERROR_MESSAGE_SIZE];
+char error_message[MAX_ERROR_MESSAGE_SIZE];
 
 char *TestResultMsg(const char *format, ...)
 {
   va_list vl;
   va_start(vl, format);
    
-  vsnprintf(em, MAX_ERROR_MESSAGE_SIZE, format, vl);
+  vsnprintf(error_message, MAX_ERROR_MESSAGE_SIZE, format, vl);
   
   va_end(vl);
   
-  return em;
+  return error_message;
 }
 
 int Any_Negative_int(void)

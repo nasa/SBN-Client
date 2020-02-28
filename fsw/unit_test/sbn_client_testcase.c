@@ -2,6 +2,12 @@
 
 void add_connect_to_server_tests(void);
 
+/*******************************************************************************
+**
+**  SBN_Client_Tests Setup and Teardown
+**
+*******************************************************************************/
+
 void SBN_Client_Testcase_Setup(void)
 {
     SBN_Client_Setup();
@@ -16,10 +22,6 @@ void SBN_Client_Testcase_Setup(void)
 void SBN_Client_Testcase_Teardown(void)
 {
     SBN_Client_Teardown();
-    
-    log_message_expected_string = "";
-    log_message_was_called = FALSE;
-    perror_expected_string = "";
 }
 
 /*******************************************************************************

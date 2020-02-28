@@ -1,5 +1,11 @@
 #include "sbn_client_tests_includes.h"
 
+/*******************************************************************************
+**
+**  SBN_Client_Init_Tests Setup and Teardown
+**
+*******************************************************************************/
+
 void SBN_Client_Init_Setup(void)
 {
     SBN_Client_Setup();

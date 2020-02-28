@@ -1,5 +1,25 @@
 #include "sbn_client_tests_includes.h"
 
+
+
+/*******************************************************************************
+**
+**  SBN_Client_Minders_Tests Setup and Teardown
+**
+*******************************************************************************/
+
+void SBN_Client_Minders_Tests_Setup(void)
+{
+    SBN_Client_Setup();
+}
+
+void SBN_Client_Minders_Tests_Teardown(void)
+{
+    SBN_Client_Teardown();
+}
+
+
+
 void Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse(void)
 {
     /* Arrange */
@@ -104,16 +124,6 @@ void Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse(void)
     UtAssert_True(result == NULL, "SBN_Client_HeartbeatMinder returned NULL"); 
     UtAssert_True(recv_msg_call_number == recv_msg_discontiue_on_call_number,
       "recv_msg was called the expected number of times");
-}
-
-void SBN_Client_Minders_Tests_Setup(void)
-{
-    SBN_Client_Setup();
-}
-
-void SBN_Client_Minders_Tests_Teardown(void)
-{
-    SBN_Client_Teardown();
 }
 
 void SBN_Client_Minders_Tests_AddTestCases(void)

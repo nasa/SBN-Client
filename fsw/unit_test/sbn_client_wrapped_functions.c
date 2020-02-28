@@ -440,7 +440,11 @@ void SBN_CLient_Wrapped_Functions_Teardown(void)
     use_wrap_recv_msg = FALSE;
     wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
     recv_msg_call_number = 0;
-    recv_msg_discontiue_on_call_number = 0;    
+    recv_msg_discontiue_on_call_number = 0;
+    log_message_expected_string = "";
+    log_message_was_called = FALSE;
+    perror_expected_string = "";
+        
     
     /* function pointers */
     wrap_log_message_call_func = NULL;

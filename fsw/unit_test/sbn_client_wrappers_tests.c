@@ -6,6 +6,25 @@ const char *pipeName = "TestPipe";
 
 /*******************************************************************************
 **
+**  SBN_Client_Wrappers_Tests Setup and Teardown
+**
+*******************************************************************************/
+
+void SBN_Client_Wrappers_Tests_Setup(void)
+{
+    SBN_Client_Setup();
+}
+
+void SBN_Client_Wrappers_Tests_Teardown(void)
+{
+    SBN_Client_Teardown();  
+    
+    pipePtr = 0;
+    pipe_depth = 5;
+}
+
+/*******************************************************************************
+**
 **  __wrap_CFE_SB_CreatePipe Tests
 **
 *******************************************************************************/
@@ -622,22 +641,6 @@ void Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails(void)
     UtAssert_True(result = expectedResult, 
         "__wrap_CFE_SB_ZeroCopySend failed and returned -1");
 } /* end Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails */
-
-
-void SBN_Client_Wrappers_Tests_Setup(void)
-{
-    SBN_Client_Setup();
-}
-
-void SBN_Client_Wrappers_Tests_Teardown(void)
-{
-    SBN_Client_Teardown();  
-    
-    log_message_expected_string = "";
-    
-    pipePtr = 0;
-    pipe_depth = 5;
-}
 
 
 void SBN_Client_Wrappers_Tests_AddTestCases(void)
