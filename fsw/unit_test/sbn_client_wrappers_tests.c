@@ -311,7 +311,7 @@ void Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires(void)
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
     wrap_pthread_cond_timedwait_should_be_called = TRUE;
     use_wrap_pthread_cond_timedwait = TRUE;
-    wrap_pthread_cond_return_value = ETIMEDOUT;
+    wrap_pthread_cond_timedwait_return_value = ETIMEDOUT;
     use_wrap_CFE_SBN_Client_GetPipeIdx = TRUE;
     wrap_CFE_SBN_Client_GetPipeIdx_return_value = pipe_assigned;
 
@@ -434,13 +434,16 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout(void)
     uint previous_read_msg = Any_Pipe_Message_Location();
     uint current_read_msg = (previous_read_msg + 1) % 
       CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wraps to 0 if necessary */
-    uint number_of_messages = 0;
+    uint number_of_messages = 1;
       
     CFE_SB_MsgPtr_t buffer;
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
     int32 timeout = Any_Positive_int32();
     
     wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_cond_timedwait_should_be_called = TRUE;
+    use_wrap_pthread_cond_timedwait = TRUE;
+    wrap_pthread_cond_timedwait_return_value = 0;
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
 
     pipe->InUse = CFE_SBN_CLIENT_IN_USE;
@@ -459,10 +462,10 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout(void)
       "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
       result));
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, 
       TestResultMsg(
-      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
-      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      "PipeTbl[%d].NumberOfMessages should be 1", 
+      pipe_assigned, number_of_messages, PipeTbl[pipe_assigned].NumberOfMessages));
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
       TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 

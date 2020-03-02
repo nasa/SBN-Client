@@ -239,7 +239,8 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
     // Need to coordinate with the recv_msg thread... so locking?
     // Also, what about messages that get split? Is that an issue?
     uint8           pipe_idx;
-    int32           status = CFE_EVS_ERROR;
+    int32           beginning_status = CFE_EVS_ERROR;
+    int32           status = beginning_status;
     struct timespec enter_time;
     
     clock_gettime(CLOCK_MONOTONIC, &enter_time);
@@ -263,73 +264,79 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
             log_message("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
             status = CFE_SB_BAD_ARGUMENT;
         }
-        else
+        
+    } /* end if */
+    
+    if (status != CFE_SB_BAD_ARGUMENT)
+    {
+        int lock_mutex_status, wait_mutex_status, unlock_mutex_status;
+        CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
+    
+        lock_mutex_status = pthread_mutex_lock(&receive_mutex);
+        
+        /* Number of messages must be 2 or more otherwise no new messages are
+         * in the pipe */
+        if (pipe->NumberOfMessages < 2)
         {
-            int unlock_mutex_status;
-            CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
-        
-            pthread_mutex_lock(&receive_mutex);
-        
-            if (pipe->NumberOfMessages > 1)
-            {
-                /* must progress to next message in pipe because currently 
-                 * pointed to message is the last message that was read */
-                uint32 next_msg = (pipe->ReadMessage + 1) % 
-                  CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-                pipe->ReadMessage = next_msg;
-        
-                *BufPtr = (CFE_SB_MsgPtr_t)(&(pipe->Messages[next_msg]));
-        
-                pipe->NumberOfMessages -= 1;
-                status = CFE_SUCCESS;
-            }
-            else if (TimeOut == CFE_SB_POLL)
+            
+            if (TimeOut == CFE_SB_POLL)
             {
                 status = CFE_SB_NO_MESSAGE;
             }
-            else
+            else if (TimeOut == CFE_SB_PEND_FOREVER)
             {
-              int wait_result;
-              struct timespec future_timeout;
-        
-              /* set future time for timeout check to entry time + timeout 
-               * milliseconds */
-              future_timeout.tv_sec = enter_time.tv_sec;
-              future_timeout.tv_nsec = enter_time.tv_nsec + (TimeOut * pow(10, 6));
-        
-              /* when nsec greater than 1 second perform update to seconds and 
-               * nanoseconds */
-              if (future_timeout.tv_nsec >= pow(10, 9))
-              {
-                future_timeout.tv_sec += future_timeout.tv_nsec / pow(10, 9);
-                future_timeout.tv_nsec = future_timeout.tv_nsec % (long) pow(10, 9);
-              }
-        
-              wait_result = pthread_cond_timedwait(&received_condition, 
-                                                   &receive_mutex, 
-                                                   &future_timeout);
-        
-              if (wait_result == ETIMEDOUT)
-              {
-                status = CFE_SB_TIME_OUT;
-              } /* end if */
-        
-            } /* end if */
-        
-            unlock_mutex_status = pthread_mutex_unlock(&receive_mutex);
-        
-            if (unlock_mutex_status != 0)
+                wait_mutex_status = pthread_cond_wait(&received_condition, 
+                                                      &receive_mutex);
+            }
+            else /* Timout set to value */
             {
-              status =  CFE_EVS_ERROR;
+                int wait_result;
+                struct timespec future_timeout;
+          
+                /* set future time for timeout check to entry time + timeout 
+                 * milliseconds */
+                future_timeout.tv_sec = enter_time.tv_sec;
+                future_timeout.tv_nsec = enter_time.tv_nsec + (TimeOut * pow(10, 6));
+          
+                /* when nsec greater than 1 second perform update to seconds and 
+                 * nanoseconds */
+                if (future_timeout.tv_nsec >= pow(10, 9))
+                {
+                  future_timeout.tv_sec += future_timeout.tv_nsec / pow(10, 9);
+                  future_timeout.tv_nsec = future_timeout.tv_nsec % (long) pow(10, 9);
+                }
+          
+                wait_mutex_status = pthread_cond_timedwait(&received_condition, 
+                                                           &receive_mutex, 
+                                                           &future_timeout);
+          
+                if (wait_mutex_status == ETIMEDOUT)
+                {
+                  status = CFE_SB_TIME_OUT;
+                } /* end if */
+                
             } /* end if */
             
-            if (status != CFE_SUCCESS)
-            {
-                *BufPtr = NULL;
-            }
-        
         } /* end if */
-        
+    
+        if (status == beginning_status)
+        {
+            /* must progress to next message in pipe because currently 
+             * pointed to message is the last message that was read */
+            uint32 next_msg = (pipe->ReadMessage + 1) % 
+              CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+            pipe->ReadMessage = next_msg;
+    
+            *BufPtr = (CFE_SB_MsgPtr_t)(&(pipe->Messages[next_msg]));
+    
+            pipe->NumberOfMessages -= 1;
+            status = CFE_SUCCESS;
+        }
+        else
+        {
+            *BufPtr = NULL;
+        } /* end if */
+    
     } /* end if */
     
     return status;

@@ -17,7 +17,7 @@ boolean use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
 CFE_SB_MsgId_t wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
 boolean wrap_pthread_cond_timedwait_should_be_called = FALSE;
 boolean use_wrap_pthread_cond_timedwait = FALSE;
-int wrap_pthread_cond_return_value = 0;
+int wrap_pthread_cond_timedwait_return_value = 0;
 boolean use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
 uint8 wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
 boolean use_wrap_connect_to_server = FALSE;
@@ -151,7 +151,7 @@ int __wrap_pthread_cond_timedwait(pthread_cond_t * cond,
     
     if (use_wrap_pthread_cond_timedwait)
     {
-        result = wrap_pthread_cond_return_value;
+        result = wrap_pthread_cond_timedwait_return_value;
     }
     else
     {
@@ -421,7 +421,7 @@ void SBN_CLient_Wrapped_Functions_Teardown(void)
     wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
     wrap_pthread_cond_timedwait_should_be_called = FALSE;
     use_wrap_pthread_cond_timedwait = FALSE;
-    wrap_pthread_cond_return_value = 0;
+    wrap_pthread_cond_timedwait_return_value = 0;
     use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
     wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
     use_wrap_connect_to_server = FALSE;

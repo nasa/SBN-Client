@@ -60,7 +60,7 @@ extern boolean use_wrap_CFE_SBN_Client_GetMsgId;
 extern CFE_SB_MsgId_t wrap_CFE_SBN_Client_GetMsgId_return_value;
 extern boolean wrap_pthread_cond_timedwait_should_be_called;
 extern boolean use_wrap_pthread_cond_timedwait;
-extern int wrap_pthread_cond_return_value;
+extern int wrap_pthread_cond_timedwait_return_value;
 extern boolean use_wrap_CFE_SBN_Client_GetPipeIdx;
 extern uint8 wrap_CFE_SBN_Client_GetPipeIdx_return_value;
 extern boolean use_wrap_connect_to_server;
