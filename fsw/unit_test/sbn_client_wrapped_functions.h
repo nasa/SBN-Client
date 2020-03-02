@@ -4,6 +4,7 @@
 #include "sbn_client_tests_includes.h"
 
 int __real_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
+int __real_pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
 int __real_pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, 
   const struct timespec *);
 CFE_SB_MsgId_t __real_CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t);
@@ -23,6 +24,7 @@ int __wrap_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
 int __wrap_pthread_mutex_lock(pthread_mutex_t *);
 int __wrap_pthread_mutex_unlock(pthread_mutex_t *);
 int __wrap_pthread_cond_signal(pthread_cond_t *);
+int __wrap_pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
 int __wrap_pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *,
   const struct timespec *);
 CFE_SB_MsgId_t __wrap_CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t);
@@ -52,14 +54,21 @@ extern unsigned char *wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer;
 extern int wrap_CFE_SBN_CLIENT_ReadBytes_return_value;
 extern boolean wrap_pthread_mutex_lock_should_be_called;
 extern boolean wrap_pthread_mutex_lock_was_called;
+extern int wrap_pthread_mutex_lock_return_value;
 extern boolean wrap_pthread_mutex_unlock_should_be_called;
 extern boolean wrap_pthread_mutex_unlock_was_called;
+extern int wrap_pthread_mutex_unlock_return_value;
 extern boolean wrap_pthread_cond_signal_should_be_called;
 extern boolean wrap_pthread_cond_signal_was_called;
+extern boolean wrap_pthread_cond_wait_should_be_called;
+extern boolean wrap_pthread_cond_wait_was_called;
+extern boolean use_wrap_pthread_cond_wait;
+extern int wrap_pthread_cond_wait_return_value;
 extern boolean use_wrap_CFE_SBN_Client_GetMsgId;
 extern CFE_SB_MsgId_t wrap_CFE_SBN_Client_GetMsgId_return_value;
 extern boolean wrap_pthread_cond_timedwait_should_be_called;
 extern boolean use_wrap_pthread_cond_timedwait;
+extern boolean wrap_pthread_cond_timedwait_was_called;
 extern int wrap_pthread_cond_timedwait_return_value;
 extern boolean use_wrap_CFE_SBN_Client_GetPipeIdx;
 extern uint8 wrap_CFE_SBN_Client_GetPipeIdx_return_value;

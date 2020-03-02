@@ -135,6 +135,7 @@ WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_cond_signal
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SBN_Client_GetMsgId
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SBN_Client_GetPipeIdx
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_cond_timedwait
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_cond_wait
 endif
 
 #WARNINGS = -Wall -W -ansi -Werror -Wstrict-prototypes -Wundef
