@@ -424,66 +424,50 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestHasMessageInPipe(void)
 }
 
 
-void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestReceivesMessage(void)
+void Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout(void)
 {
     /* Arrange */
-    // unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
-    // size_t msgSize = sizeof(msg);
-    // CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();    
-    // uint msg_id_slot = Any_Message_Id_Slot();
-    // uint previous_read_msg = Any_Pipe_Message_Location();
-    // uint current_read_msg = (previous_read_msg + 1) % 
-    //   CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wraps to 0 if necessary */
-    // uint number_of_messages = 0; /* 2 to MAX */
-    // 
-    // CFE_SB_MsgPtr_t buffer;
-    // CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
-    // int32 timeout = Any_Positive_int32();
-    // 
-    // wrap_pthread_mutex_lock_should_be_called = TRUE;
-    // wrap_pthread_mutex_unlock_should_be_called = TRUE;
-    // wrap_pthread_cond_timedwait_should_be_called = TRUE;
-    // use_wrap_pthread_cond_timedwait = TRUE;
-    // wrap_pthread_cond_return_value = 0;
-    // use_wrap_CFE_SBN_Client_GetPipeIdx = TRUE;
-    // wrap_CFE_SBN_Client_GetPipeIdx_return_value = pipe_assigned;
-    // 
-    // pipe->InUse = CFE_SBN_CLIENT_IN_USE;
-    // pipe->PipeId = pipe_assigned;
-    // pipe->SubscribedMsgIds[msg_id_slot] = 0x1881;
-    // pipe->NumberOfMessages = number_of_messages;
-    // pipe->ReadMessage = previous_read_msg;
-    // 
-    // //memcpy(pipe->Messages[current_read_msg], msg, msgSize);
-    // 
-    // /* Act */ 
-    // int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
-    // 
-    // /* Assert */
-    // int i;
-    // 
-    // UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-    //   "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
-    //   result));
-    // 
-    // for(i = 0; i < msgSize; i++)
-    // {
-    //   UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
-    //     Messages[current_read_msg][i], TestResultMsg(
-    //     "buffer[%d] should = %d and was %d", i, 
-    //     PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
-    //     ((unsigned char *)buffer)[i]));
-    // }
-    // 
-    // UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-    //   TestResultMsg(
-    //   "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
-    //   pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    // UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-    //   TestResultMsg(
-    //   "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
-    //   pipe_assigned, current_read_msg, previous_read_msg, 
-    //   PipeTbl[pipe_assigned].ReadMessage));
+    size_t msgSize = Any_Message_Size();
+    unsigned char *msg = Any_Pipe_Message(msgSize);
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();    
+    uint msg_id_slot = Any_Message_Id_Slot();
+    uint previous_read_msg = Any_Pipe_Message_Location();
+    uint current_read_msg = (previous_read_msg + 1) % 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wraps to 0 if necessary */
+    uint number_of_messages = 0;
+      
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    int32 timeout = Any_Positive_int32();
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
+
+    pipe->InUse = CFE_SBN_CLIENT_IN_USE;
+    pipe->PipeId = pipe_assigned;
+    pipe->SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
+    pipe->NumberOfMessages = number_of_messages;
+    pipe->ReadMessage = previous_read_msg;
+    
+    memcpy(pipe->Messages[current_read_msg], msg, msgSize);
+    
+    /* Act */ 
+    int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+
+    /* Assert */
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result));
+    UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));
 }
 
 void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
@@ -863,9 +847,9 @@ void SBN_Client_Wrappers_Tests_AddTestCases(void)
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestHasMessageInPipe, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestHasMessageInPipe");
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestReceivesMessage, 
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
-      "Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestReceivesMessage");
+      "Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout");
     // UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Wrappers_Tests_Setup, 
     //   SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
     // UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, 
