@@ -9,14 +9,21 @@ unsigned char *wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
 int wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
 boolean wrap_pthread_mutex_lock_should_be_called = FALSE;
 boolean wrap_pthread_mutex_lock_was_called = FALSE;
+int wrap_pthread_mutex_lock_return_value = 0;
 boolean wrap_pthread_mutex_unlock_should_be_called = FALSE;
 boolean wrap_pthread_mutex_unlock_was_called = FALSE;
+int wrap_pthread_mutex_unlock_return_value = 0;
+boolean wrap_pthread_cond_wait_should_be_called = FALSE;
+boolean wrap_pthread_cond_wait_was_called = FALSE;
+boolean use_wrap_pthread_cond_wait = FALSE;
+int wrap_pthread_cond_wait_return_value = INT_MIN;
 boolean wrap_pthread_cond_signal_should_be_called = FALSE;
 boolean wrap_pthread_cond_signal_was_called = FALSE;
 boolean use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
 CFE_SB_MsgId_t wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
 boolean wrap_pthread_cond_timedwait_should_be_called = FALSE;
 boolean use_wrap_pthread_cond_timedwait = FALSE;
+boolean wrap_pthread_cond_timedwait_was_called = FALSE;
 int wrap_pthread_cond_timedwait_return_value = 0;
 boolean use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
 uint8 wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
@@ -95,13 +102,11 @@ int __wrap_pthread_mutex_lock(pthread_mutex_t *mutex)
         UtAssert_Failed("pthread_mutex_lock called, but should not have been");
     }
     
-    return 0;
+    return wrap_pthread_mutex_lock_return_value;
 }
 
 int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-    int result;
-    
     wrap_pthread_mutex_unlock_was_called = TRUE;
     
     if (!wrap_pthread_mutex_unlock_should_be_called)
@@ -115,14 +120,9 @@ int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
             "pthread_mutex_unlock called before calling pthread_mutex_lock");
         }
         
-        result = PTHREAD_MUTEX_UNLOCK_FAILURE;
-    }
-    else
-    {
-        result =  PTHREAD_MUTEX_UNLOCK_SUCCESS;
     }
     
-    return result;
+    return wrap_pthread_mutex_unlock_return_value;
 }
 
 int __wrap_pthread_cond_signal(pthread_cond_t *cond)
@@ -138,10 +138,36 @@ int __wrap_pthread_cond_signal(pthread_cond_t *cond)
     return 0;
 }
 
+int __wrap_pthread_cond_wait(pthread_cond_t * cond, pthread_mutex_t * mutex)
+{
+    int result;
+    
+    wrap_pthread_cond_wait_was_called = TRUE;
+    
+    if (!wrap_pthread_cond_wait_should_be_called)
+    {
+        UtAssert_Failed(
+          "pthread_cond_wait was called, but should not have been");
+    }
+    
+    if (use_wrap_pthread_cond_wait)
+    {
+        result = wrap_pthread_cond_wait_return_value;
+    }
+    else
+    {
+        result = __real_pthread_cond_wait(cond, mutex);
+    }
+    
+    return result;
+}
+
 int __wrap_pthread_cond_timedwait(pthread_cond_t * cond,
   pthread_mutex_t * mutex, const struct timespec * abstime)
 {
     int result;
+    
+    wrap_pthread_cond_timedwait_was_called = TRUE;
     
     if (!wrap_pthread_cond_timedwait_should_be_called)
     {
@@ -413,14 +439,21 @@ void SBN_CLient_Wrapped_Functions_Teardown(void)
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
     wrap_pthread_mutex_lock_should_be_called = FALSE;
     wrap_pthread_mutex_lock_was_called = FALSE;
+    wrap_pthread_mutex_lock_return_value = 0;
     wrap_pthread_mutex_unlock_should_be_called = FALSE;
     wrap_pthread_mutex_unlock_was_called = FALSE;
+    wrap_pthread_mutex_unlock_return_value = 0;
+    wrap_pthread_cond_wait_should_be_called = FALSE;
+    wrap_pthread_cond_wait_was_called = FALSE;
+    use_wrap_pthread_cond_wait = FALSE;
+    wrap_pthread_cond_wait_return_value = INT_MIN;
     wrap_pthread_cond_signal_should_be_called = FALSE;
     wrap_pthread_cond_signal_was_called = FALSE;
     use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
     wrap_pthread_cond_timedwait_should_be_called = FALSE;
     use_wrap_pthread_cond_timedwait = FALSE;
+    wrap_pthread_cond_timedwait_was_called = FALSE;
     wrap_pthread_cond_timedwait_return_value = 0;
     use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
     wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;

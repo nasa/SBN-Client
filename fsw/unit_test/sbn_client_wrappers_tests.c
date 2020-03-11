@@ -231,7 +231,7 @@ void Test__wrap_CFE_SB_RcvMsg_FailsBufferPointerIsNull(void)
     UtAssert_True(log_message_was_called, "log_message was called");
 } /* end Test__wrap_CFE_SB_RcvMsg_FailsBufferPointerIsNull */
 
-void Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne(void)
+void Test__wrap_CFE_SB_RcvMsg_FailsTimeoutLessThanNegativeOne(void)
 {
     /* Arrange */
     CFE_SB_MsgPtr_t buffer;
@@ -248,7 +248,7 @@ void Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne(void)
     UtAssert_True(result == CFE_SB_BAD_ARGUMENT,
       "__wrap_CFE_SB_RcvMsg returned CFE_SB_BAD_ARGUMENT");
     UtAssert_True(log_message_was_called, "log_message was called");
-} /* end Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne */
+} /* end Test__wrap_CFE_SB_RcvMsg_FailsTimeoutLessThanNegativeOne */
 
 void Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx(void)
 {
@@ -273,6 +273,33 @@ void Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx(void)
     UtAssert_True(log_message_was_called, "log_message was called");
 } /* end Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx */
 
+void Test__wrap_CFE_SB_RcvMsg_FailPthreadMutexLockFailure(void)
+{
+    /* Arrange */
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
+    int32 timeout = CFE_SB_POLL;
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    int32 result;
+    
+    pipe->NumberOfMessages = 1;
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_lock_return_value = Any_int_Except(0);
+    use_wrap_CFE_SBN_Client_GetPipeIdx = TRUE;
+    wrap_CFE_SBN_Client_GetPipeIdx_return_value = pipe_assigned;
+    
+    /* Act */
+    result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SB_PIPE_RD_ERR, 
+      "__wrap_CFE_SB_RcvMsg returned CFE_SB_PIPE_RD_ERR, mutex lock fail");
+    UtAssert_True(buffer == NULL, "__wrap_CFE_SB_RcvMsg set *BufPtr to NULL");
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+}
+
 void Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage(void)
 {
     /* Arrange */
@@ -282,7 +309,7 @@ void Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage(void)
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
     int32 result;
     
-    pipe->NumberOfMessages = 0;
+    pipe->NumberOfMessages = 1;
     
     wrap_pthread_mutex_lock_should_be_called = TRUE;
     wrap_pthread_mutex_unlock_should_be_called = TRUE;
@@ -296,6 +323,44 @@ void Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage(void)
     UtAssert_True(result == CFE_SB_NO_MESSAGE, 
       "__wrap_CFE_SB_RcvMsg returned CFE_SB_NO_MESSAGE, pipe empty, poll rqst");
     UtAssert_True(buffer == NULL, "__wrap_CFE_SB_RcvMsg set *BufPtr to NULL");
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+      "pthread_mutex_unlock was called");
+}
+
+void Test__wrap_CFE_SB_RcvMsg_FailsPendWhenWaitReturnsError(void)
+{
+    /* Arrange */
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();
+    int32 timeout = CFE_SB_PEND_FOREVER;
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    int32 result;
+
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
+    wrap_pthread_cond_wait_should_be_called = TRUE;
+    use_wrap_pthread_cond_wait = TRUE;
+    wrap_pthread_cond_timedwait_return_value = Any_int_Except(0);
+    use_wrap_CFE_SBN_Client_GetPipeIdx = TRUE;
+    wrap_CFE_SBN_Client_GetPipeIdx_return_value = pipe_assigned;
+
+    pipe->NumberOfMessages = 1;
+
+    /* Act */
+    result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+
+    /* Assert */
+    UtAssert_True(result == CFE_SB_PIPE_RD_ERR, 
+      "__wrap_CFE_SB_RcvMsg returned CFE_SB_PIPE_RD_ERR, pipe empty, pend fail");
+    UtAssert_True(buffer == NULL, "__wrap_CFE_SB_RcvMsg set *BufPtr to NULL");
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+    UtAssert_True(wrap_pthread_cond_wait_was_called, 
+      "pthread_cond_wait was called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+      "pthread_mutex_unlock was called");
 }
 
 void Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires(void)
@@ -315,18 +380,22 @@ void Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires(void)
     use_wrap_CFE_SBN_Client_GetPipeIdx = TRUE;
     wrap_CFE_SBN_Client_GetPipeIdx_return_value = pipe_assigned;
 
-    pipe->NumberOfMessages = 0;
+    pipe->NumberOfMessages = 1;
 
     /* Act */
     result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
 
     /* Assert */
     UtAssert_True(result == CFE_SB_TIME_OUT, 
-      "__wrap_CFE_SB_RcvMsg returned CFE_SB_NO_MESSAGE, pipe empty, poll rqst");
+      "__wrap_CFE_SB_RcvMsg returned CFE_SB_TIME_OUT, pipe empty, timed out");
     UtAssert_True(buffer == NULL, "__wrap_CFE_SB_RcvMsg set *BufPtr to NULL");
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+    UtAssert_True(wrap_pthread_cond_timedwait_was_called, 
+      "pthread_cond_timedwait was called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+      "pthread_mutex_unlock was called");
 }
-
-//TODO: test CFE_SB_PIPE_RD_ERR  = an unexpected queue read error occurred
 
 void Test__wrap_CFE_SB_RcvMsg_SuccessPollRequestHasMessageInPipe(void)
 {
@@ -373,10 +442,64 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPollRequestHasMessageInPipe(void)
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
       PipeTbl[pipe_assigned].ReadMessage));
+      UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+        "pthread_mutex_lock was called");
+      UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+        "pthread_mutex_unlock was called");
 }
 
+void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutPendMessageAlreadyInPipe(void)
+{
+    /* Arrange */
+    size_t msgSize = Any_Message_Size();
+    unsigned char *msg = Any_Pipe_Message(msgSize);
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();    
+    uint msg_id_slot = Any_Message_Id_Slot();
+    uint previous_read_msg = Any_Pipe_Message_Location();
+    uint current_read_msg = (previous_read_msg + 1) % 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wraps to 0 if necessary */
+    uint number_of_messages = rand() % 
+      (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1) + 2; /* 2 to MAX */
+      
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    int32 timeout = CFE_SB_PEND_FOREVER;
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
 
-void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestHasMessageInPipe(void)
+    pipe->InUse = CFE_SBN_CLIENT_IN_USE;
+    pipe->PipeId = pipe_assigned;
+    pipe->SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
+    pipe->NumberOfMessages = number_of_messages;
+    pipe->ReadMessage = previous_read_msg;
+    
+    memcpy(pipe->Messages[current_read_msg], msg, msgSize);
+    
+    /* Act */ 
+    int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+
+    /* Assert */
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result));
+    UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+      "pthread_mutex_unlock was called");
+}
+
+void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutValueMessageAlreadyInPipe(void)
 {
     /* Arrange */
     size_t msgSize = Any_Message_Size();
@@ -420,7 +543,65 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestHasMessageInPipe(void)
       TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));      
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+      "pthread_mutex_unlock was called");}
+
+void Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageDuringWait(void)
+{
+    /* Arrange */
+    size_t msgSize = Any_Message_Size();
+    unsigned char *msg = Any_Pipe_Message(msgSize);
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();    
+    uint msg_id_slot = Any_Message_Id_Slot();
+    uint previous_read_msg = Any_Pipe_Message_Location();
+    uint current_read_msg = (previous_read_msg + 1) % 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wraps to 0 if necessary */
+    uint number_of_messages = 1;
+      
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    int32 timeout = CFE_SB_PEND_FOREVER;
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_cond_wait_should_be_called = TRUE;
+    use_wrap_pthread_cond_wait = TRUE;
+    wrap_pthread_cond_wait_return_value = 0;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
+
+    pipe->InUse = CFE_SBN_CLIENT_IN_USE;
+    pipe->PipeId = pipe_assigned;
+    pipe->SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
+    pipe->NumberOfMessages = number_of_messages;
+    pipe->ReadMessage = previous_read_msg;
+    
+    memcpy(pipe->Messages[current_read_msg], msg, msgSize);
+    
+    /* Act */ 
+    int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+
+    /* Assert */
+    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result));
+    UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should be 1", 
+      pipe_assigned, number_of_messages, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
       PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+    UtAssert_True(wrap_pthread_cond_wait_was_called, 
+      "pthread_cond_wait was called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+      "pthread_mutex_unlock was called");
 }
 
 
@@ -471,6 +652,64 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout(void)
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
       PipeTbl[pipe_assigned].ReadMessage));
+    UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+      "pthread_mutex_lock was called");
+    UtAssert_True(wrap_pthread_cond_timedwait_was_called, 
+      "pthread_cond_timedwait was called");
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+      "pthread_mutex_unlock was called");
+}
+
+void Test__wrap_CFE_SB_RcvMsg_FailsPthreadMutexUnlockFailure(void)
+{
+    /* Arrange */
+    size_t msgSize = Any_Message_Size();
+    unsigned char *msg = Any_Pipe_Message(msgSize);
+    CFE_SB_PipeId_t pipe_assigned = Any_CFE_SB_PipeId_t();    
+    uint msg_id_slot = Any_Message_Id_Slot();
+    uint previous_read_msg = Any_Pipe_Message_Location();
+    uint current_read_msg = (previous_read_msg + 1) % 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wraps to 0 if necessary */
+    uint number_of_messages = rand() % 
+      (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1) + 2; /* 2 to MAX */
+      
+    CFE_SB_MsgPtr_t buffer;
+    CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
+    int32 timeout = CFE_SB_POLL;
+    
+    wrap_pthread_mutex_lock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_should_be_called = TRUE;
+    wrap_pthread_mutex_unlock_return_value = Any_int_Except(0);
+
+    pipe->InUse = CFE_SBN_CLIENT_IN_USE;
+    pipe->PipeId = pipe_assigned;
+    pipe->SubscribedMsgIds[msg_id_slot] = msg[0] << 8 | msg[1];
+    pipe->NumberOfMessages = number_of_messages;
+    pipe->ReadMessage = previous_read_msg;
+    
+    memcpy(pipe->Messages[current_read_msg], msg, msgSize);
+    
+    /* Act */ 
+    int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
+
+    /* Assert */
+    UtAssert_True(result == CFE_SB_PIPE_RD_ERR, TestResultMsg(
+      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SB_PIPE_RD_ERR, 
+      result));
+    UtAssert_True(buffer == NULL, "Buffer returned points to NULL");    
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
+      TestResultMsg(
+      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
+      TestResultMsg(
+      "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
+      pipe_assigned, current_read_msg, previous_read_msg, 
+      PipeTbl[pipe_assigned].ReadMessage));
+      UtAssert_True(wrap_pthread_mutex_lock_was_called, 
+        "pthread_mutex_lock was called");
+      UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
+        "pthread_mutex_unlock was called");
 }
 
 void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
@@ -832,27 +1071,42 @@ void SBN_Client_Wrappers_Tests_AddTestCases(void)
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailsBufferPointerIsNull, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsg_FailsBufferPointerIsNull");
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne, 
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailsTimeoutLessThanNegativeOne, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
-      "Test__wrap_CFE_SB_RcvMsgFailsTimeoutLessThanNegativeOne");
+      "Test__wrap_CFE_SB_RcvMsg_FailsTimeoutLessThanNegativeOne");
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsg_FailsInvalidPipeIdx");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailPthreadMutexLockFailure, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsg_FailPthreadMutexLockFailure");
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsg_PollRequestReturnsWhenNoMessage");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailsPendWhenWaitReturnsError, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsg_FailsPendWhenWaitReturnsError");
     UtTest_Add(Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsgTimeoutReturnsNoMessageAfterTimeoutExpires");
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPollRequestHasMessageInPipe, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsg_SuccessPollRequestHasMessageInPipe");
-    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestHasMessageInPipe, 
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutPendMessageAlreadyInPipe, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
-      "Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutRequestHasMessageInPipe");
+      "Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutPendMessageAlreadyInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutValueMessageAlreadyInPipe, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutValueMessageAlreadyInPipe");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageDuringWait, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageDuringWait");
     UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout, 
       SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
       "Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout");
+    UtTest_Add(Test__wrap_CFE_SB_RcvMsg_FailsPthreadMutexUnlockFailure, 
+      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
+      "Test__wrap_CFE_SB_RcvMsg_FailsPthreadMutexUnlockFailure");
     // UtTest_Add(Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull, SBN_Client_Wrappers_Tests_Setup, 
     //   SBN_Client_Wrappers_Tests_Teardown, "Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull");
     // UtTest_Add(Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe, 
