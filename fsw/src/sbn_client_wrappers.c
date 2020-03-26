@@ -5,13 +5,13 @@
 
 #include "sbn_client.h"
 #include "sbn_client_utils.h"
+#include "sbn_client_wrappers.h"
 
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 extern int sbn_client_sockfd;
 extern int sbn_client_cpuId;
 extern pthread_mutex_t receive_mutex;
 extern pthread_cond_t  received_condition;
-// Pipe creation / subscription
 
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
@@ -71,7 +71,7 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
     }/* end if */
         
     return status;
-}
+} /* end __wrap_CFE_SB_CreatePipe */
 
 int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 {
@@ -103,7 +103,7 @@ int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
     //TODO: if we get here no pipes matched, error
     
     return -2;
-}
+} /* end __wrap_CFE_SB_DeletePipe */
 
 int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
@@ -154,14 +154,14 @@ int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
     SendSubToSbn(SBN_SUB_MSG, MsgId, QoS);
     
     return CFE_SUCCESS;
-}
+} /* end __wrap_CFE_SB_Subscribe */
 
 int32 __wrap_CFE_SB_SubscribeEx(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId, 
                                 CFE_SB_Qos_t Quality, uint16 MsgLim)
 {
     printf ("SBN_CLIENT: ERROR CFE_SB_SubscribeEx not yet implemented\n");
     return -1;
-}
+} /* end __wrap_CFE_SB_Subscribe */
 
 int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t  MsgId, 
                                    CFE_SB_PipeId_t PipeId, 
@@ -169,20 +169,20 @@ int32 __wrap_CFE_SB_SubscribeLocal(CFE_SB_MsgId_t  MsgId,
 {
     printf ("SBN_CLIENT: ERROR CFE_SB_SubscribeLocal not yet implemented\n");
     return -1;
-}
+} /* end __wrap_CFE_SB_SubscribeLocal */
 
 int32 __wrap_CFE_SB_Unsubscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
     printf ("SBN_CLIENT: ERROR CFE_SB_Unsubscribe not yet implemented\n");
     return -1;
-}
+} /* end __wrap_CFE_SB_Unsubscribe */
 
 int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId, 
                                      CFE_SB_PipeId_t PipeId)
 {
     printf ("SBN_CLIENT: ERROR CFE_SB_UnsubscribeLocal not yet implemented\n");
     return -1;
-}
+} /* end __wrap_CFE_SB_UnsubscribeLocal */
 
 uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 {
@@ -228,7 +228,7 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
     free(buffer);
 
     return CFE_SUCCESS;
-}
+} /* end __wrap_CFE_SB_SendMsg */
 
 int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, 
                            int32 TimeOut)
@@ -374,5 +374,5 @@ int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr,
 {
     printf ("SBN_CLIENT: ERROR CFE_SB_ZeroCopySend not yet implemented\n");
     return -1;
-}
+} /* end __wrap_CFE_SB_ZeroCopySend */
 
