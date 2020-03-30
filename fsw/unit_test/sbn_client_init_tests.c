@@ -25,22 +25,17 @@ void SBN_Client_Init_Teardown(void)
 void Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails(void)
 {
     /* Arrange */
+    int32 result;
+    int32 expected_result = SBN_CLIENT_BAD_SOCK_FD_EID;
     /* connect_to_server call control */
     use_wrap_connect_to_server = TRUE;
     wrap_connect_to_server_return_value = Any_Negative_int();
-    wrap_exit_expected_status = SBN_CLIENT_BAD_SOCK_FD_EID;
 
     /* Act */ 
-    int32 result = SBN_Client_Init();
+    result = SBN_Client_Init();
 
     /* Assert */
-    /* Note during a live run of this function it will exit(sbn_client_sockfd); 
-     * however during a test, exit() is wrapped and the value passed to it is 
-     * checked in the wrapped function.  The check for a result is ONLY put here
-     * to show that the Status gets set correctly in the function.  If the 
-     * exit() assert in the wrapper passes, it shows that the function will 
-     * correctly exit the operation */
-    UtAssert_True(result == wrap_exit_expected_status, 
+    UtAssert_True(result == expected_result, 
         TestResultMsg("SBN_Client_Init result should be %d, but was %d", 
         SBN_CLIENT_BAD_SOCK_FD_EID, result));
 }
@@ -48,6 +43,8 @@ void Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails(void)
 void Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails(void)
 {
     /* Arrange */
+    int32 result;
+    int32 expected_result = SBN_CLIENT_HEART_THREAD_CREATE_EID;
     /* connect_to_server call control */
     use_wrap_connect_to_server = TRUE;
     wrap_connect_to_server_return_value = Any_Positive_int_Or_Zero();
@@ -62,15 +59,12 @@ void Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails(void)
     use_wrap_check_pthread_create_status = TRUE;
     wrap_check_pthread_create_status_fail_call = TRUE;
     check_pthread_create_status_errors_on_call_number = FIRST_CALL;
-    
-    /* set expected exit value */
-    wrap_exit_expected_status = SBN_CLIENT_HEART_THREAD_CREATE_EID;
 
     /* Act */ 
-    int32 result = SBN_Client_Init();
+    result = SBN_Client_Init();
 
     /* Assert */
-    UtAssert_True(result == wrap_exit_expected_status, 
+    UtAssert_True(result == expected_result, 
         TestResultMsg("SBN_Client_Init result should be %d, but was %d", 
         SBN_CLIENT_HEART_THREAD_CREATE_EID, result));
     UtAssert_True(sbn_client_sockfd == wrap_connect_to_server_return_value,
@@ -83,6 +77,8 @@ void Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails(void)
 void Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails(void)
 {
     /* Arrange */
+    int32 result;
+    int32 expected_result = SBN_CLIENT_RECEIVE_THREAD_CREATE_EID;
     /* connect_to_server call control */
     use_wrap_connect_to_server = TRUE;
     wrap_connect_to_server_return_value = Any_Positive_int_Or_Zero();
@@ -97,15 +93,12 @@ void Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails(void)
     use_wrap_check_pthread_create_status = TRUE;
     wrap_check_pthread_create_status_fail_call = TRUE;
     check_pthread_create_status_errors_on_call_number = SECOND_CALL;
-    
-    /* set expected exit value */
-    wrap_exit_expected_status = SBN_CLIENT_RECEIVE_THREAD_CREATE_EID;
 
     /* Act */ 
-    int32 result = SBN_Client_Init();
+    result = SBN_Client_Init();
 
     /* Assert */
-    UtAssert_True(result == SBN_CLIENT_RECEIVE_THREAD_CREATE_EID, 
+    UtAssert_True(result == expected_result, 
         TestResultMsg("SBN_Client_Init result should be %d, but was %d", 
         SBN_CLIENT_RECEIVE_THREAD_CREATE_EID, result));
     UtAssert_True(sbn_client_sockfd == wrap_connect_to_server_return_value,

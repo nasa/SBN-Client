@@ -121,7 +121,6 @@ WRAP_LOPT :=$(WRAP_LOPT),-wrap,read
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,sleep
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,log_message
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,perror
-WRAP_LOPT :=$(WRAP_LOPT),-wrap,exit
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,pthread_create
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,connect_to_server
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SBN_Client_InitPipeTbl

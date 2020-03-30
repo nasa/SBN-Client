@@ -60,7 +60,6 @@ int32 SBN_Client_Init(void)
     if (status != SBN_CLIENT_SUCCESS)
     {
         printf("SBN_Client_Init error %d\n", status);
-        exit(status);
     }/* end if */ 
     
     return status;
