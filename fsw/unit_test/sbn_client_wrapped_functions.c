@@ -1,4 +1,4 @@
-#include "sbn_client_tests_includes.h"
+#include "sbn_client_wrapped_functions.h"
 
 #define PTHREAD_MUTEX_UNLOCK_SUCCESS  0
 #define PTHREAD_MUTEX_UNLOCK_FAILURE  EPERM
