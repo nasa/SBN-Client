@@ -6,12 +6,12 @@
 **
 *******************************************************************************/
 
-void SBN_Client_Testcase_Setup(void)
+void SBN_Client_Tests_Setup(void)
 {
     SBN_Client_Setup();
 }
 
-void SBN_Client_Testcase_Teardown(void)
+void SBN_Client_Tests_Teardown(void)
 {
     SBN_Client_Teardown();
 }
@@ -118,19 +118,19 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
 
 /*************************************************/
 
-void SBN_Client_Test_AddTestCases(void)
+void UtTest_Setup(void)
 {
     /* CFE_SBN_Client_InitPipeTbl Tests */
     UtTest_Add(Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes, 
-      SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
       "Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes");
     
     /* CFE_SBN_Client_GetAvailPipeIdx Tests*/
     UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, 
-      SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
       "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
     UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, 
-      SBN_Client_Testcase_Setup, SBN_Client_Testcase_Teardown, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
       "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
 
 }

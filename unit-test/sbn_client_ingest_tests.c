@@ -378,7 +378,7 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
 
 
 
-void SBN_Client_Ingest_Tests_AddTestCases(void)
+void UtTest_Setup(void)
 {
     /* ingest_app_message Tests */
     UtTest_Add(Test_ingest_app_message_ReadBytesFails, 

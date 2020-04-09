@@ -142,7 +142,7 @@ void Test_SBN_Client_Init_Success(void)
 
 /*************************************************/
 
-void SBN_Client_Init_Tests_AddTestCases(void)
+void UtTest_Setup(void)
 {    
     /* SBN_Client_Init Tests */
     UtTest_Add(Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails, 

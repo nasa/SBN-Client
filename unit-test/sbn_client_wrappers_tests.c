@@ -190,8 +190,8 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
     for (i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
     {
         PipeTbl[pipe_id].SubscribedMsgIds[i] = other_msg_id + i;
-        printf("PipeTbl[%d].SubscribedMsgIds[%d] = %d\n", pipe_id, i, 
-          PipeTbl[pipe_id].SubscribedMsgIds[i]);
+        // printf("PipeTbl[%d].SubscribedMsgIds[%d] = %d\n", pipe_id, i, 
+        //   PipeTbl[pipe_id].SubscribedMsgIds[i]);
     }
     
     /* Act */ 
@@ -777,16 +777,16 @@ void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
     int msgSize = sizeof(msg);
     int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
-    printf("pipe_assigned = %d\n", pipe_assigned);
+    //printf("pipe_assigned = %d\n", pipe_assigned);
     int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
-    printf("msg_id_slot = %d\n", msg_id_slot);
+    //printf("msg_id_slot = %d\n", msg_id_slot);
     int previous_read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    printf("previous_read_msg = %d\n", previous_read_msg);
+    //printf("previous_read_msg = %d\n", previous_read_msg);
     int current_read_msg = (previous_read_msg + 1) % 
       CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
-    printf("current_read_msg = %d\n", current_read_msg);
+    //printf("current_read_msg = %d\n", current_read_msg);
     int num_msg = (rand() % (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1)) + 2; 
-    printf("num_msg = %d\n", num_msg);
+    //printf("num_msg = %d\n", num_msg);
     CFE_SB_MsgPtr_t buffer;
 
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
@@ -836,16 +836,16 @@ void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
     int msgSize = sizeof(msg);
     int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
-    printf("pipe_assigned = %d\n", pipe_assigned);
+    //printf("pipe_assigned = %d\n", pipe_assigned);
     int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
-    printf("msg_id_slot = %d\n", msg_id_slot);
+    //printf("msg_id_slot = %d\n", msg_id_slot);
     int previous_read_msg = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
-    printf("previous_read_msg = %d\n", previous_read_msg);
+    //printf("previous_read_msg = %d\n", previous_read_msg);
     int current_read_msg = (previous_read_msg + 1) % 
     CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH; /* auto wrap to 0 if necessary */
-    printf("current_read_msg = %d\n", current_read_msg);
+    //printf("current_read_msg = %d\n", current_read_msg);
     int num_msg = 2; 
-    printf("num_msg = %d\n", num_msg);
+    //printf("num_msg = %d\n", num_msg);
     CFE_SB_MsgPtr_t buffer;
 
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
@@ -895,15 +895,15 @@ void Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
     unsigned char msg[8] = {0x18, 0x81, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00};
     int msgSize = sizeof(msg);
     int pipe_assigned = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;
-    printf("pipe_assigned = %d\n", pipe_assigned);
+    //printf("pipe_assigned = %d\n", pipe_assigned);
     int msg_id_slot = rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
-    printf("msg_id_slot = %d\n", msg_id_slot);
+    //printf("msg_id_slot = %d\n", msg_id_slot);
     int previous_read_msg = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1;
-    printf("previous_read_msg = %d\n", previous_read_msg);
+    //printf("previous_read_msg = %d\n", previous_read_msg);
     int current_read_msg = 0; /* auto wrap to 0 if necessary */
-    printf("current_read_msg = %d\n", current_read_msg);
+    //printf("current_read_msg = %d\n", current_read_msg);
     int num_msg = (rand() % (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1)) + 2; 
-    printf("num_msg = %d\n", num_msg);
+    //printf("num_msg = %d\n", num_msg);
     CFE_SB_MsgPtr_t buffer;
 
     CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_assigned];
@@ -1034,7 +1034,7 @@ void Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails(void)
 } /* end Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails */
 
 
-void SBN_Client_Wrappers_Tests_AddTestCases(void)
+void UtTest_Setup(void)
 {
     /* Wrap_CFE_SB_CreatePipe Tests */
     /* create pipe tests will not run with SBN_Client_Init enabled, 

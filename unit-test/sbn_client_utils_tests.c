@@ -490,7 +490,7 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
 
 /*************************************************/
 
-void SBN_Client_Utils_Tests_AddTestCases(void)
+void UtTest_Setup(void)
 {
     // UtGroupSetup_Add(Test_Group_Setup);
     // UtGroupTeardown_Add(Test_Group_Teardown);

@@ -199,11 +199,7 @@ void SBN_Client_Setup(void)
 
     /* Global UT CFE resets -- 
     * NOTE: not sure if these are required for sbn_client */
-    Ut_OSAPI_Reset();
-    Ut_CFE_SB_Reset();
-    Ut_CFE_ES_Reset();
-    Ut_CFE_EVS_Reset();
-    Ut_CFE_TBL_Reset();
+    UT_ResetState(0);
     
     SBN_CLient_Wrapped_Functions_Setup();
 } /* end SBN_Client_Setup */
