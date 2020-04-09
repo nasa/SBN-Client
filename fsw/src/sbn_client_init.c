@@ -3,11 +3,8 @@
 #include "sbn_client.h"
 #include "sbn_client_minders.h"
 #include "sbn_client_utils.h"
+#include "sbn_client_defs.h"
 
-/* Refer to sbn_cont_tbl.c to make sure port and ip_addr match
- * SBN is running here: <- Should be in the platform config */
-#define SBN_CLIENT_PORT    1234
-#define SBN_CLIENT_IP_ADDR "127.0.0.1"
 
 extern int sbn_client_sockfd;
 extern int sbn_client_cpuId;
