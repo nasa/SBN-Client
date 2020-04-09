@@ -89,6 +89,7 @@ UT_OBJS += sbn_client_testcase.o
 UT_OBJS += sbn_client_init_tests.o
 UT_OBJS += sbn_client_minders_tests.o
 UT_OBJS += sbn_client_ingest_tests.o
+UT_OBJS += sbn_client_utils_tests.o
 UT_OBJS += sbn_client_wrappers_tests.o
 UT_OBJS += sbn_client_common_test_utils.o
 UT_OBJS += sbn_client_wrapped_functions.o
