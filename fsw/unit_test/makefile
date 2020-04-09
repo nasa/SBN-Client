@@ -111,6 +111,16 @@ ENABLE_WRAP = TRUE
 ifeq ($(ENABLE_WRAP), TRUE)
 WRAP_LOPT := -Wl
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_CreatePipe
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_DeletePipe
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_Subscribe
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_SubscribeEx
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_SubscribeLocal
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_Unsubscribe
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_UnsubscribeLocal
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_SendMsg
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_RcvMsg
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_ZeroCopySend
+WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_CreatePipe
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_Subscribe
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,CFE_SB_RcvMsg
 WRAP_LOPT :=$(WRAP_LOPT),-wrap,socket
