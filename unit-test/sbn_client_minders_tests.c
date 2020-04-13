@@ -126,7 +126,7 @@ void Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse(void)
       "recv_msg was called the expected number of times");
 }
 
-void SBN_Client_Minders_Tests_AddTestCases(void)
+void UtTest_Setup(void)
 {
     UtTest_Add(Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse,
                SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,

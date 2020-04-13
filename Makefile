@@ -1,6 +1,6 @@
 SBN_CLIENT_SRC = ./fsw/src
 SBN_CLIENT_INC = -I./fsw/public_inc
-SBN_INC = -I../sbn/fsw/public_inc -I../sbn/fsw/platform_inc
+SBN_INC = -I../sbn/fsw/public_inc -I../sbn/fsw/platform_inc -I../sbn/fsw/src
 
 # cfe_platform_cfg.h is build specific, and comes from the defs folder.
 # Link the platform cfg you want (such as x86-64_platform_cfg.h) as cfe_defs/cfe_platform_cfg.h

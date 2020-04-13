@@ -151,14 +151,14 @@ int32 Any_int32_ExceptThese(int32 * exceptions, size_t length)
     return random_value;
 }
 
-int Any_Message_Id_Slot(void)
+CFE_SB_MsgId_t Any_Message_Id_Slot(void)
 {
-    return rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE;
+    return (CFE_SB_MsgId_t)(rand() % CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE);
 }
 
-int Any_Pipe_Message_Location(void)
+uint32 Any_Pipe_Message_Location(void)
 {
-    return rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
+    return (uint32)(rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH);
 }
 
 unsigned char Any_unsigned_char(void)
@@ -199,11 +199,7 @@ void SBN_Client_Setup(void)
 
     /* Global UT CFE resets -- 
     * NOTE: not sure if these are required for sbn_client */
-    Ut_OSAPI_Reset();
-    Ut_CFE_SB_Reset();
-    Ut_CFE_ES_Reset();
-    Ut_CFE_EVS_Reset();
-    Ut_CFE_TBL_Reset();
+    UT_ResetState(0);
     
     SBN_CLient_Wrapped_Functions_Setup();
 } /* end SBN_Client_Setup */

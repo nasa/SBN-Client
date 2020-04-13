@@ -55,7 +55,7 @@ void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID,
     Pack_UInt16(&Pack, 54);
     Pack_UInt8(&Pack, SubType);
     Pack_UInt32(&Pack, 2);
-    Pack_Data(&Pack, SBN_IDENT, SBN_IDENT_LEN);
+    Pack_Data(&Pack, (void *)SBN_IDENT, (size_t)SBN_IDENT_LEN);
     Pack_UInt16(&Pack, 1);
 
     Pack_MsgID(&Pack, MsgID);

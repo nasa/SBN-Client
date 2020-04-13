@@ -14,16 +14,8 @@
 
 /* UT includes */
 #include "uttest.h"
-#include "ut_cfe_tbl_stubs.h"
-#include "ut_cfe_tbl_hooks.h"
-#include "ut_cfe_evs_stubs.h"
-#include "ut_cfe_evs_hooks.h"
-#include "ut_cfe_sb_stubs.h"
-#include "ut_cfe_sb_hooks.h"
-#include "ut_cfe_es_stubs.h"
-#include "ut_osapi_stubs.h"
-#include "ut_osfileapi_stubs.h"
-#include "ut_cfe_fs_stubs.h"
+#include "utassert.h"
+#include "utstubs.h"
 
 /* SBN_Client includes */
 #include "sbn_client_ingest.h"
