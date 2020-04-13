@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.6.4)
 project(CFS_SBN_CLIENT C)
 
 include_directories(fsw/public_inc)
-include_directories(${SBN_MISSION_DIR}/fsw/src)
-include_directories(${SBN_MISSION_DIR}/fsw/platform_inc)
+include_directories(${sbn_MISSION_DIR}/fsw/src)
+include_directories(${sbn_MISSION_DIR}/fsw/platform_inc)
 
 aux_source_directory(fsw/src APP_SRC_FILES)
 
