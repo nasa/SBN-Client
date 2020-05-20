@@ -145,16 +145,20 @@ void Test_SBN_Client_Init_Success(void)
 void UtTest_Setup(void)
 {    
     /* SBN_Client_Init Tests */
-    UtTest_Add(Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails, 
-               SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
-              "Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails");
-    UtTest_Add(Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails, 
-               SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
-              "Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails");
-    UtTest_Add(Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails, 
-               SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
-              "Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails");
-    UtTest_Add(Test_SBN_Client_Init_Success, 
-               SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
-              "Test_SBN_Client_Init_Success");
+    UtTest_Add(
+      Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails, 
+      SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
+      "Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails");
+    UtTest_Add(
+      Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails, 
+      SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
+      "Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails");
+    UtTest_Add(
+      Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails, 
+      SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
+      "Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails");
+    UtTest_Add(
+      Test_SBN_Client_Init_Success, 
+      SBN_Client_Init_Setup, SBN_Client_Init_Teardown, 
+      "Test_SBN_Client_Init_Success");
 }

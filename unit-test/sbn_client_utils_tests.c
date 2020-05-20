@@ -399,7 +399,8 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == pipe, "CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", 
+    UtAssert_True(result == pipe, 
+      "CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", 
       pipe, result);
 }
 
@@ -426,7 +427,8 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == tblIdx, "CFE_SBN_Client_GetPipeIdx for pipeId %d should have been %d and was %d", 
+    UtAssert_True(result == tblIdx, 
+      "CFE_SBN_Client_GetPipeIdx for pipeId %d should have been %d and was %d", 
       pipe, tblIdx, result);
 }
 /* end CFE_SBN_Client_GetPipeIdx Tests */
@@ -494,19 +496,24 @@ void UtTest_Setup(void)
     // UtGroupTeardown_Add(Test_Group_Teardown);
     // 
     /* check_pthread_create_status Tests */
-    UtTest_Add(Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EAGAIN,
+    UtTest_Add(
+      Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EAGAIN,
        SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
        "Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EAGAIN");
-    UtTest_Add(Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EINVAL,
+    UtTest_Add(
+      Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EINVAL,
        SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
        "Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EINVAL");
-    UtTest_Add(Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EPERM, 
+    UtTest_Add(
+      Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EPERM, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EPERM");
-    UtTest_Add(Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero, 
+    UtTest_Add(
+      Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_check_pthread_create_status_Is_errorId_WhenStatusIsNonZero");
-    UtTest_Add(Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0, 
+    UtTest_Add(
+      Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_check_pthread_create_status_Is_SBN_CLIENT_SUCCESS_When0");
     
@@ -514,18 +521,22 @@ void UtTest_Setup(void)
     add_connect_to_server_tests();
     
     /* CFE_SBN_Client_GetPipeIdx Tests */
-    UtTest_Add(Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx, 
+    UtTest_Add(
+      Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx");
-    UtTest_Add(Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx, 
+    UtTest_Add(
+      Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx");
     
     /* CFE_SBN_CLIENT_ReadBytes Tests*/
-    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, 
+    UtTest_Add(
+      Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken");
-    UtTest_Add(Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed, 
+    UtTest_Add(
+      Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed");
     UtTest_Add(
@@ -539,31 +550,40 @@ void UtTest_Setup(void)
 
 void add_connect_to_server_tests(void)
 {
-    UtTest_Add(Test_connect_to_server_returns_sbn_client_sockfd_when_successful, 
+    UtTest_Add(
+      Test_connect_to_server_returns_sbn_client_sockfd_when_successful, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_returns_sbn_client_sockfd_when_successful");
-    UtTest_Add(Test_connect_to_server_Outlog_message_EACCES_WhenSocketFails, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EACCES_WhenSocketFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EACCES_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outlog_message_EAFNOSUPPORT_WhenSocketFails, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EAFNOSUPPORT_WhenSocketFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EAFNOSUPPORT_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outlog_message_EINVAL_WhenSocketFails, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EINVAL_WhenSocketFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EINVAL_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outlog_message_EMFILE_WhenSocketFails, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EMFILE_WhenSocketFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EMFILE_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outlog_message_ENOBUFS_WhenSocketFails, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_ENOBUFS_WhenSocketFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_ENOBUFS_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outlog_message_ENOMEM_WhenSocketFails, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_ENOMEM_WhenSocketFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_ENOMEM_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outlog_message_EPROTONOSUPPORT_WhenSocketFails, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EPROTONOSUPPORT_WhenSocketFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EPROTONOSUPPORT_WhenSocketFails");
-    UtTest_Add(Test_connect_to_server_Outlog_messageUnknownErrorWhenNoCaseMatches, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_messageUnknownErrorWhenNoCaseMatches, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_messageUnknownErrorWhenNoCaseMatches");
     UtTest_Add(
@@ -574,59 +594,76 @@ void add_connect_to_server_tests(void)
       Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid");
-    UtTest_Add(Test_connect_to_server_returns_error_WhenConnectFails, 
+    UtTest_Add(
+      Test_connect_to_server_returns_error_WhenConnectFails, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_returns_error_WhenConnectFails");
-    UtTest_Add(Test_connect_to_server_Outlog_message_EACCES_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EACCES_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EACCES_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EPERM_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EPERM_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EPERM_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EADDRINUSE_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EADDRINUSE_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EADDRINUSE_errorFromConnectCall");  
     UtTest_Add(
       Test_connect_to_server_Outlog_message_EADDRNOTAVAIL_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EADDRNOTAVAIL_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EAFNOSUPPORT_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EAFNOSUPPORT_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EAFNOSUPPORT_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EAGAIN_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EAGAIN_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EAGAIN_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EALREADY_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EALREADY_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EALREADY_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EBADF_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EBADF_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EBADF_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_ECONNREFUSED_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_ECONNREFUSED_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_ECONNREFUSED_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EFAULT_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EFAULT_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EFAULT_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EINPROGRESS_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EINPROGRESS_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EINPROGRESS_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EINTR_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EINTR_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EINTR_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EISCONN_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EISCONN_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EISCONN_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_ENETUNREACH_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_ENETUNREACH_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_ENETUNREACH_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_ENOTSOCK_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_ENOTSOCK_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_ENOTSOCK_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_EPROTOTYPE_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_EPROTOTYPE_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_EPROTOTYPE_errorFromConnectCall");  
-    UtTest_Add(Test_connect_to_server_Outlog_message_ETIMEDOUT_errorFromConnectCall, 
+    UtTest_Add(
+      Test_connect_to_server_Outlog_message_ETIMEDOUT_errorFromConnectCall, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_connect_to_server_Outlog_message_ETIMEDOUT_errorFromConnectCall");  
 }

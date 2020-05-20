@@ -121,7 +121,8 @@ void Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull(void)
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg, 
       "PipeTbl[%d].NumberOfMessages %d should not increase and was %d", 
       pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages);
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
@@ -173,10 +174,12 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     ingest_app_message(sockfd, msgSize);
     
     /* Assert */
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, 
+      "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
       CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
       PipeTbl[pipe_assigned].NumberOfMessages);
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
@@ -234,7 +237,8 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
       "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
       pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages);
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
@@ -293,7 +297,8 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
       "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
       pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages);
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
@@ -349,10 +354,12 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
           PipeTbl[pipe_assigned].Messages[msg_slot][i]);
     }  
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 
-      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
+      "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
       CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
       PipeTbl[pipe_assigned].NumberOfMessages);
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
+      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
@@ -371,25 +378,32 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
 void UtTest_Setup(void)
 {
     /* ingest_app_message Tests */
-    UtTest_Add(Test_ingest_app_message_ReadBytesFails, 
+    UtTest_Add(
+      Test_ingest_app_message_ReadBytesFails, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_ReadBytesFails");
-    UtTest_Add(Test_ingest_app_message_FailsWhenNoPipesInUse, 
+    UtTest_Add(
+      Test_ingest_app_message_FailsWhenNoPipesInUse, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_FailsWhenNoPipesInUse");
-    UtTest_Add(Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull, 
+    UtTest_Add(
+      Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull");
-    UtTest_Add(Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId, 
+    UtTest_Add(
+      Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId");
-    UtTest_Add(Test_ingest_app_message_SuccessAllSlotsAvailable, 
+    UtTest_Add(
+      Test_ingest_app_message_SuccessAllSlotsAvailable, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_SuccessAllSlotsAvailable");
-    UtTest_Add(Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable, 
+    UtTest_Add(
+      Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable");
-    UtTest_Add(Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft, 
+    UtTest_Add(
+      Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft, 
       SBN_Client_Ingest_Setup, SBN_Client_Ingest_Teardown, 
       "Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft");
 }

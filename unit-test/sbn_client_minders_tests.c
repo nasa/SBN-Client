@@ -55,7 +55,8 @@ void Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse(void)
     void * result;
     sbn_client_sockfd = Any_Non_Zero_int();
     
-    send_heartbeat_discontinue_on_call_number = (rand() % UCHAR_MAX) + 1; /* 1 to 255 */
+    /* call number becomes from 1 to 255 */
+    send_heartbeat_discontinue_on_call_number = (rand() % UCHAR_MAX) + 1; 
     
     use_wrap_send_heartbeat = TRUE;
     wrap_send_heartbeat_return_value = Any_int();
@@ -98,7 +99,8 @@ void Test_SBN_Client_ReceiveMinder_Outlog_messageError(void)
       wrap_recv_msg_return_value);
     
     log_message_expected_string = err_msg;
-    wrap_log_message_call_func = &wrap_log_message_set_continue_recv_check_false;
+    wrap_log_message_call_func = 
+      &wrap_log_message_set_continue_recv_check_false;
     
     /* Act */
     result = SBN_Client_ReceiveMinder(NULL);
@@ -112,7 +114,8 @@ void Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse(void)
     /* Arrange */
     void * result;
     
-    recv_msg_discontiue_on_call_number = (rand() % UCHAR_MAX) + 1; /* 1 to 255 */
+     /* call number becomes from 1 to 255 */
+    recv_msg_discontiue_on_call_number = (rand() % UCHAR_MAX) + 1;
     
     use_wrap_recv_msg = TRUE;
     wrap_recv_msg_return_value = CFE_SUCCESS;
@@ -128,26 +131,32 @@ void Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse(void)
 
 void UtTest_Setup(void)
 {
-    UtTest_Add(Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse,
-               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
-              "Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse");
-    UtTest_Add(Test_SBN_Client_HeartbeatMinder_HeartbeatWithSockfdZero,
-               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
-              "Test_SBN_Client_HeartbeatMinder_HeartbeatWithSockfdZero");
-    UtTest_Add(Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse,
-               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
-              "Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse");
+    UtTest_Add(
+      Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse,
+      SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+      "Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse");
+    UtTest_Add(
+      Test_SBN_Client_HeartbeatMinder_HeartbeatWithSockfdZero,
+      SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+      "Test_SBN_Client_HeartbeatMinder_HeartbeatWithSockfdZero");
+    UtTest_Add(
+      Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse,
+      SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+      "Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse");
 
     
     
     
-    UtTest_Add(Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse,
-               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
-              "Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse");
-    UtTest_Add(Test_SBN_Client_ReceiveMinder_Outlog_messageError,
-               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
-              "Test_SBN_Client_ReceiveMinder_Outlog_messageError");
-    UtTest_Add(Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse,
-               SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
-              "Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse");
+    UtTest_Add(
+      Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse,
+      SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+      "Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse");
+    UtTest_Add(
+      Test_SBN_Client_ReceiveMinder_Outlog_messageError,
+      SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+      "Test_SBN_Client_ReceiveMinder_Outlog_messageError");
+    UtTest_Add(
+      Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse,
+      SBN_Client_Minders_Tests_Setup, SBN_Client_Minders_Tests_Teardown,
+      "Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse");
 }

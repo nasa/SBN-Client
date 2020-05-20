@@ -44,10 +44,12 @@ void Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes(void)
         UtAssert_True(test_pipe.PipeId == CFE_SBN_CLIENT_INVALID_PIPE, 
           "PipeTbl[%d].PipeId should equal %d and was %d", i, 
           CFE_SBN_CLIENT_INVALID_PIPE, PipeTbl[i].PipeId);
-        UtAssert_True(test_pipe.NumberOfMessages == 1, "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 1, 
+        UtAssert_True(test_pipe.NumberOfMessages == 1, 
+          "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 1, 
           PipeTbl[i].NumberOfMessages);
         UtAssert_True(test_pipe.ReadMessage == 
-          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 
+          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), 
+          "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 
           (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1, 
           PipeTbl[i].ReadMessage));
         UtAssert_True(strcmp(test_pipe.PipeName, "") == 0, 
@@ -57,7 +59,8 @@ void Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes(void)
         for(j = 0; j < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; j++)
         {
             UtAssert_True(test_pipe.SubscribedMsgIds[j] == 
-              CFE_SBN_CLIENT_INVALID_MSG_ID, "PipeTbl[%d].SubscribedMsgIds[%d] should be %d and was %d", i, j, 
+              CFE_SBN_CLIENT_INVALID_MSG_ID, 
+              "PipeTbl[%d].SubscribedMsgIds[%d] should be %d and was %d", i, j, 
               CFE_SBN_CLIENT_INVALID_MSG_ID, test_pipe.SubscribedMsgIds[j]);
         }
         
@@ -108,7 +111,8 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
     result = CFE_SBN_Client_GetAvailPipeIdx();
     
     /* Assert */
-    UtAssert_True(result == available_index, "CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", 
+    UtAssert_True(result == available_index, 
+      "CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", 
       available_index, result);
 }
 
@@ -117,15 +121,18 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
 void UtTest_Setup(void)
 {
     /* CFE_SBN_Client_InitPipeTbl Tests */
-    UtTest_Add(Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes, 
+    UtTest_Add(
+      Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes, 
       SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
       "Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes");
     
     /* CFE_SBN_Client_GetAvailPipeIdx Tests*/
-    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, 
+    UtTest_Add(
+      Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, 
       SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
       "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
-    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, 
+    UtTest_Add(
+      Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, 
       SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
       "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
 
