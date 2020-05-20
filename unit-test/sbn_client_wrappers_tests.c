@@ -36,9 +36,8 @@ void Test__wrap_CFE_SB_CreatePipe_Results_In_CFE_SUCCESS(void)
   int32 result = CFE_SB_CreatePipe(&pipePtr, pipe_depth, pipeName);
   
   /* Assert */
-  UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-    "Pipe creation should have succeeded with (= %d), the result was (= %d)", 
-    CFE_SUCCESS, result));
+  UtAssert_True(result == CFE_SUCCESS, "Pipe creation should have succeeded with (= %d), the result was (= %d)", 
+    CFE_SUCCESS, result);
 }
 
 void Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
@@ -48,25 +47,18 @@ void Test__wrap_CFE_SB_CreatePipe_InitializesPipeCorrectly(void)
   CFE_SB_CreatePipe(&pipePtr, pipe_depth, pipeName);
   
   /* Assert */
-  UtAssert_True(pipePtr == 0, TestResultMsg(
-    "PipePtr should point to pipe 0 (initial pipe) and points to pipe %d.", 
-    pipePtr));
-  UtAssert_True(PipeTbl[0].InUse == CFE_SBN_CLIENT_IN_USE, TestResultMsg(
-    "PipeTbl[0].InUse should be %d and was %d", CFE_SBN_CLIENT_IN_USE, 
-    PipeTbl[0].InUse));
-  UtAssert_True(PipeTbl[0].PipeId == 0, TestResultMsg(
-    "PipeTbl[0].PipeID should be %d and was %d", 0, PipeTbl[0].PipeId));
-  UtAssert_True(PipeTbl[0].SendErrors == 0, TestResultMsg(
-    "PipeTbl[0].SendErrors should be %d and was %d", 0, PipeTbl[0].SendErrors));
-  UtAssert_True(strcmp(&PipeTbl[0].PipeName[0], pipeName) == 0, TestResultMsg(
-    "PipeTbl[0].PipeName should be %s and was %s", pipeName, 
-    PipeTbl[0].PipeName));
-  UtAssert_True(PipeTbl[0].NumberOfMessages == 0, TestResultMsg(
-    "PipeTbl[0].NumberOfMessages should be %d and was %d", 0, 
-    PipeTbl[0].NumberOfMessages));
-  UtAssert_True(PipeTbl[0].ReadMessage == 0, TestResultMsg(
-    "PipeTbl[0].ReadMessage should be %d and was %d", 0, 
-    PipeTbl[0].ReadMessage));  
+  UtAssert_True(pipePtr == 0, "PipePtr should point to pipe 0 (initial pipe) and points to pipe %d.", 
+    pipePtr);
+  UtAssert_True(PipeTbl[0].InUse == CFE_SBN_CLIENT_IN_USE, "PipeTbl[0].InUse should be %d and was %d", CFE_SBN_CLIENT_IN_USE, 
+    PipeTbl[0].InUse);
+  UtAssert_True(PipeTbl[0].PipeId == 0, "PipeTbl[0].PipeID should be %d and was %d", 0, PipeTbl[0].PipeId);
+  UtAssert_True(PipeTbl[0].SendErrors == 0, "PipeTbl[0].SendErrors should be %d and was %d", 0, PipeTbl[0].SendErrors);
+  UtAssert_True(strcmp(&PipeTbl[0].PipeName[0], pipeName) == 0, "PipeTbl[0].PipeName should be %s and was %s", pipeName, 
+    PipeTbl[0].PipeName);
+  UtAssert_True(PipeTbl[0].NumberOfMessages == 0, "PipeTbl[0].NumberOfMessages should be %d and was %d", 0, 
+    PipeTbl[0].NumberOfMessages);
+  UtAssert_True(PipeTbl[0].ReadMessage == 0, "PipeTbl[0].ReadMessage should be %d and was %d", 0, 
+    PipeTbl[0].ReadMessage);  
 }
 
 void Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
@@ -85,13 +77,12 @@ void Test__wrap_CFE_SB_CreatePipe_SendsMaxPipesErrorWhenPipesAreFull(void)
   //uint32 current_event_q_depth = Ut_CFE_EVS_GetEventQueueDepth();
   
   /* Assert */
-  UtAssert_True(result == CFE_SBN_CLIENT_MAX_PIPES_MET, TestResultMsg(
-    "Call to CFE_SB_CreatePipe result should be %d and was %d", 
-    CFE_SBN_CLIENT_MAX_PIPES_MET, result));
+  UtAssert_True(result == CFE_SBN_CLIENT_MAX_PIPES_MET, "Call to CFE_SB_CreatePipe result should be %d and was %d", 
+    CFE_SBN_CLIENT_MAX_PIPES_MET, result);
   //TODO:set stubs to intercept wraps on CFE calls
-  //UtAssert_True(current_event_q_depth == initial_event_q_depth + 1, TestResultMsg("Event queue count should be %d, but was %d", initial_event_q_depth + 1, current_event_q_depth));
+  //UtAssert_True(current_event_q_depth == initial_event_q_depth + 1, "Event queue count should be %d, but was %d", initial_event_q_depth + 1, current_event_q_depth);
   //UtAssert_EventSent(CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg, 
-  //  TestResultMsg("Error event as expected was not sent. Expected: Error = %d, ErrorType=%d, Error Message = %s", CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg));
+  //  "Error event as expected was not sent. Expected: Error = %d, ErrorType=%d, Error Message = %s", CFE_SBN_CLIENT_MAX_PIPES_MET, CFE_EVS_ERROR, expected_error_msg);
 }
 /* end __wrap_CFE_SB_CreatePipe Tests */
 
@@ -112,9 +103,8 @@ void Test__wrap_CFE_SB_DeletePipeSuccessWhenPipeIdIsCorrectAndInUse(void)
   int32 result = CFE_SB_DeletePipe(pipeIdToDelete);
   
   /* Assert */
-  UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-    "Call to CFE_SB_DeletePipe to delete pipe#%d should be %d and was %d", 
-    pipeIdToDelete, CFE_SUCCESS, result));
+  UtAssert_True(result == CFE_SUCCESS, "Call to CFE_SB_DeletePipe to delete pipe#%d should be %d and was %d", 
+    pipeIdToDelete, CFE_SUCCESS, result);
 }
 /* end __wrap_CFE_SB_DeletePipe Tests */
 
@@ -150,14 +140,12 @@ void Test__wrap_CFE_SB_SubscribePipeIsValidMsgIdUnsubscribedNotAtMaxMsgIds(void)
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
     
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "Call to CFE_SB_Subscribe should return %d and was %d", CFE_SUCCESS, 
-      result));
+    UtAssert_True(result == CFE_SUCCESS, "Call to CFE_SB_Subscribe should return %d and was %d", CFE_SUCCESS, 
+      result);
     UtAssert_True(PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed] == 
-      msg_id, TestResultMsg(
-      "PipeTble[%d].SubscribedMsgIds[%d] should be %d and was %d", 
+      msg_id, "PipeTble[%d].SubscribedMsgIds[%d] should be %d and was %d", 
       pipe_id, num_msgIds_subscribed, msg_id, 
-      PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed]));    
+      PipeTbl[pipe_id].SubscribedMsgIds[num_msgIds_subscribed]);    
 }
 
 void Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
@@ -172,9 +160,8 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenPipeIsInvalid(void)
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
         
     /* Assert */
-    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg(
-      "Call to CFE_SB_Subscribe with pipeId %d should be error %d and was %d", 
-      pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
+    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, "Call to CFE_SB_Subscribe with pipeId %d should be error %d and was %d", 
+      pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result);
 }
 
 void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
@@ -198,9 +185,8 @@ void Test__wrap_CFE_SB_SubscribeFailsWhenNumberOfMessagesForPipeIsExceeded(void)
     int32 result = CFE_SB_Subscribe(msg_id, pipe_id);
         
     /* Assert */
-    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, TestResultMsg(
-      "Call to CFE_SB_Subscribe with pipeId %d should be error %d and was %d", 
-      pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result));
+    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, "Call to CFE_SB_Subscribe with pipeId %d should be error %d and was %d", 
+      pipe_id, CFE_SBN_CLIENT_BAD_ARGUMENT, result);
 }
 /* end __wrap_CFE_SB_Subscribe Tests */
 
@@ -429,19 +415,16 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPollRequestHasMessageInPipe(void)
     int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
 
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
-      result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result);
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected");    
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
-      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
       UtAssert_True(wrap_pthread_mutex_lock_was_called, 
         "pthread_mutex_lock was called");
       UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
@@ -480,19 +463,16 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutPendMessageAlreadyInPipe(void)
     int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
 
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
-      result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result);
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
-      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called, 
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
@@ -531,19 +511,16 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutValueMessageAlreadyInPipe(void)
     int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
 
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
-      result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result);
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
-      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));      
+      PipeTbl[pipe_assigned].ReadMessage);      
     UtAssert_True(wrap_pthread_mutex_lock_was_called, 
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
@@ -583,19 +560,16 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageDuringWait(void)
     int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
 
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
-      result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result);
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should be 1", 
-      pipe_assigned, number_of_messages, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, number_of_messages, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called, 
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_cond_wait_was_called, 
@@ -639,19 +613,16 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessReceivesMessageWithinTimeout(void)
     int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
 
     /* Assert */
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
-      result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result);
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should be 1", 
-      pipe_assigned, number_of_messages, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, number_of_messages, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called, 
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_cond_timedwait_was_called, 
@@ -693,19 +664,16 @@ void Test__wrap_CFE_SB_RcvMsg_FailsPthreadMutexUnlockFailure(void)
     int32 result = CFE_SB_RcvMsg(&buffer, pipe_assigned, timeout);
 
     /* Assert */
-    UtAssert_True(result == CFE_SB_PIPE_RD_ERR, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SB_PIPE_RD_ERR, 
-      result));
+    UtAssert_True(result == CFE_SB_PIPE_RD_ERR, "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SB_PIPE_RD_ERR, 
+      result);
     UtAssert_True(buffer == NULL, "Buffer returned points to NULL");    
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
-      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, number_of_messages - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
       UtAssert_True(wrap_pthread_mutex_lock_was_called, 
         "pthread_mutex_lock was called");
       UtAssert_True(wrap_pthread_mutex_unlock_was_called, 
@@ -749,26 +717,22 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
-      result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg result should be %d and was %d", CFE_SUCCESS, 
+      result);
     for(i = 0; i < msgSize; i++)
     {
       UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
-        Messages[current_read_msg][i], TestResultMsg(
-        "buffer[%d] should = %d and was %d", i, 
+        Messages[current_read_msg][i], "buffer[%d] should = %d and was %d", i, 
         PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
-        ((unsigned char *)buffer)[i]));
+        ((unsigned char *)buffer)[i]);
     }
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
-      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
 }
 
 void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
@@ -808,26 +772,22 @@ void Test__wrap_CFE_SB_RcvMsgSuccessAtLeastTwoMessagesInPipe(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
-      CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
+      CFE_SUCCESS, result);
     for(i = 0; i < msgSize; i++)
     {
       UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
-        Messages[current_read_msg][i], TestResultMsg(
-        "buffer[%d] should = %d and was %d", i, 
+        Messages[current_read_msg][i], "buffer[%d] should = %d and was %d", i, 
         PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
-        ((unsigned char *)buffer)[i]));
+        ((unsigned char *)buffer)[i]);
     }
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should decrease by 1 to %d and is %d", 
-      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should progress to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
 }
 
 void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
@@ -867,26 +827,23 @@ void Test__wrap_CFE_SB_RcvMsgSuccessTwoMessagesInPipe(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
-      CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
+      CFE_SUCCESS, result);
     for(i = 0; i < msgSize; i++)
     {
       UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
         Messages[current_read_msg][i], 
-        TestResultMsg("buffer[%d] should = %d and was %d", i, 
+        "buffer[%d] should = %d and was %d", i, 
         PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
-        ((unsigned char *)buffer)[i]));
+        ((unsigned char *)buffer)[i]);
     }
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should decrease by 1 to %d and is %d", 
-      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should progress to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
 }
 
 void Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
@@ -925,26 +882,22 @@ void Test__wrap_CFE_SB_RcvMsgSuccessPreviousMessageIsAtEndOfPipe(void)
     /* Assert */
     int i = 0;
     
-    UtAssert_True(result == CFE_SUCCESS, TestResultMsg(
-      "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
-      CFE_SUCCESS, result));
+    UtAssert_True(result == CFE_SUCCESS, "__wrap_CFE_SB_RcvMsg did not succeed, result should be %d, but was %d", 
+      CFE_SUCCESS, result);
     for(i = 0; i < msgSize; i++)
     {
       UtAssert_True(((unsigned char *)buffer)[i] == PipeTbl[pipe_assigned].
-        Messages[current_read_msg][i], TestResultMsg(
-        "buffer[%d] should = %d and was %d", i, 
+        Messages[current_read_msg][i], "buffer[%d] should = %d and was %d", i, 
         PipeTbl[pipe_assigned].Messages[current_read_msg][i], 
-        ((unsigned char *)buffer)[i]));
+        ((unsigned char *)buffer)[i]);
     }
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should decrease by 1 to %d and is %d", 
-      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages));
+      pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
-      TestResultMsg(
       "PipeTbl[%d].ReadMessage should progress to %d from %d and is %d", 
       pipe_assigned, current_read_msg, previous_read_msg, 
-      PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].ReadMessage);
 }
 
 //TODO: Test__wrap_CFE_SB_RcvMsgSuccess when num messages = 1
