@@ -119,12 +119,10 @@ void Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull(void)
     
     /* Assert */
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages %d should not increase and was %d", 
-      pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));
+      pipe_assigned, num_msg, PipeTbl[pipe_assigned].NumberOfMessages);
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
@@ -175,13 +173,11 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     ingest_app_message(sockfd, msgSize);
     
     /* Assert */
-    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, TestResultMsg(
-      "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
+    UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 0, "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
       CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
-      PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].NumberOfMessages);
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
@@ -231,17 +227,15 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     for(i = 0; i < msgSize; i++)
     {
         UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
-          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
+          "PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
           pipe_assigned, msg_slot, i, msg[i], 
-          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
+          PipeTbl[pipe_assigned].Messages[msg_slot][i]);
     }
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
-      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));
+      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages);
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
@@ -292,17 +286,15 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     for(i = 0; i < msgSize; i++)
     {
         UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
-          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
+          "PipeTbl[%d].Messages[%d][%d] should = %d and was %d", 
           pipe_assigned, msg_slot, i, msg[i], 
-          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
+          PipeTbl[pipe_assigned].Messages[msg_slot][i]);
     }
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg + 1, 
-      TestResultMsg(
       "PipeTbl[%d].NumberOfMessages should increase by 1 to %d and was %d", 
-      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));
+      pipe_assigned, num_msg + 1, PipeTbl[pipe_assigned].NumberOfMessages);
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
@@ -352,18 +344,16 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
     for(i = 0; i < msgSize; i++)
     {
         UtAssert_True(PipeTbl[pipe_assigned].Messages[msg_slot][i] == msg[i], 
-          TestResultMsg("PipeTbl[%d].Messages[%d][%d] should = %d and was %d ", 
+          "PipeTbl[%d].Messages[%d][%d] should = %d and was %d ", 
           pipe_assigned, msg_slot, i, msg[i], 
-          PipeTbl[pipe_assigned].Messages[msg_slot][i]));
+          PipeTbl[pipe_assigned].Messages[msg_slot][i]);
     }  
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == 
-      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, TestResultMsg(
-      "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
+      CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, "PipeTbl[%d].NumberOfMessages should = %d and was %d ", pipe_assigned, 
       CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH, 
-      PipeTbl[pipe_assigned].NumberOfMessages));
-    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, TestResultMsg(
-      "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
-      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage));
+      PipeTbl[pipe_assigned].NumberOfMessages);
+    UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
+      pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
     UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
       "pthread_mutex_lock was called");
     UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
