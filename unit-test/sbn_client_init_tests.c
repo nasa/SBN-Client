@@ -36,8 +36,8 @@ void Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails(void)
 
     /* Assert */
     UtAssert_True(result == expected_result, 
-        TestResultMsg("SBN_Client_Init result should be %d, but was %d", 
-        SBN_CLIENT_BAD_SOCK_FD_EID, result));
+        "SBN_Client_Init result should be %d, but was %d", 
+        SBN_CLIENT_BAD_SOCK_FD_EID, result);
 }
 
 void Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails(void)
@@ -65,8 +65,8 @@ void Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails(void)
 
     /* Assert */
     UtAssert_True(result == expected_result, 
-        TestResultMsg("SBN_Client_Init result should be %d, but was %d", 
-        SBN_CLIENT_HEART_THREAD_CREATE_EID, result));
+        "SBN_Client_Init result should be %d, but was %d", 
+        SBN_CLIENT_HEART_THREAD_CREATE_EID, result);
     UtAssert_True(sbn_client_sockfd == wrap_connect_to_server_return_value,
       "SBN_Client_Init successful call to connect_to_server set "
       "sbn_client_sockfd to the returned value");
@@ -99,8 +99,8 @@ void Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails(void)
 
     /* Assert */
     UtAssert_True(result == expected_result, 
-        TestResultMsg("SBN_Client_Init result should be %d, but was %d", 
-        SBN_CLIENT_RECEIVE_THREAD_CREATE_EID, result));
+        "SBN_Client_Init result should be %d, but was %d", 
+        SBN_CLIENT_RECEIVE_THREAD_CREATE_EID, result);
     UtAssert_True(sbn_client_sockfd == wrap_connect_to_server_return_value,
       "SBN_Client_Init successful call to connect_to_server set "
       "sbn_client_sockfd to the returned value");
@@ -129,8 +129,8 @@ void Test_SBN_Client_Init_Success(void)
 
     /* Assert */
     UtAssert_True(result == SBN_CLIENT_SUCCESS, 
-      TestResultMsg("SBN_Client_Init result should be %d, but was %d", 
-      SBN_CLIENT_SUCCESS, result));
+      "SBN_Client_Init result should be %d, but was %d", 
+      SBN_CLIENT_SUCCESS, result);
     UtAssert_True(sbn_client_sockfd == wrap_connect_to_server_return_value,
       "SBN_Client_Init successful call to connect_to_server set "
       "sbn_client_sockfd to the returned value");
