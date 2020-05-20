@@ -126,8 +126,8 @@ void connect_to_server_socket_fail_check(int32 expected_error,
     
     /* Assert */
     UtAssert_True(result == SERVER_SOCKET_ERROR, 
-      TestResultMsg("Error returned should have been %d and was %d", 
-      SERVER_SOCKET_ERROR, result));
+      "Error returned should have been %d and was %d", 
+      SERVER_SOCKET_ERROR, result);
 }
 
 void connect_to_server_connect_fail_check(int32 expected_error, 
@@ -152,8 +152,8 @@ void connect_to_server_connect_fail_check(int32 expected_error,
 
     /* Assert */
     UtAssert_True(result == SERVER_CONNECT_ERROR, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      SERVER_CONNECT_ERROR, result));
+      "error returned should have been %d and was %d", 
+      SERVER_CONNECT_ERROR, result);
 }
 
 /*******************************************************************************
@@ -177,8 +177,8 @@ void Test_connect_to_server_returns_sbn_client_sockfd_when_successful(void)
   
   /* Assert */
   UtAssert_True(result == wrap_socket_return_value, 
-    TestResultMsg("Sockfd returned should have been %d and was %d", 
-    wrap_socket_return_value, result));
+    "Sockfd returned should have been %d and was %d", 
+    wrap_socket_return_value, result);
 }
 
 void Test_connect_to_server_Outlog_message_EACCES_WhenSocketFails(void)
@@ -232,8 +232,8 @@ void Test_connect_to_server_Outlog_messageUnknownErrorWhenNoCaseMatches(void)
     
     /* Assert */
     UtAssert_True(result == SERVER_SOCKET_ERROR, 
-      TestResultMsg("Error returned should have been %d and was %d", 
-      SERVER_SOCKET_ERROR, result));
+      "Error returned should have been %d and was %d", 
+      SERVER_SOCKET_ERROR, result);
 }
 
 void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
@@ -252,8 +252,8 @@ void Test_connect_to_server_returns_error_when_inet_pton_src_is_invalid(void)
   
   /* Assert */
   UtAssert_True(result == SERVER_INET_PTON_SRC_ERROR, 
-    TestResultMsg("Error returned should have been %d and was %d", 
-    SERVER_INET_PTON_SRC_ERROR, result));
+    "Error returned should have been %d and was %d", 
+    SERVER_INET_PTON_SRC_ERROR, result);
 }
 
 void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
@@ -272,8 +272,8 @@ void Test_connect_to_server_returns_error_when_inet_pton_af_is_invalid(void)
   
   /* Assert */
   UtAssert_True(result == SERVER_INET_PTON_INVALID_AF_ERROR, 
-    TestResultMsg("Error returned should have been %d and was %d", 
-    SERVER_INET_PTON_INVALID_AF_ERROR, result));
+    "Error returned should have been %d and was %d", 
+    SERVER_INET_PTON_INVALID_AF_ERROR, result);
 }
 
 void Test_connect_to_server_returns_error_WhenConnectFails(void)
@@ -292,8 +292,8 @@ void Test_connect_to_server_returns_error_WhenConnectFails(void)
 
     /* Assert */
     UtAssert_True(result == errno, 
-      TestResultMsg("error returned should have been %d and was %d", 
-      errno, result));
+      "error returned should have been %d and was %d", 
+      errno, result);
 }
 
 void Test_connect_to_server_Outlog_message_EACCES_errorFromConnectCall(void)
@@ -399,9 +399,8 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdEqualsPipeIdx(void)
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == pipe, TestResultMsg(
-      "CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", 
-      pipe, result));
+    UtAssert_True(result == pipe, "CFE_SBN_Client_GetPipeIdx should have returned %d and was %d", 
+      pipe, result);
 }
 
 /* NOTE:not sure if what happens in 
@@ -427,9 +426,8 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)
     uint8 result = CFE_SBN_Client_GetPipeIdx(pipe);
   
     /* Assert */
-    UtAssert_True(result == tblIdx, TestResultMsg(
-      "CFE_SBN_Client_GetPipeIdx for pipeId %d should have been %d and was %d", 
-      pipe, tblIdx, result));
+    UtAssert_True(result == tblIdx, "CFE_SBN_Client_GetPipeIdx for pipeId %d should have been %d and was %d", 
+      pipe, tblIdx, result);
 }
 /* end CFE_SBN_Client_GetPipeIdx Tests */
 
