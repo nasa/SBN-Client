@@ -36,32 +36,29 @@ void Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes(void)
         CFE_SBN_Client_PipeD_t test_pipe = PipeTbl[i];
         
         UtAssert_True(test_pipe.InUse == CFE_SBN_CLIENT_NOT_IN_USE, 
-          TestResultMsg("PipeTbl[%d].InUse should equal %d and was %d", i, 
-          CFE_SBN_CLIENT_NOT_IN_USE, PipeTbl[i].InUse));
+          "PipeTbl[%d].InUse should equal %d and was %d", i, 
+          CFE_SBN_CLIENT_NOT_IN_USE, PipeTbl[i].InUse);
         UtAssert_True(test_pipe.SysQueueId == CFE_SBN_CLIENT_UNUSED_QUEUE, 
-          TestResultMsg("PipeTbl[%d].SysQueueId should equal %d and was %d", i, 
-          CFE_SBN_CLIENT_UNUSED_QUEUE, PipeTbl[i].SysQueueId));
+          "PipeTbl[%d].SysQueueId should equal %d and was %d", i, 
+          CFE_SBN_CLIENT_UNUSED_QUEUE, PipeTbl[i].SysQueueId);
         UtAssert_True(test_pipe.PipeId == CFE_SBN_CLIENT_INVALID_PIPE, 
-          TestResultMsg("PipeTbl[%d].PipeId should equal %d and was %d", i, 
-          CFE_SBN_CLIENT_INVALID_PIPE, PipeTbl[i].PipeId));
-        UtAssert_True(test_pipe.NumberOfMessages == 1, TestResultMsg(
-          "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 1, 
-          PipeTbl[i].NumberOfMessages));
+          "PipeTbl[%d].PipeId should equal %d and was %d", i, 
+          CFE_SBN_CLIENT_INVALID_PIPE, PipeTbl[i].PipeId);
+        UtAssert_True(test_pipe.NumberOfMessages == 1, "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 1, 
+          PipeTbl[i].NumberOfMessages);
         UtAssert_True(test_pipe.ReadMessage == 
-          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), TestResultMsg(
-          "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 
-          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), 
+          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1), "PipeTbl[%d].NumberOfMessages should equal %d and was %d", i, 
+          (CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1, 
           PipeTbl[i].ReadMessage));
         UtAssert_True(strcmp(test_pipe.PipeName, "") == 0, 
-          TestResultMsg("PipeTbl[%d].PipeId should equal '' and was '%s'", i, 
-          PipeTbl[i].PipeName));  
+          "PipeTbl[%d].PipeId should equal '' and was '%s'", i, 
+          PipeTbl[i].PipeName);  
     
         for(j = 0; j < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; j++)
         {
             UtAssert_True(test_pipe.SubscribedMsgIds[j] == 
-              CFE_SBN_CLIENT_INVALID_MSG_ID, TestResultMsg(
-              "PipeTbl[%d].SubscribedMsgIds[%d] should be %d and was %d", i, j, 
-              CFE_SBN_CLIENT_INVALID_MSG_ID, test_pipe.SubscribedMsgIds[j]));
+              CFE_SBN_CLIENT_INVALID_MSG_ID, "PipeTbl[%d].SubscribedMsgIds[%d] should be %d and was %d", i, j, 
+              CFE_SBN_CLIENT_INVALID_MSG_ID, test_pipe.SubscribedMsgIds[j]);
         }
         
     }
@@ -111,9 +108,8 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
     result = CFE_SBN_Client_GetAvailPipeIdx();
     
     /* Assert */
-    UtAssert_True(result == available_index, TestResultMsg(
-      "CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", 
-      available_index, result));
+    UtAssert_True(result == available_index, "CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", 
+      available_index, result);
 }
 
 /*************************************************/
