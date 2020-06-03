@@ -59,8 +59,7 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
                     }
                     else /* message is put into pipe */
                     {    
-                        log_message("App message received: MsgId 0x%08",
-                          MsgId);
+                        log_message("App message received: MsgId 0x%08"); /* TODO: MsgId); */
                         
                         memcpy(PipeTbl[i].Messages[message_entry_point(
                             PipeTbl[i])], msg_buffer, MsgSz);
