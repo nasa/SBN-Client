@@ -16,7 +16,7 @@ int __real_pthread_create(pthread_t *, const pthread_attr_t *,
 int32 __real_check_pthread_create_status(int, int32);
 int   __real_send_heartbeat(int);
 int32 __real_recv_msg(int32);
-int    __real_log_message(const char *str);
+int    __real_log_message(const char *format, ...);
 void   __real_perror(const char *s);
 size_t __real_read(int fd, void* buf, size_t cnt);
 
@@ -35,7 +35,7 @@ int __wrap_pthread_create(pthread_t *, const pthread_attr_t *,
   void *(*) (void *), void *);
 int   __wrap_send_heartbeat(int);
 int32 __wrap_recv_msg(int32);
-int __wrap_log_message(const char *str);
+int __wrap_log_message(const char *format, ...);
 void __wrap_perror(const char *s);
 int __wrap_socket(int, int, int);
 uint16_t __wrap_htons(uint16_t);
