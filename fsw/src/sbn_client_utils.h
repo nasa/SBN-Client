@@ -2,6 +2,7 @@
 #define _sbn_client_utils_h_
 
 #include <stdint.h>
+#include <stdarg.h>
 
 #include "sbn_pack.h"
 #include "sbn_client.h"
