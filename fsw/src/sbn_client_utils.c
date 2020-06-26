@@ -392,5 +392,7 @@ int log_message(const char * format, ...)
   
   va_end(vl);
   
+  puts(error_message);
+  
   return num_char_written;
 }
