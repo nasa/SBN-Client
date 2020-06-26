@@ -9,6 +9,8 @@ The source code remains the same, but the build process is different.
 
 This version is meant to allow an outside program to communicate with a [cFS](https://github.com/NASA/cFS) instantiation through the Software Bus, mediated by the [Software Bus Network](https://github.com/nasa/SBN). It may be used for bindings to other languages, such as Python, and does not require the rest of cFE to be linked.
 
+The SBN is linked with sbn_client via TCP/IP with the port and IP address set in the sbn_client_defs.h file. These may be updated for the user's particular instance.   
+
 To see the functions provided, see functions exported in sbn_client.h and the redefined symbols found in unwrap_sybmols.txt.
 
 ### Building

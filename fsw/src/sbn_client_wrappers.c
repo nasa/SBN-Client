@@ -18,19 +18,16 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
     uint8 i;
     int32 status = CFE_SBN_CLIENT_MAX_PIPES_MET;
     
-    //SBN_Client_Init();
+    /* TODO:AppId is static for now */
     
-    /* AppId is static for now */
-    
-    /* caller name is static for now */
-    
-    /* name will not require NULL terminator */
+    /* TODO:caller name is static for now */    
+    /* caller name will not require NULL terminator */
     
     /* TODO: determine if semaphore is necessary */
     
     /* TODO: determine if taskId is necessary */
     
-    /* set user's pipe id value to 'invalid' for error cases below */
+    /* sets user's pipe id value to 'invalid' for error cases */
     if(PipeIdPtr != NULL)
     {
         *PipeIdPtr = CFE_SBN_CLIENT_INVALID_PIPE;
