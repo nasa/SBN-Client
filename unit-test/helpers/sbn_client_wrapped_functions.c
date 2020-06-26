@@ -365,11 +365,43 @@ int __wrap_log_message(const char *format, ...)
     //     (*wrap_log_message_call_func)();
     // }
     int result;
+    int i = 0;
+    int num_vars = 0;
     va_list vl;
     
+    UT_Stub_CopyToLocal(UT_KEY(log_message), format, sizeof(format));
+    
     va_start(vl, format);
-    result =  __real_log_message(format, vl);
+    while (format[i] && format[i+1])
+    {
+        
+        if (format[i] == '%')
+        {
+            num_vars++;
+            UT_Stub_CopyToLocal(UT_KEY(log_message), va_arg(vl, int), sizeof(int));
+        }
+        
+        i++;
+    }
+    
     va_end(vl);
+    
+    // 
+    // 
+    // printf("PreCheck NUM_VARS = %d\n", num_vars);
+    // 
+    // for(i = 0;format[i] != '\0';i++)
+    // {
+    // 
+    //     if (format[i] == '%')
+    //     { 
+    //         num_vars++;
+    //     }
+    // 
+    // }
+    // printf("PostCheck NUM_VARS = %d\n", num_vars);
+    
+    //result =  __real_log_message(format, vl);
     
     return result;
 }
