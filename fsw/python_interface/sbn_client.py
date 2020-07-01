@@ -1,0 +1,125 @@
+import ctypes
+from ctypes import *
+
+# SB
+CFE_SB_PEND_FOREVER = -1
+
+
+# typedef struct {
+#    uint8   StreamId[2];  /* packet identifier word (stream ID) */
+#       /*  bits  shift   ------------ description ---------------- */
+#       /* 0x07FF    0  : application ID                            */
+#       /* 0x0800   11  : secondary header: 0 = absent, 1 = present */
+#       /* 0x1000   12  : packet type:      0 = TLM, 1 = CMD        */
+#       /* 0xE000   13  : CCSDS version:    0 = ver 1, 1 = ver 2    */
+#    uint8   Sequence[2];  /* packet sequence word */
+#       /*  bits  shift   ------------ description ---------------- */
+#       /* 0x3FFF    0  : sequence count                            */
+#       /* 0xC000   14  : segmentation flags:  3 = complete packet  */
+#    uint8  Length[2];     /* packet length word */
+#       /*  bits  shift   ------------ description ---------------- */
+#       /* 0xFFFF    0  : (total packet length) - 7                 */
+# } CCSDS_PriHdr_t;
+
+# Version 2 of CCSDS has 4 extra bytes for the secondary header
+# typedef struct {
+#    uint8 APIDQSubsystem[2];
+#    uint8 APIDQSystemId[2];
+# } CCSDS_APIDqualifiers_t;
+
+# The time format is configurable... using 2 bytes right now
+# typedef struct {
+#    uint8  Time[CCSDS_TIME_SIZE];
+# } CCSDS_TlmSecHdr_t;
+
+# typedef union {
+#     CCSDS_PriHdr_t      Hdr;   /**< \brief CCSDS Primary Header #CCSDS_PriHdr_t */
+#     CCSDS_SpacePacket_t SpacePacket;
+#     uint32              Dword; /**< \brief Forces minimum of 32-bit alignment for this object */
+#     uint8               Byte[sizeof(CCSDS_PriHdr_t)];   /**< \brief Allows byte-level access */
+# }CFE_SB_Msg_t;
+
+# Note: Not currently dealing with the whole union issue
+class Primary_Header_t(BigEndianStructure):
+    _pack_ = 1
+    _fields_ = [("StreamId", c_uint16),
+                ("Sequence", c_uint16),
+                ("Length", c_uint16)]
+
+class Secondary_Header_t(BigEndianStructure):
+    _pack_ = 1
+    _fields_ = [("Seconds", c_uint32),
+                ("Subseconds", c_uint16)]
+
+class CFE_SB_Msg_t(Structure):
+    _pack_ = 1
+    _fields_ = [("Primary", Primary_Header_t),
+                ("Secondary", Secondary_Header_t)]
+
+#for generic data type
+# TODO Should the max message size be hardcoded or somehow taken from the mps_defs directory?
+class sbn_data_generic_t(Structure):
+    _pack_ = 1
+    _fields_ = [("TlmHeader", CFE_SB_Msg_t),
+                ("byte_array", c_ubyte * 65536)]
+
+sbn_client = None
+cmd_pipe = c_ushort()
+cmd_pipe_name = create_string_buffer(b'cmd_pipe')
+
+
+def print_header(message_p):
+    recv_msg = message_p.contents
+    print("Message Header: {} {} {}".format(hex(recv_msg.TlmHeader.StreamId), hex(recv_msg.TlmHeader.Sequence), hex(recv_msg.TlmHeader.Length)))
+    print("Message APID: {} {}".format(hex(recv_msg.TlmHeader.APIDQSubsystem), hex(recv_msg.TlmHeader.APIDQSystemId)))
+    print("Message Time: {}".format(hex(recv_msg.TlmHeader.Time)))
+
+# TODO: Common file?
+def cfs_error_convert (number):
+    if number < 0:
+        return number + (2**32)
+    else:
+        return number
+
+def sbn_load_and_init():
+    global sbn_client
+    global cmd_pipe
+    global cmd_pipe_name
+
+    ctypes.cdll.LoadLibrary('./sbn_client.so')
+    sbn_client = CDLL('sbn_client.so')
+    print("SBN Client library loaded: '{}'".format(sbn_client))
+    status = sbn_client.SBN_Client_Init()
+    print("SBN Client init: {}".format(status))
+    status = sbn_client.__wrap_CFE_SB_CreatePipe(byref(cmd_pipe), 10, cmd_pipe_name)
+    print("SBN Client command pipe: {}".format(status))
+    subscribe(0x18DE)
+
+def send_repeater_msg():
+    global sbn_client
+
+    if sbn_client == None:
+        print("Hey, load SBN Client library first!")
+    else:
+        # create message
+        # repeater_msg = bytearray([0x08,0x74,0xC0,0x00,0x04,0x09,0x00,0x00,0x00,0x00,0x00,0x00,0xA5,0x08,0x0D,0x00,0x48,0x65,0x6C,0x6C,0x6F,0x20,0x54,0x68,0x65,0x72,0x65,0x21])
+        repeater_msg = bytearray([0x08,0x74,0xC0,0x00,0x04,0x09,0x00,0x00,0x00,0x00,0x00,0x00,0xDE,0x18,0x0D,0x00,0x48,0x65,0x6C,0x6C,0x6F,0x20,0x54,0x68,0x65,0x72,0x65,0x21])
+        repeater_msg_str = str(repeater_msg)
+        repeater_msg_p = cast(repeater_msg_str, POINTER(c_char))
+        sbn_client.__wrap_CFE_SB_SendMsg(repeater_msg_p)
+
+def recv_msg(recv_msg_p):
+    global sbn_client
+    global cmd_pipe
+
+    status = sbn_client.__wrap_CFE_SB_RcvMsg(byref(recv_msg_p), cmd_pipe, CFE_SB_PEND_FOREVER)
+    print("status of __wrap_CFE_SB_RcvMsg = %X" % cfs_error_convert(status))
+    #recv_msg = recv_msg_p.contents
+    #print("Message: {} {} {}".format(hex(recv_msg.Hdr.StreamId), hex(recv_msg.Hdr.Sequence), hex(recv_msg.Hdr.Length)))
+    #print_header(recv_msg_p)
+
+def subscribe(msgid):
+    global cmd_pipe
+
+    status = sbn_client.__wrap_CFE_SB_Subscribe(msgid, cmd_pipe)
+    print("SBN Client subscribe msg (id {}): {}".format(hex(msgid), status))
