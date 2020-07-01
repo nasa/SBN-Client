@@ -379,20 +379,3 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
 
     return sockfd;
 }
-
-int log_message(const char * format, ...)
-{
-  int num_char_written;
-  va_list vl;
-  char error_message[MAX_LOG_MESSAGE_SIZE];
-  
-  va_start(vl, format);
-   
-  num_char_written = vsnprintf(error_message, MAX_LOG_MESSAGE_SIZE, format, vl);
-  
-  va_end(vl);
-  
-  puts(error_message);
-  
-  return num_char_written;
-}

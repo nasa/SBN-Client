@@ -7,6 +7,9 @@
 char error_message[MAX_ERROR_MESSAGE_SIZE];
 unsigned char message[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
 
+const char *log_message_expected_string = "";
+boolean log_message_was_called = FALSE;
+void (*wrap_log_message_call_func)(void) = NULL;
 /*
  * Functions
  */

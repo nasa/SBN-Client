@@ -18,7 +18,10 @@ void SBN_Client_Minders_Tests_Teardown(void)
     SBN_Client_Teardown();
 }
 
-
+void wrap_log_message_set_continue_recv_check_false(void)
+{
+    continue_receive_check = FALSE;
+}
 
 void Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse(void)
 {

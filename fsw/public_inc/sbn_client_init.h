@@ -2,7 +2,7 @@
 #define _sbn_client_init_h_
 
 /******************************************************************************
-** File: cfe_sb.h
+** File: sbn_client_init.h
 **
 ** Purpose:
 **      This header file contains the definition of the cFS sbn_client app's 
@@ -10,7 +10,7 @@
 **      multi-process app in order to use the features of cFE that sbn_client
 **      provides.
 **
-** Author:   R.McGraw/SSI
+** Author:   A.Gibson/587
 **
 ******************************************************************************/
 /****************** Function Prototypes **********************/

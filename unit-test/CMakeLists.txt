@@ -29,6 +29,7 @@ include_directories(${osal_MISSION_DIR}/ut_assert/inc)  #osal_MISSION_DIR = ${MI
 include_directories(${PROJECT_SOURCE_DIR}/fsw/src)      # PROJECT_SOURCE_DIR is set by the last call to project() command, sample_app?
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)    # CMAKE_CURRENT_SOURCE_DIR Path to the current source directory being processed, sample_app/unit_test?
 include_directories(${PROJECT_SOURCE_DIR}/unit-test/helpers)
+include_directories(${PROJECT_SOURCE_DIR}/unit-test/stubs)
 include_directories(${PROJECT_SOURCE_DIR}/unit-test)
 
 # Setting wrappers for how things are done currently.
@@ -52,7 +53,6 @@ set(WRAPS "${WRAPS},-wrap,inet_pton")
 set(WRAPS "${WRAPS},-wrap,connect")
 set(WRAPS "${WRAPS},-wrap,read")
 set(WRAPS "${WRAPS},-wrap,sleep")
-set(WRAPS "${WRAPS},-wrap,log_message")
 set(WRAPS "${WRAPS},-wrap,perror")
 set(WRAPS "${WRAPS},-wrap,pthread_create")
 set(WRAPS "${WRAPS},-wrap,connect_to_server")
@@ -73,12 +73,25 @@ set(WRAPS "${WRAPS},-wrap,pthread_cond_wait")
 # Get the files in the source subdirectory
 set(source_files)
 aux_source_directory("${PROJECT_SOURCE_DIR}/fsw/src" source_files)
+
+set(source_file_names)
+foreach(SOURCE_FILE ${source_files})
+    get_filename_component(SOURCE_NAME "${SOURCE_FILE}" NAME_WE)
+    add_library("${SOURCE_NAME}_object" OBJECT "${SOURCE_FILE}")
+    list(APPEND source_file_names "${SOURCE_NAME}_object")
+endforeach()
+    
+    
+add_library("logger_stub" OBJECT "${PROJECT_SOURCE_DIR}/unit-test/stubs/sbn_client_logger_stubs.c")
+
+
 # Get the files in the applications unit-test directory
 set(app_ut_helper_files)
 aux_source_directory("${PROJECT_SOURCE_DIR}/unit-test/helpers" app_ut_helper_files)
 # Have a variable hold the helper library names so they can be referenced later
 set(app_ut_helper_names)
 # Build all the test helpers and save the object names
+
 foreach(HELPER_FILE ${app_ut_helper_files})
     get_filename_component(HELPER_NAME "${HELPER_FILE}" NAME_WE)
     add_library("${HELPER_NAME}_object" OBJECT "${HELPER_FILE}")
@@ -91,6 +104,17 @@ foreach(SRCFILE ${source_files})
     # Get the base sourcfile name as a module name without path or the extension, 
     # this will be used as the base name of the unit test file.
     get_filename_component(MODULENAME "${SRCFILE}" NAME_WE)
+    
+    set(source_file_names_copy ${source_file_names})
+    
+    set(stub_names)
+    if(NOT MODULENAME MATCHES "sbn_client_logger")
+        # aux_source_directory("${PROJECT_SOURCE_DIR}/unit-test/stubs" stub_dir)
+        set(stub_names "logger_stub")
+        remove(source_file_names_copy "sbn_client_logger_object")
+    endif()
+    
+    remove(source_file_names_copy "${MODULENAME}_object")
     
     # Use the module name to find the testname, adding _tests to the end
     set(TESTNAME "${MODULENAME}_tests")
@@ -126,10 +150,11 @@ foreach(SRCFILE ${source_files})
     # as well as the UT assert framework
     # sbn_client needs referenced here, not sure how to remove it, maybe when there's stubs for sbn_client files?
     target_link_libraries(${TESTNAME}-testrunner
+        ${source_file_names_copy}
+        ${app_ut_helper_names}
+        ${stub_names}
         ut_cfe-core_stubs
         ut_assert
-        ${app_ut_helper_names}
-        sbn_client
     )
     
     # Add it to the set of tests to run as part of "make test"
