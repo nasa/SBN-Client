@@ -93,7 +93,6 @@ def sbn_load_and_init():
     print("SBN Client init: {}".format(status))
     status = sbn_client.__wrap_CFE_SB_CreatePipe(byref(cmd_pipe), 10, cmd_pipe_name)
     print("SBN Client command pipe: {}".format(status))
-    subscribe(0x18DE)
 
 def send_repeater_msg():
     global sbn_client
