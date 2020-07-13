@@ -2,9 +2,11 @@
 #define _sbn_client_utils_h_
 
 #include <stdint.h>
+#include <stdarg.h>
 
 #include "sbn_pack.h"
 #include "sbn_client.h"
+#include "sbn_client_logger.h"
 
 /************************************************************************
 ** Type Definitions
@@ -73,7 +75,6 @@ CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t);
 int send_heartbeat(int);
 uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t);
 int connect_to_server(const char *, uint16_t);
-void log_message(const char *);
 
 #endif /* _sbn_client_utils_h_ */
 

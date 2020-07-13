@@ -379,8 +379,3 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
 
     return sockfd;
 }
-
-void log_message(const char * message)
-{
-    puts(message);
-}

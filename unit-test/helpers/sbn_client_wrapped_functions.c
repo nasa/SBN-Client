@@ -46,8 +46,6 @@ boolean use_wrap_recv_msg = FALSE;
 int     wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
 uint8   recv_msg_call_number = 0;
 uint8   recv_msg_discontiue_on_call_number = 0;
-const char *log_message_expected_string = "";
-boolean log_message_was_called = FALSE;
 const char *perror_expected_string = "";
 int wrap_socket_return_value;
 uint16_t wrap_htons_return_value;
@@ -57,18 +55,12 @@ size_t wrap_read_return_value;
 
 
 /* function pointers */
-void (*wrap_log_message_call_func)(void) = NULL;
 void (*wrap_sleep_call_func)(void) = NULL;
 
 /* Functions called by function pointer */
 void wrap_sleep_set_continue_heartbeat_false(void)
 {
     continue_heartbeat = FALSE;
-}
-
-void wrap_log_message_set_continue_recv_check_false(void)
-{
-    continue_receive_check = FALSE;
 }
 
 
@@ -349,25 +341,6 @@ int32 __wrap_recv_msg(int sockfd)
     return result;
 }
 
-int __wrap_log_message(const char *str)
-{
-    log_message_was_called = TRUE;
-    
-    if (strlen(log_message_expected_string) > 0)
-    {
-        UtAssert_StrCmp(str, log_message_expected_string, 
-          TestResultMsg("log_message expected string '%s' == '%s' string recieved",
-          log_message_expected_string, str));
-    }
-    
-    if (wrap_log_message_call_func != NULL)
-    {
-        (*wrap_log_message_call_func)();
-    }
-    
-    return __real_log_message(str);
-}
-
 void __wrap_perror(const char *str)
 {
     if (strlen(perror_expected_string) > 0)
@@ -476,13 +449,10 @@ void SBN_CLient_Wrapped_Functions_Teardown(void)
     wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
     recv_msg_call_number = 0;
     recv_msg_discontiue_on_call_number = 0;
-    log_message_expected_string = "";
-    log_message_was_called = FALSE;
     perror_expected_string = "";
         
     
     /* function pointers */
-    wrap_log_message_call_func = NULL;
     wrap_sleep_call_func = NULL;
     
     /* external resets */    

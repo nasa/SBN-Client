@@ -4,7 +4,7 @@ void add_connect_to_server_tests(void);
 
 /*******************************************************************************
 **
-**  SBN_Client_Tests Setup and Teardown
+**  SBN_Client_Utils_Tests Setup and Teardown
 **
 *******************************************************************************/
 
@@ -490,12 +490,38 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
 
 /*************************************************/
 
+void Test_CFE_SBN_Client_GetMessageSubscribeIndex_FailsMaxMessagesHit(CFE_SB_PipeId_t PipeId)
+{
+    /* Arrange */
+    CFE_SB_PipeId_t testPipeId = 0;
+    int32 expectedResult = CFE_SBN_CLIENT_MAX_MSG_IDS_MET;
+    int32 result;
+    int i=0;
+    
+    for (i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; ++i)
+    {
+        PipeTbl[testPipeId].SubscribedMsgIds[i] = i + 1;
+    }
+    
+    /* Act */
+    result = CFE_SBN_Client_GetMessageSubscribeIndex(testPipeId);
+    
+    /* Assert */
+    UtAssert_True(result == expectedResult, "Expected 0x%08X got 0x%08X", expectedResult, result);
+    
+}
+
 void UtTest_Setup(void)
 {
     // UtGroupSetup_Add(Test_Group_Setup);
     // UtGroupTeardown_Add(Test_Group_Teardown);
     // 
     /* check_pthread_create_status Tests */
+    UtTest_Add(
+      Test_CFE_SBN_Client_GetMessageSubscribeIndex_FailsMaxMessagesHit,
+       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
+       "Test_CFE_SBN_Client_GetMessageSubscribeIndex_FailsMaxMessagesHit");
+    
     UtTest_Add(
       Test_check_pthread_create_status_Outlog_messageErrorWhenStatusIs_EAGAIN,
        SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 

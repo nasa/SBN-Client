@@ -15,20 +15,20 @@ pthread_t heart_thread_id;
 
 int32 SBN_Client_Init(void)
 {
-     /* Gets socket file descriptor */
     int32 status = SBN_CLIENT_NO_STATUS_SET;
     int heart_thread_status = 0;
     int receive_thread_status = 0;
     
-    printf("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, 
+    log_message("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, 
         SBN_CLIENT_PORT);
     
     sbn_client_sockfd = connect_to_server(SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
-    sbn_client_cpuId = 2; /* TODO: this is hardcoded, but should be set by cFS's SBN ??*/
+    sbn_client_cpuId = 2; /* TODO: hardcoded, but should be set by cFS SBN ??*/
 
     if (sbn_client_sockfd < 0)
     {
-        log_message("SBN_CLIENT: ERROR Failed to get sbn_client_sockfd, cannot continue.");
+        log_message(
+         "SBN_CLIENT: ERROR Failed to get sbn_client_sockfd, cannot continue.");
         status = SBN_CLIENT_BAD_SOCK_FD_EID;
     }
     else
@@ -56,7 +56,7 @@ int32 SBN_Client_Init(void)
     
     if (status != SBN_CLIENT_SUCCESS)
     {
-        printf("SBN_Client_Init error %d\n", status);
+        log_message("SBN_Client_Init error %d\n", status);
     }/* end if */ 
     
     return status;
