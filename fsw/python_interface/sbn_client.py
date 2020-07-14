@@ -70,9 +70,11 @@ cmd_pipe_name = create_string_buffer(b'cmd_pipe')
 
 def print_header(message_p):
     recv_msg = message_p.contents
-    print("Message Header: {} {} {}".format(hex(recv_msg.TlmHeader.StreamId), hex(recv_msg.TlmHeader.Sequence), hex(recv_msg.TlmHeader.Length)))
-    print("Message APID: {} {}".format(hex(recv_msg.TlmHeader.APIDQSubsystem), hex(recv_msg.TlmHeader.APIDQSystemId)))
-    print("Message Time: {}".format(hex(recv_msg.TlmHeader.Time)))
+    print("Message Header: {} {} {}".format(hex(recv_msg.TlmHeader.Primary.StreamId),
+                                            hex(recv_msg.TlmHeader.Primary.Sequence),
+                                            hex(recv_msg.TlmHeader.Primary.Length)))
+    print("Message Time: {} {}".format(hex(recv_msg.TlmHeader.Secondary.Seconds),
+                                       hex(recv_msg.TlmHeader.Secondary.Subseconds)))
 
 # TODO: Common file?
 def cfs_error_convert (number):
