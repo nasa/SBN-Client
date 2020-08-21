@@ -87,7 +87,7 @@ int32 recv_msg(int32 sockfd)
     unsigned char msg[CFE_SB_MAX_SB_MSG_SIZE];
     SBN_MsgSz_t MsgSz;
     SBN_MsgType_t MsgType;
-    SBN_CpuID_t CpuID;
+    uint32 CpuID;
     
     int status = CFE_SBN_CLIENT_ReadBytes(sockfd, sbn_hdr_buffer, 
                                           SBN_PACKED_HDR_SZ);
