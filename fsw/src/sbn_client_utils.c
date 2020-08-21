@@ -174,11 +174,9 @@ CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)
 {
     CFE_SB_MsgId_t MsgId = 0;
 
-#ifdef MESSAGE_FORMAT_IS_CCSDS
-
- #ifndef MESSAGE_FORMAT_IS_CCSDS_VER_2  
+#ifndef MESSAGE_FORMAT_IS_CCSDS_VER_2
     MsgId = CCSDS_RD_SID(MsgPtr->Hdr);
- #else
+#else
 
     uint32            SubSystemId;
 
@@ -190,8 +188,6 @@ CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)
     /* Add in the SubSystem ID as needed */
     SubSystemId = CCSDS_RD_SUBSYSTEM_ID(MsgPtr->SpacePacket.ApidQ);
     MsgId = (MsgId | (SubSystemId << 8));
- #endif
- 
 #endif
 
 return MsgId;
@@ -218,11 +214,7 @@ int send_heartbeat(int sockfd)
 
 uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t MsgPtr)
 {
-#ifdef MESSAGE_FORMAT_IS_CCSDS
-
     return CCSDS_RD_LEN(MsgPtr->Hdr);
-
-#endif
 }/* end CFE_SBN_Client_GetTotalMsgLength */
 
 int connect_to_server(const char *server_ip, uint16_t server_port)
