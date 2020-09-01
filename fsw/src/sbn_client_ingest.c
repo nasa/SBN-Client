@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <string.h>
 
 #include "sbn_client_ingest.h"
 
@@ -19,9 +20,9 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
     
     if (status != CFE_SUCCESS)
     {
-        char error_message[60];
+        char error_message[61];
         
-        snprintf(error_message, 60, 
+        snprintf(error_message, sizeof(error_message), 
           "CFE_SBN_CLIENT_ReadBytes returned a bad status = 0x%08X\n", status);
         log_message(error_message);
         
