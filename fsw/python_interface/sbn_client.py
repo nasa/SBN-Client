@@ -51,6 +51,20 @@ class Secondary_Header_t(BigEndianStructure):
     _fields_ = [("Seconds", c_uint32),
                 ("Subseconds", c_uint16)]
 
+# typedef struct {
+#    uint8 FunctionCode; /* Command Function Code */
+#                        /* bits shift ---------description-------- */
+#                        /* 0x7F  0    Command function code        */
+#                        /* 0x80  7    Reserved                     */
+#
+#    uint8 Checksum;     /* Command checksum  (all bits, 0xFF)      */
+# } CCSDS_CmdSecHdr_t;
+
+class Command_Header_t(Structure):
+    _pack_ = 1
+    _fields_ = [("FunctionCode", c_uint8),
+                ("Checksum", c_uint8)]
+
 class CFE_SB_Msg_t(Structure):
     _pack_ = 1
     _fields_ = [("Primary", Primary_Header_t),
