@@ -2,7 +2,7 @@
 
 Refer to git commits for document history and revisions.
 
-The primary requirement of the software is that it must correctly implement the SBN communication protocol. Fulfillment of this requirement is confirmed via unit tests which are included with the source code. Functional testing is performed with demonstration projects (such as the CLIP TODO) and project software that is utilizing SBNC, such as TODO RAISR.
+The primary requirement of the software is that it must correctly implement the SBN communication protocol. Fulfillment of this requirement is confirmed via unit tests which are included with the source code. Functional testing is performed with demonstration projects such as the [CLIP](https://aetd-git.gsfc.nasa.gov/cFS_lab/clip).
 
 ## 1. Implement SBN Protocol
 
