@@ -32,6 +32,7 @@ void *SBN_Client_HeartbeatMinder(void *vargp)
 void *SBN_Client_ReceiveMinder(void *vargp)
 {
     int32 status;
+    int32 consec_error_count = 0;
     
     while(continue_receive_check) /* TODO: check run state? */
     {
@@ -42,7 +43,17 @@ void *SBN_Client_ReceiveMinder(void *vargp)
         if (status != CFE_SUCCESS)
         {
             log_message("Recieve message returned error 0x%08X\n", status);
+            consec_error_count++;
+        }
+        else
+        {
+            consec_error_count = 0;
         } /* end if */
+
+        if (5 == consec_error_count) {
+            continue_heartbeat = FALSE;
+            continue_receive_check = FALSE;
+        }
         
     } /* end while */
     
