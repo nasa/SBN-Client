@@ -82,9 +82,6 @@ int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
             if (PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
             {
                 invalidate_pipe(&PipeTbl[i]);
-                // CFE_EVS_SendEvent(CFE_SBN_CLIENT_PIPE_DELETED_EID, 
-                // CFE_EVS_EventType_DEBUG, "Pipe Deleted:id %d,owner %s",
-                // (int)PipeId, APP_NAME);
                 return CFE_SUCCESS;
             }
             else
@@ -236,7 +233,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
     // Need to coordinate with the recv_msg thread... so locking?
     // Also, what about messages that get split? Is that an issue?
     uint8           pipe_idx;
-    int32           beginning_status = CFE_EVS_ERROR;
+    int32           beginning_status = CFE_EVS_ERROR; // TODO: Why this error? Seems like _not_ what was intended
     int32           status = beginning_status;
     struct timespec enter_time;
     
