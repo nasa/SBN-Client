@@ -75,7 +75,7 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer,
         else if (bytes_received == 0)
         {
             /* TODO:ERROR closed remotely */
-            log_message("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
+            log_message("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR: %s\n", strerror(errno));
             return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
         }
         
@@ -229,7 +229,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     /* Socket error */
     if (sockfd < 0)
     {
-        switch(errno)
+        switch(errno) // TODO: Could this use strerror(errno) instead?
         {
             case EACCES:
             log_message("socket err = EACCES");
@@ -293,7 +293,7 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
     /* Connect error */
     if (connection < 0)
     {
-        switch(errno)
+        switch(errno) // TODO: Could this use strerror(errno) instead?
         {
             case EACCES:
             log_message("connect err = EACCES");
