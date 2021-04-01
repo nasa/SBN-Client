@@ -3,7 +3,6 @@
 #include "sbn_client.h"
 #include "sbn_client_minders.h"
 #include "sbn_client_utils.h"
-#include "sbn_client_defs.h"
 
 
 extern int sbn_client_sockfd;
@@ -19,8 +18,7 @@ int32 SBN_Client_Init(void)
     int heart_thread_status = 0;
     int receive_thread_status = 0;
     
-    log_message("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, 
-        SBN_CLIENT_PORT);
+    log_message("SBN_Client Connecting to %s, %d\n", SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
     
     sbn_client_sockfd = connect_to_server(SBN_CLIENT_IP_ADDR, SBN_CLIENT_PORT);
     sbn_client_cpuId = 2; /* TODO: hardcoded, but should be set by cFS SBN ??*/
@@ -33,16 +31,16 @@ int32 SBN_Client_Init(void)
     }
     else
     {
-        /* Create pipe table */
         CFE_SBN_Client_InitPipeTbl();
 
-        /* Create thread for watchdog and receive */
+        /* heartbeat thread establishes live connection */
         heart_thread_status = pthread_create(&heart_thread_id, NULL, 
             SBN_Client_HeartbeatMinder, NULL);
             
         status = check_pthread_create_status(heart_thread_status, 
             SBN_CLIENT_HEART_THREAD_CREATE_EID);
         
+        /* receive thread monitors for messages */
         if (status == SBN_CLIENT_SUCCESS)
         {    
             receive_thread_status = pthread_create(&receive_thread_id, NULL, 
