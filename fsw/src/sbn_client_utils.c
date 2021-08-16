@@ -75,7 +75,7 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer,
         else if (bytes_received == 0)
         {
             /* TODO:ERROR closed remotely */
-            log_message("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR\n");
+            log_message("SBN_CLIENT: ERROR CFE_SBN_CLIENT_PIPE_CLOSED_ERR: %s\n", strerror(errno));
             return CFE_SBN_CLIENT_PIPE_CLOSED_ERR;
         }
         
@@ -127,8 +127,7 @@ size_t write_message(int sockfd, char *buffer, size_t size)
 uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
 {
   /* Quick check because PipeId should match PipeIdx */
-    if (PipeTbl[PipeId].PipeId == PipeId && PipeTbl[PipeId].InUse == 
-        CFE_SBN_CLIENT_IN_USE)
+    if (PipeTbl[PipeId].PipeId == PipeId && PipeTbl[PipeId].InUse == CFE_SBN_CLIENT_IN_USE)
     {
         return PipeId;
     }
@@ -147,8 +146,7 @@ uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
 
         } /* end for */
     
-        /* Pipe ID not found. 
-         * TODO: error event? No, lets have caller do that... */
+        /* Pipe ID not found */
         return CFE_SBN_CLIENT_INVALID_PIPE;
     }/* end if */
   
@@ -160,8 +158,7 @@ uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
     
     for (i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
     {
-        if (PipeTbl[PipeId].SubscribedMsgIds[i] == 
-            CFE_SBN_CLIENT_INVALID_MSG_ID)
+        if (PipeTbl[PipeId].SubscribedMsgIds[i] == CFE_SBN_CLIENT_INVALID_MSG_ID)
         {
             return i;
         }
@@ -204,7 +201,7 @@ int send_heartbeat(int sockfd)
     Pack_Init(&Pack, sbn_header, 0 + SBN_PACKED_HDR_SZ, 0);
     
     Pack_UInt16(&Pack, 0);
-    Pack_UInt8(&Pack, SBN_TCP_HEARTBEAT_MSG);
+    Pack_UInt8(&Pack, SBN_HEARTBEAT_MSG);
     Pack_UInt32(&Pack, 2);
     
     retval = write(sockfd, sbn_header, sizeof(sbn_header));
@@ -232,38 +229,19 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
         switch(errno)
         {
             case EACCES:
-            log_message("socket err = EACCES");
-            break; 
-            
             case EAFNOSUPPORT:
-            log_message("socket err = EAFNOSUPPORT");
-            break;  
-            
             case EINVAL:
-            log_message("socket err = EINVAL");
-            break; 
-            
             case EMFILE:
-            log_message("socket err = EMFILE");
-            break; 
-            
             case ENOBUFS:
-            log_message("socket err = ENOBUFS");
-            break; 
-            
             case ENOMEM:
-            log_message("socket err = ENOMEM");
-            break; 
-            
             case EPROTONOSUPPORT:
-            log_message("socket err = EPROTONOSUPPORT");
-            break;  
+                log_message("Socket err = %s", strerror(errno));
+                break;  
             
             default:
-            printf("Unknown socket error = %d\n", errno);  
+                log_message("Unknown socket error = %s", strerror(errno));  
         }
         
-        perror("connect_to_server socket error");
         return SERVER_SOCKET_ERROR;
     }
     
@@ -296,76 +274,30 @@ int connect_to_server(const char *server_ip, uint16_t server_port)
         switch(errno)
         {
             case EACCES:
-            log_message("connect err = EACCES");
-            break;
-            
             case EPERM:
-            log_message("connect err = EPERM");
-            break;
-            
             case EADDRINUSE:
-            log_message("connect err = EADDRINUSE");
-            break;
-            
             case EADDRNOTAVAIL:
-            log_message("connect err = EADDRNOTAVAIL");
-            break;
-            
             case EAFNOSUPPORT:
-            log_message("connect err = EAFNOSUPPORT");
-            break;
-            
             case EAGAIN:
-            log_message("connect err = EAGAIN");
-            break;
-            
             case EALREADY:
-            log_message("connect err = EALREADY");
-            break;
-            
             case EBADF:
-            log_message("connect err = EBADF");
-            break;
-            
             case ECONNREFUSED:
-            log_message("connect err = ECONNREFUSED");
-            break;
-            
             case EFAULT:
-            log_message("connect err = EFAULT");
-            break;
-            
             case EINPROGRESS:
-            log_message("connect err = EINPROGRESS");
-            break;
-            
             case EINTR:
-            log_message("connect err = EINTR");
-            break;
-            
             case EISCONN:
-            log_message("connect err = EISCONN");
-            break;
-            
             case ENETUNREACH:
-            log_message("connect err = ENETUNREACH");
-            break;
-            
             case ENOTSOCK:
-            log_message("connect err = ENOTSOCK");
-            break;
-            
             case EPROTOTYPE:
-            log_message("connect err = EPROTOTYPE");
-            break;
-            
             case ETIMEDOUT:
-            log_message("connect err = ETIMEDOUT");
-            break;        
+                log_message("connect err = %s", strerror(errno));
+                break;
+            
+            default:
+                log_message("Unknown connect error = %s", strerror(errno)); 
         }
         
-        perror("connect_to_server connect error");
-        printf("SERVER_CONNECT_ERROR: Connect failed error: %d\n", connection);
+        log_message("SERVER_CONNECT_ERROR: Connect failed error: %d\n", connection);
         return SERVER_CONNECT_ERROR;
     }
 

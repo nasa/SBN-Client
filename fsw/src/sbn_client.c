@@ -61,20 +61,10 @@ void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID,
     Pack_MsgID(&Pack, MsgID);
     Pack_Data(&Pack, &QoS, sizeof(QoS)); /* 2 uint8's */
     
-    // int i = 0;
-    // log_message("SUB MSG: ");
-    // for (i;i < Pack.BufUsed; i++)
-    // {
-    //   printf("0x%02x ", (unsigned char)Buf[i]);
-    // }
-    // printf("i = %d\n", i);
-    // log_message("");
-    
     size_t write_result = write_message(sbn_client_sockfd, Buf, Pack.BufUsed);
     
     if (write_result != Pack.BufUsed)
     {
-      //TODO: error
       log_message("SBN_CLIENT: ERROR SendSubToSbn!!\n");
     }
     
@@ -105,9 +95,6 @@ int32 recv_msg(int32 sockfd)
         Unpack_UInt8(&Unpack, &MsgType);
         Unpack_UInt32(&Unpack, &CpuID);
 
-        // printf("Msg Size: %d\t Msg Type: %d\t Processor_ID: %d\n", MsgSz,
-        //       MsgType, CpuID);
-
         //TODO: check cpuID to see if it is correct for this location?
 
         switch(MsgType)
@@ -128,13 +115,12 @@ int32 recv_msg(int32 sockfd)
             case SBN_PROTO_MSG:      
                 status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
                 break;
-            case SBN_RECVD_HEARTBEAT_MSG:
+            case SBN_HEARTBEAT_MSG:
                 status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
                 break;
 
             default:
-                printf("SBN_CLIENT: ERROR - recv_msg unrecognized type %d\n", 
-                       MsgType);
+                log_message("SBN_CLIENT: ERROR - recv_msg unrecognized type %d\n", MsgType);
                 status =  CFE_EVS_ERROR; //TODO: change error
         }
         

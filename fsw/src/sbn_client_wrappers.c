@@ -82,9 +82,6 @@ int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
             if (PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
             {
                 invalidate_pipe(&PipeTbl[i]);
-                // CFE_EVS_SendEvent(CFE_SBN_CLIENT_PIPE_DELETED_EID, 
-                // CFE_EVS_EventType_DEBUG, "Pipe Deleted:id %d,owner %s",
-                // (int)PipeId, APP_NAME);
                 return CFE_SUCCESS;
             }
             else
@@ -183,7 +180,6 @@ int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId,
 
 uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 {
-    //printf("SBN_Client:Sending Message...\n");
     char *buffer;
     uint16 msg_size = CFE_SBN_Client_GetTotalMsgLength(msg);
 
@@ -204,21 +200,12 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
     Pack_UInt32(&Pack, sbn_client_cpuId);
 
     memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
-    
-    // int i = 0;
-    // log_message("SUB MSG: ");
-    // for (i;i < Pack.BufUsed; i++)
-    // {
-    //   printf("0x%02x ", (unsigned char)Buf[i]);
-    // }
-    // printf("i = %d\n", i);
-    // log_message("");
 
     write_result = write_message(sbn_client_sockfd, buffer, total_size);
 
     if (write_result != total_size)
     {
-        // TODO: This isn't an allocation error...
+        // TODO: This isn't an allocation error, but must return an error that CFE_SB_SendMsg would return, is there a better choice here?
         return CFE_SB_BUF_ALOC_ERR;
     }
 
@@ -230,14 +217,8 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, 
                            int32 TimeOut)
 {
-    //log_message("SBN_CLIENT: Checking for messages...");
-    // Oh my.
-    // Need to have multiple pipes... so the subscribe thing
-    // Need to coordinate with the recv_msg thread... so locking?
-    // Also, what about messages that get split? Is that an issue?
     uint8           pipe_idx;
-    int32           beginning_status = CFE_EVS_ERROR;
-    int32           status = beginning_status;
+    int32           status = CFE_SUCCESS;
     struct timespec enter_time;
     
     clock_gettime(CLOCK_MONOTONIC, &enter_time);
@@ -264,7 +245,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
         
     } /* end if */
     
-    if (status == beginning_status)
+    if (status == CFE_SUCCESS)
     {
         int lock_mutex_status = 0;
         int wait_mutex_status = 0;
@@ -329,7 +310,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
                 
             }
         
-            if (status == beginning_status)
+            if (status == CFE_SUCCESS)
             {
                 /* must progress to next message in pipe because currently 
                  * pointed to message is the last message that was read */

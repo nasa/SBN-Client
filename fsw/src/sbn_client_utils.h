@@ -7,6 +7,7 @@
 #include "sbn_pack.h"
 #include "sbn_client.h"
 #include "sbn_client_logger.h"
+#include "sbn_client_defs.h"
 
 /************************************************************************
 ** Type Definitions
@@ -22,34 +23,34 @@
 **     Note: Changing the size of this structure may require the memory pool
 **     block sizes to change.
 */
-
 typedef struct {
-     CFE_SB_MsgId_t    MsgId;
-     uint16            UseCount;
-     uint32            Size;
-     void              *Buffer;
-     CFE_SB_SenderId_t Sender;
+     CFE_SB_MsgId_t     MsgId;
+     uint16             UseCount;
+     uint32             Size;
+     void*              Buffer;
+     CFE_SB_SenderId_t  Sender;
 } CFE_SBN_Client_BufferD_t;
 
+/* TODO: Doxygen comments */
 typedef struct {
-    uint8              InUse;
-    CFE_SB_PipeId_t    PipeId;
-    char               PipeName[OS_MAX_API_NAME];
-    char               AppName[OS_MAX_API_NAME];
-    uint8              Opts;
-    uint8              Spare;
-    uint32             AppId;
-    uint32             SysQueueId;
-    uint32             LastSender;
-    uint16             QueueDepth;
-    uint16             SendErrors;
-    uint32     NumberOfMessages;
-    uint32     ReadMessage;
-    unsigned char  Messages[CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH][CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
-    CFE_SB_MsgId_t     SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE];
+    uint8             InUse;
+    CFE_SB_PipeId_t   PipeId;
+    char              PipeName[OS_MAX_API_NAME];
+    char              AppName[OS_MAX_API_NAME];
+    uint8             Opts;
+    uint8             Spare;
+    uint32            AppId;
+    uint32            SysQueueId;
+    uint32            LastSender;
+    uint16            QueueDepth;
+    uint16            SendErrors;
+    uint32            NumberOfMessages;
+    uint32            ReadMessage;
+    unsigned char     Messages[CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH][CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    CFE_SB_MsgId_t    SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE];
 } CFE_SBN_Client_PipeD_t;
 
-// SBN header // TODO: from include?
+/* SBN header TODO: Header is hardcoded here; what is a better way to bring this in from SB? */
 typedef struct
 {
     uint16 SBN_MsgSz;
@@ -57,6 +58,7 @@ typedef struct
     uint32 SBN_ProcessorID;
 } SBN_Hdr_t;
 
+/* TODO: Doxygen comments */
 typedef struct {
   int  msgId;
   int  pipeIds[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];

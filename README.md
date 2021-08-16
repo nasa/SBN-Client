@@ -11,6 +11,11 @@ This configuration allows the cFS application to be isolated in an OS process wh
 SBNC is intended to support the rapid development of software concepts for future flight software and technology demonstrations.
 It is not intended to be used in flight software.
 
+## Configuration
+
+Configuration is set by defines in [`sbn_client_defs.h`](./fsw/src/sbn_client_defs.h).
+For now, this is only the IP address and port used by SBN, which should match that in `sbn_conf_tbl.c`.
+
 ## Standalone Library
 
 This version is meant to allow an outside program to communicate with a [cFS](https://github.com/NASA/cFS) instantiation through the Software Bus, mediated by the [Software Bus Network](https://github.com/nasa/SBN). It may be used for bindings to other languages, such as Python, and does not require the rest of cFE to be linked.

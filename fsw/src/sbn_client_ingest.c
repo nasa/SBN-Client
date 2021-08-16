@@ -8,7 +8,10 @@ pthread_cond_t  received_condition = PTHREAD_COND_INITIALIZER;
 
 /* TODO: Using memcpy to move message into pipe. What about pointer passing?
  *    Can we only look to msgId then memcpy only that then read directly
- *    into pipe? This could speed things up... */
+ *    into pipe? This could speed things up... 
+ * passing pointers will only work here if it is guaranteed that the message 
+ * will not be destroyed.  SBN may not be able to provide that assurance */
+
 void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
 {
     int            status, i;
@@ -31,12 +34,9 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
 
     MsgId = CFE_SBN_Client_GetMsgId((CFE_SB_MsgPtr_t)msg_buffer);
     
-    /* TODO: check that msgid is valid - How? */
-    
-    /* Take mutex */
     pthread_mutex_lock(&receive_mutex);
     
-    /*Put message into pipe */    
+    /* Put message into pipe */    
     for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
     {    
         if (PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
@@ -49,10 +49,9 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
             {
                 if (PipeTbl[i].SubscribedMsgIds[j] == MsgId)
                 {
-                    if (PipeTbl[i].NumberOfMessages == 
-                        CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
+                    if (PipeTbl[i].NumberOfMessages == CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH)
                     {
-                        //TODO: error pipe overflow
+                        /* TODO: handle error pipe overflow */
                         log_message("SBN_CLIENT: ERROR pipe overflow");
                         
                         pthread_mutex_unlock(&receive_mutex);
@@ -62,11 +61,11 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
                     {    
                         log_message("App message received: MsgId 0x%08X", MsgId);
                         
-                        memcpy(PipeTbl[i].Messages[message_entry_point(
-                            PipeTbl[i])], msg_buffer, MsgSz);
+                        memcpy(PipeTbl[i].Messages[message_entry_point(PipeTbl[i])], msg_buffer, MsgSz);
                         PipeTbl[i].NumberOfMessages++;
                         
                         pthread_mutex_unlock(&receive_mutex);
+
                         /* only a received message should send signal */
                         pthread_cond_signal(&received_condition);
                         

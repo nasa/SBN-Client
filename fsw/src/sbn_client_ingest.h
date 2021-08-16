@@ -35,8 +35,7 @@ extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
  ** \param[in]  MsgSz        The number of bytes to read for the message.
  **
  **/
-void ingest_app_message(int SockFd, 
-                         SBN_MsgSz_t MsgSz);
+void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz);
  
  /**@}*/
 #endif /* _sbn_client_ingest_h_ */
