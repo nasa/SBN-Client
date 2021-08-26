@@ -51,3 +51,7 @@ The library will be built by cFS's CMake system.
 There are a number of workarounds used to allow for SBN Client to be used in both environments, but ultimately these are preferable to having diverging source code.
 The crux of the problem is that for process applications the library needs to be linked alongside of the rest of cFS.
 Thus we have to wrap function names that we want to override for the process applications, and then unwrap those calls for standalone applications.
+
+## License and Copyright
+
+Please refer to (NOSA GSC-18396-1.pdf) and (COPYRIGHT).
