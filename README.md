@@ -11,6 +11,12 @@ This configuration allows the cFS application to be isolated in an OS process wh
 SBNC is intended to support the rapid development of software concepts for future flight software and technology demonstrations.
 It is not intended to be used in flight software.
 
+## Compatible cFS and SBN Version
+
+Currently works with the cFS integration candidate from 2020-05-27: [github.com/nasa/cFS](https://github.com/nasa/cFS/tree/da695db7daaf3ca417662b81c5b9ea48c67be78f), which uses cFE 6.7.19 [github.com/nasa/cFE](https://github.com/nasa/cFE/tree/ad2190af9a2b40c9b9d0f3b88f601e931ad4059d).
+
+Tested with SBN 1.11.0, specifically: [github.com/nasa/SBN](https://github.com/nasa/SBN/tree/ea45ea4a075b1e28e0fd3413c63a3ad6ce57aba0).
+
 ## Configuration
 
 Configuration is set by defines in [`sbn_client_defs.h`](./fsw/src/sbn_client_defs.h).
