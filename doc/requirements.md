@@ -2,7 +2,9 @@
 
 Refer to git commits for document history and revisions.
 
-The primary requirement of the software is that it must correctly implement the SBN communication protocol. Fulfillment of this requirement is confirmed via unit tests which are included with the source code. Functional testing is performed with demonstration projects such as the [CLIP](https://aetd-git.gsfc.nasa.gov/cFS_lab/clip).
+The primary requirement of the software is that it must correctly implement the SBN communication protocol.
+Fulfillment of this requirement is confirmed via unit tests which are included with the source code.
+Functional testing is performed with demonstration projects (not yet publicly available).
 
 ## 1. Implement SBN Protocol
 
