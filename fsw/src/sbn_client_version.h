@@ -1,14 +1,15 @@
-/************************************************************************
-** File:
-**   $Id: sbn_client_version.h  $
+/*
+** GSC-18396-1, “Software Bus Network Client for External Process”
 **
-** Purpose:
-**  The SBN Client header file containing version number
+** Copyright © 2019 United States Government as represented by
+** the Administrator of the National Aeronautics and Space Administration.
+** No copyright is claimed in the United States under Title 17, U.S. Code.
+** All Other Rights Reserved.
 **
-** Notes:
-**
-**
-*************************************************************************/
+** Licensed under the NASA Open Source Agreement version 1.3
+** See "NOSA GSC-18396-1.pdf"
+*/
+
 #ifndef _sbn_client_version_h_
 #define _sbn_client_version_h_
 
