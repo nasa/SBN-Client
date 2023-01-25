@@ -54,7 +54,7 @@ void *SBN_Client_ReceiveMinder(void *vargp)
         
         if (status != CFE_SUCCESS)
         {
-            log_message("Recieve message returned error 0x%08X\n", status);
+            log_message("Receive message returned error 0x%08X\n", status);
             consec_error_count++;
         }
         else

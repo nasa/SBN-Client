@@ -452,7 +452,7 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPollRequestHasMessageInPipe(void)
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected");    
     UtAssert_True(
       PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      "PipeTbl[%d].NumberOfMessages should have decreased by 1 to %d and is %d", 
       pipe_assigned, number_of_messages - 1, 
       PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
@@ -503,7 +503,7 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutPendMessageAlreadyInPipe(void)
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
     UtAssert_True(
       PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      "PipeTbl[%d].NumberOfMessages should have decreased by 1 to %d and is %d", 
       pipe_assigned, number_of_messages - 1, 
       PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(
@@ -555,7 +555,7 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessTimeoutValueMessageAlreadyInPipe(void)
     UtAssert_MemCmp(buffer, msg, msgSize, "Message in buffer is as expected"); 
     UtAssert_True(
       PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      "PipeTbl[%d].NumberOfMessages should have decreased by 1 to %d and is %d", 
       pipe_assigned, number_of_messages - 1, 
       PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
@@ -715,7 +715,7 @@ void Test__wrap_CFE_SB_RcvMsg_FailsPthreadMutexUnlockFailure(void)
     UtAssert_True(buffer == NULL, "Buffer returned points to NULL");    
     UtAssert_True(
       PipeTbl[pipe_assigned].NumberOfMessages == number_of_messages - 1, 
-      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      "PipeTbl[%d].NumberOfMessages should have decreased by 1 to %d and is %d", 
       pipe_assigned, number_of_messages - 1, 
       PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
@@ -776,7 +776,7 @@ void Test__wrap_CFE_SB_RcvMsg_SuccessPipeIsFull(void)
         ((unsigned char *)buffer)[i]);
     }
     UtAssert_True(PipeTbl[pipe_assigned].NumberOfMessages == num_msg - 1, 
-      "PipeTbl[%d].NumberOfMessages should have decresed by 1 to %d and is %d", 
+      "PipeTbl[%d].NumberOfMessages should have decreased by 1 to %d and is %d", 
       pipe_assigned, num_msg - 1, PipeTbl[pipe_assigned].NumberOfMessages);
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == current_read_msg, 
       "PipeTbl[%d].ReadMessage should have progressed to %d from %d and is %d", 

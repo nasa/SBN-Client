@@ -18,7 +18,7 @@
 **
 ** Purpose:
 **      This header file contains the definition of the cFS sbn_client app's 
-**      initialzation function.  The init function must be called by a cFS
+**      initialization function.  The init function must be called by a cFS
 **      multi-process app in order to use the features of cFE that sbn_client
 **      provides.
 **
@@ -27,7 +27,7 @@
 ******************************************************************************/
 /****************** Function Prototypes **********************/
 
-/** @defgroup SBNCLIENTAPIInitilization sbn_client Init API
+/** @defgroup SBNCLIENTAPIInitialization sbn_client Init API
  * @{
  */
 

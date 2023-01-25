@@ -19,7 +19,7 @@
 
 /**
  * Extern reference to sbn client pipe table.
- * Allows the message injest to fill the pipe
+ * Allows the message ingest to fill the pipe
  */
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
  

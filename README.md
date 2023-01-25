@@ -1,7 +1,7 @@
 # SBN Client
 
 The Software Bus Network Client (SBNC) communicates with NASA's core Flight System (cFS) Software Bus Network (SBN) application.
-Its main purpose it to facilitate two-way communication from the cFS Software Bus service to an external application (i.e. an application that is not a child task of cFS).
+Its main purpose is to facilitate two-way communication from the cFS Software Bus service to an external application (i.e. an application that is not a child task of cFS).
 SBNC implements the SBN communication protocol and provides access to the Software Bus through a standalone C library.
 
 We also support using SBNC within existing cFS applications through a modified build system and function wrappers.
