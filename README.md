@@ -54,7 +54,7 @@ Thus we have to wrap function names that we want to override for the process app
 
 ## License and Copyright
 
-Please refer to [NOSA GSC-188396-1.pdf](NOSA%20GSC-18396-1.pdf) and [COPYRIGHT](COPYRIGHT).
+Please refer to [NOSA GSC-18396-1.pdf](NOSA%20GSC-18396-1.pdf) and [COPYRIGHT](COPYRIGHT).
 
 ## Contributions
 
