@@ -55,3 +55,16 @@ Thus we have to wrap function names that we want to override for the process app
 ## License and Copyright
 
 Please refer to [NOSA GSC-188396-1.pdf](NOSA%20GSC-18396-1.pdf) and [COPYRIGHT](COPYRIGHT).
+
+## Contributions
+
+Please open an issue if you find any problems.
+We are a small team, but will try to respond in a timely fashion.
+
+If you would like to contribute code, GREAT!
+First you will need to complete the [Individual Contributor License Agreement (pdf)](doc/Indv_CLA_SBNC.pdf) and email it to gsfc-softwarerequest@mail.nasa.gov with  james.marshall-1@nasa.gov CCed.
+
+Next, please create an issue for the fix or feature and note that you intend to work on it.
+Fork the repository and create a branch with a name that starts with the issue number.
+Once done, submit your pull request and we'll take a look.
+You may want to make draft pull requests to solicit feedback on larger changes.
