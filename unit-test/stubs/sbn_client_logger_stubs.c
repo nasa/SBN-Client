@@ -27,7 +27,7 @@ int32 log_message(const char *format, ...)
     // if (strlen(log_message_expected_string) > 0)
     // {
     //     UtAssert_StrCmp(str, log_message_expected_string, 
-    //       TestResultMsg("log_message expected string '%s' == '%s' string recieved",
+    //       TestResultMsg("log_message expected string '%s' == '%s' string received",
     //       log_message_expected_string, str));
     // }
     // 

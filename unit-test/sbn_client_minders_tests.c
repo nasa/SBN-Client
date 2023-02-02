@@ -110,7 +110,7 @@ void Test_SBN_Client_ReceiveMinder_Outlog_messageError(void)
     use_wrap_recv_msg = TRUE;
     
     wrap_recv_msg_return_value = Any_int32_Except(CFE_SUCCESS);
-    snprintf(err_msg, 50, "Recieve message returned error 0x%08X\n", 
+    snprintf(err_msg, 50, "Receive message returned error 0x%08X\n", 
       wrap_recv_msg_return_value);
     
     log_message_expected_string = err_msg;

@@ -115,7 +115,7 @@ void invalidate_pipe(CFE_SBN_Client_PipeD_t *pipe)
     /* SB always holds one message so Number of messages should always be a minimum of 1 */
     pipe->NumberOfMessages = 1;
     /* Message to be read will be incremented after receive is called */
-    /* Therefor initial next message is the last in the chain */
+    /* Therefore initial next message is the last in the chain */
     pipe->ReadMessage = CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH - 1;
     memset(&pipe->PipeName[0],0,OS_MAX_API_NAME);
     

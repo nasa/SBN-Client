@@ -358,7 +358,7 @@ void __wrap_perror(const char *str)
     if (strlen(perror_expected_string) > 0)
     {
         UtAssert_StrCmp(str, perror_expected_string, 
-          TestResultMsg("perror expected string '%s' == '%s' string recieved",
+          TestResultMsg("perror expected string '%s' == '%s' string received",
           perror_expected_string, str));
     }
     
