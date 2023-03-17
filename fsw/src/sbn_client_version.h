@@ -14,7 +14,7 @@
 #define _sbn_client_version_h_
 
 #define SBN_CLIENT_MAJOR_VERSION    1
-#define SBN_CLIENT_MINOR_VERSION    0
+#define SBN_CLIENT_MINOR_VERSION    1
 #define SBN_CLIENT_REVISION         0
 #define SBN_CLIENT_MISSION_REV      0
 

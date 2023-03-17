@@ -190,10 +190,10 @@ int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId,
     return -1;
 } /* end __wrap_CFE_SB_UnsubscribeLocal */
 
-uint32 __wrap_CFE_SB_TransmitMsg(CFE_MSG_Message_t *msg, true)
+uint32 __wrap_CFE_SB_TransmitMsg(const CFE_MSG_Message_t *MsgPtr, bool IncrementSequenceCount)
 {
     char *buffer;
-    uint16 msg_size = CFE_SBN_Client_GetTotalMsgLength(msg);
+    uint16 msg_size = CFE_SBN_Client_GetTotalMsgLength(MsgPtr);
 
     size_t write_result, total_size = msg_size + SBN_PACKED_HDR_SZ;
     Pack_t Pack;
@@ -211,7 +211,7 @@ uint32 __wrap_CFE_SB_TransmitMsg(CFE_MSG_Message_t *msg, true)
     Pack_UInt8(&Pack, SBN_APP_MSG);
     Pack_UInt32(&Pack, sbn_client_cpuId);
 
-    memcpy(buffer + SBN_PACKED_HDR_SZ, msg, msg_size);
+    memcpy(buffer + SBN_PACKED_HDR_SZ, MsgPtr, msg_size);
 
     write_result = write_message(sbn_client_sockfd, buffer, total_size);
 
@@ -226,8 +226,7 @@ uint32 __wrap_CFE_SB_TransmitMsg(CFE_MSG_Message_t *msg, true)
     return CFE_SUCCESS;
 } /* end __wrap_CFE_SB_TransmitMsg */
 
-int32 __wrap_CFE_SB_ReceiveBuffer(CFE_MSG_Message_t * *BufPtr, CFE_SB_PipeId_t PipeId,
-                           int32 TimeOut)
+int32 __wrap_CFE_SB_ReceiveBuffer(CFE_SB_Buffer_t **BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
 {
     uint8           pipe_idx;
     int32           status = CFE_SUCCESS;
@@ -359,10 +358,18 @@ int32 __wrap_CFE_SB_ReceiveBuffer(CFE_MSG_Message_t * *BufPtr, CFE_SB_PipeId_t P
     return status;
 } /* end __wrap_CFE_SB_ReceiveBuffer */
 
-int32 __wrap_CFE_SB_ZeroCopySend(CFE_MSG_Message_t *MsgPtr,
-                                 CFE_SB_ZeroCopyHandle_t BufferHandle)
-{
-    printf ("SBN_CLIENT: ERROR CFE_SB_ZeroCopySend not yet implemented\n");
+// Zero copy is not implemented
+CFE_SB_Buffer_t * __wrap_CFE_SB_AllocateMessageBuffer(size_t MsgSize) {
+    printf ("SBN_CLIENT: ERROR %s not implemented\n", __func__);
     return -1;
-} /* end __wrap_CFE_SB_ZeroCopySend */
+}
 
+CFE_Status_t __wrap_CFE_SB_ReleaseMessageBuffer(CFE_SB_Buffer_t *BufPtr) {
+    printf ("SBN_CLIENT: ERROR %s not implemented\n", __func__);
+    return -1;
+}
+
+CFE_Status_t __wrap_CFE_SB_TransmitBuffer(CFE_SB_Buffer_t *BufPtr, bool IncrementSequenceCount) {
+    printf ("SBN_CLIENT: ERROR %s not implemented\n", __func__);
+    return -1;
+}
