@@ -42,7 +42,7 @@ void Test_ingest_app_message_ReadBytesFails(void)
     int sockfd = Any_int();
     int msgSize = rand() % CFE_SB_MAX_SB_MSG_SIZE;
     
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);
     
     snprintf(err_msg, 60,
@@ -55,11 +55,11 @@ void Test_ingest_app_message_ReadBytesFails(void)
     ingest_app_message(sockfd, msgSize);
     
     /* Assert */
-    UtAssert_True(wrap_pthread_mutex_lock_was_called == FALSE,
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == false,
       "pthread_mutex_lock should not have been called");
-    UtAssert_True(wrap_pthread_mutex_unlock_was_called == FALSE,
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == false,
       "pthread_mutex_unlock should not have been called");
-    UtAssert_True(wrap_pthread_cond_signal_was_called == FALSE,
+    UtAssert_True(wrap_pthread_cond_signal_was_called == false,
       "pthread_cond_signal should not have been called");
 }
 
@@ -71,12 +71,12 @@ void Test_ingest_app_message_FailsWhenNoPipesInUse(void)
     int msgSize = sizeof(msg);
     int sockfd = Any_int();
     
-    wrap_pthread_mutex_lock_should_be_called = TRUE;
-    wrap_pthread_mutex_unlock_should_be_called = TRUE;
-    wrap_pthread_cond_signal_should_be_called = FALSE;
-    use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
+    wrap_pthread_mutex_lock_should_be_called = true;
+    wrap_pthread_mutex_unlock_should_be_called = true;
+    wrap_pthread_cond_signal_should_be_called = false;
+    use_wrap_CFE_SBN_Client_GetMsgId = true;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
 
@@ -86,11 +86,11 @@ void Test_ingest_app_message_FailsWhenNoPipesInUse(void)
     ingest_app_message(sockfd, msgSize);
 
     /* Assert */
-    UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == true,
       "pthread_mutex_lock should not have been called");
-    UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == true,
       "pthread_mutex_unlock should not have been called");
-    UtAssert_True(wrap_pthread_cond_signal_was_called == FALSE,
+    UtAssert_True(wrap_pthread_cond_signal_was_called == false,
       "pthread_cond_signal should not have been called");
 }
 
@@ -106,12 +106,12 @@ void Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull(void)
     int msg_slot = read_msg + num_msg;
     int sockfd = Any_int();
     
-    wrap_pthread_mutex_lock_should_be_called = TRUE;
-    wrap_pthread_mutex_unlock_should_be_called = TRUE;
-    wrap_pthread_cond_signal_should_be_called = FALSE;
-    use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
+    wrap_pthread_mutex_lock_should_be_called = true;
+    wrap_pthread_mutex_unlock_should_be_called = true;
+    wrap_pthread_cond_signal_should_be_called = false;
+    use_wrap_CFE_SBN_Client_GetMsgId = true;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
@@ -136,11 +136,11 @@ void Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
       "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
-    UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == true,
       "pthread_mutex_lock was called");
-    UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == true,
       "pthread_mutex_unlock was called");
-    UtAssert_True(wrap_pthread_cond_signal_was_called == FALSE,
+    UtAssert_True(wrap_pthread_cond_signal_was_called == false,
       "pthread_cond_signal should not have been called");
 }
 
@@ -157,17 +157,17 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     int sockfd = Any_int();
     char err_msg[60] = "SBN_CLIENT: ERROR no subscription for this msgid";
     
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);
     
     log_message_expected_string = err_msg;
     
-    wrap_pthread_mutex_lock_should_be_called = TRUE;
-    wrap_pthread_mutex_unlock_should_be_called = TRUE;
-    wrap_pthread_cond_signal_should_be_called = FALSE;
-    use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
+    wrap_pthread_mutex_lock_should_be_called = true;
+    wrap_pthread_mutex_unlock_should_be_called = true;
+    wrap_pthread_cond_signal_should_be_called = false;
+    use_wrap_CFE_SBN_Client_GetMsgId = true;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
@@ -193,11 +193,11 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
       "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
-    UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == true,
       "pthread_mutex_lock was called");
-    UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == true,
       "pthread_mutex_unlock was called");
-    UtAssert_True(wrap_pthread_cond_signal_was_called == FALSE,
+    UtAssert_True(wrap_pthread_cond_signal_was_called == false,
       "pthread_cond_signal should not have been called");
 }
 
@@ -213,12 +213,12 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     int msg_slot = read_msg + num_msg;
     int sockfd = Any_int();
     
-    wrap_pthread_mutex_lock_should_be_called = TRUE;
-    wrap_pthread_mutex_unlock_should_be_called = TRUE;
-    wrap_pthread_cond_signal_should_be_called = TRUE;
-    use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
+    wrap_pthread_mutex_lock_should_be_called = true;
+    wrap_pthread_mutex_unlock_should_be_called = true;
+    wrap_pthread_cond_signal_should_be_called = true;
+    use_wrap_CFE_SBN_Client_GetMsgId = true;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
@@ -252,11 +252,11 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
       "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
-    UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == true,
       "pthread_mutex_lock was called");
-    UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == true,
       "pthread_mutex_unlock was called");
-    UtAssert_True(wrap_pthread_cond_signal_was_called == TRUE,
+    UtAssert_True(wrap_pthread_cond_signal_was_called == true,
       "pthread_cond_signal was called");
 }
 
@@ -273,12 +273,12 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     int msg_slot = read_msg + num_msg;
     int sockfd = Any_int();
     
-    wrap_pthread_mutex_lock_should_be_called = TRUE;
-    wrap_pthread_mutex_unlock_should_be_called = TRUE;
-    wrap_pthread_cond_signal_should_be_called = TRUE;
-    use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
+    wrap_pthread_mutex_lock_should_be_called = true;
+    wrap_pthread_mutex_unlock_should_be_called = true;
+    wrap_pthread_cond_signal_should_be_called = true;
+    use_wrap_CFE_SBN_Client_GetMsgId = true;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
@@ -312,11 +312,11 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
       "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
-    UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == true,
       "pthread_mutex_lock was called");
-    UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == true,
       "pthread_mutex_unlock was called");
-    UtAssert_True(wrap_pthread_cond_signal_was_called == TRUE,
+    UtAssert_True(wrap_pthread_cond_signal_was_called == true,
       "pthread_cond_signal was called");
 }
 
@@ -332,12 +332,12 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
     int msg_slot= read_msg + num_msg;
     int sockfd = Any_int();
     
-    wrap_pthread_mutex_lock_should_be_called = TRUE;
-    wrap_pthread_mutex_unlock_should_be_called = TRUE;
-    wrap_pthread_cond_signal_should_be_called = TRUE;
-    use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
+    wrap_pthread_mutex_lock_should_be_called = true;
+    wrap_pthread_mutex_unlock_should_be_called = true;
+    wrap_pthread_cond_signal_should_be_called = true;
+    use_wrap_CFE_SBN_Client_GetMsgId = true;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
     
@@ -373,11 +373,11 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
     UtAssert_True(PipeTbl[pipe_assigned].ReadMessage == read_msg, 
       "PipeTbl[%d].ReadMessage should not have changed from %d and was %d", 
       pipe_assigned, read_msg, PipeTbl[pipe_assigned].ReadMessage);
-    UtAssert_True(wrap_pthread_mutex_lock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_lock_was_called == true,
       "pthread_mutex_lock was called");
-    UtAssert_True(wrap_pthread_mutex_unlock_was_called == TRUE,
+    UtAssert_True(wrap_pthread_mutex_unlock_was_called == true,
       "pthread_mutex_unlock was called");
-    UtAssert_True(wrap_pthread_cond_signal_was_called == TRUE,
+    UtAssert_True(wrap_pthread_cond_signal_was_called == true,
       "pthread_cond_signal was called");
 }
 

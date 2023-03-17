@@ -16,45 +16,45 @@
 #define PTHREAD_MUTEX_UNLOCK_FAILURE  EPERM
 
 
-boolean use_wrap_CFE_SBN_CLIENT_ReadBytes = FALSE;
+bool use_wrap_CFE_SBN_CLIENT_ReadBytes = false;
 unsigned char *wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
 int wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
-boolean wrap_pthread_mutex_lock_should_be_called = FALSE;
-boolean wrap_pthread_mutex_lock_was_called = FALSE;
+bool wrap_pthread_mutex_lock_should_be_called = false;
+bool wrap_pthread_mutex_lock_was_called = false;
 int wrap_pthread_mutex_lock_return_value = 0;
-boolean wrap_pthread_mutex_unlock_should_be_called = FALSE;
-boolean wrap_pthread_mutex_unlock_was_called = FALSE;
+bool wrap_pthread_mutex_unlock_should_be_called = false;
+bool wrap_pthread_mutex_unlock_was_called = false;
 int wrap_pthread_mutex_unlock_return_value = 0;
-boolean wrap_pthread_cond_wait_should_be_called = FALSE;
-boolean wrap_pthread_cond_wait_was_called = FALSE;
-boolean use_wrap_pthread_cond_wait = FALSE;
+bool wrap_pthread_cond_wait_should_be_called = false;
+bool wrap_pthread_cond_wait_was_called = false;
+bool use_wrap_pthread_cond_wait = false;
 int wrap_pthread_cond_wait_return_value = INT_MIN;
-boolean wrap_pthread_cond_signal_should_be_called = FALSE;
-boolean wrap_pthread_cond_signal_was_called = FALSE;
-boolean use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
+bool wrap_pthread_cond_signal_should_be_called = false;
+bool wrap_pthread_cond_signal_was_called = false;
+bool use_wrap_CFE_SBN_Client_GetMsgId = false;
 CFE_SB_MsgId_t wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
-boolean wrap_pthread_cond_timedwait_should_be_called = FALSE;
-boolean use_wrap_pthread_cond_timedwait = FALSE;
-boolean wrap_pthread_cond_timedwait_was_called = FALSE;
+bool wrap_pthread_cond_timedwait_should_be_called = false;
+bool use_wrap_pthread_cond_timedwait = false;
+bool wrap_pthread_cond_timedwait_was_called = false;
 int wrap_pthread_cond_timedwait_return_value = 0;
-boolean use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
+bool use_wrap_CFE_SBN_Client_GetPipeIdx = false;
 uint8 wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
-boolean use_wrap_connect_to_server = FALSE;
+bool use_wrap_connect_to_server = false;
 int wrap_connect_to_server_return_value = INT_MIN;
 int wrap_exit_expected_status = INT_MIN;  
-boolean use_wrap_CFE_SBN_Client_InitPipeTbl = FALSE;
+bool use_wrap_CFE_SBN_Client_InitPipeTbl = false;
 int pthread_create_errors_on_call_number = INT_MIN;
 uint8 pthread_create_call_number = 0;
 int pthread_create_error_value = INT_MIN;
-boolean use_wrap_check_pthread_create_status = FALSE;
-boolean wrap_check_pthread_create_status_fail_call = FALSE;
+bool use_wrap_check_pthread_create_status = false;
+bool wrap_check_pthread_create_status_fail_call = false;
 uint8 check_pthread_create_status_call_number = 0;
 int check_pthread_create_status_errors_on_call_number = INT_MIN;
-boolean use_wrap_send_heartbeat = FALSE;
+bool use_wrap_send_heartbeat = false;
 int     wrap_send_heartbeat_return_value = SBN_CLIENT_SUCCESS;
 uint8   send_hearbeat_call_number = 0;
 uint8   send_heartbeat_discontinue_on_call_number = 0;
-boolean use_wrap_recv_msg = FALSE;
+bool use_wrap_recv_msg = false;
 int     wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
 uint8   recv_msg_call_number = 0;
 uint8   recv_msg_discontiue_on_call_number = 0;
@@ -72,7 +72,7 @@ void (*wrap_sleep_call_func)(void) = NULL;
 /* Functions called by function pointer */
 void wrap_sleep_set_continue_heartbeat_false(void)
 {
-    continue_heartbeat = FALSE;
+    continue_heartbeat = false;
 }
 
 
@@ -99,7 +99,7 @@ int __wrap_CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer,
 
 int __wrap_pthread_mutex_lock(pthread_mutex_t *mutex)
 {
-    wrap_pthread_mutex_lock_was_called = TRUE;
+    wrap_pthread_mutex_lock_was_called = true;
     
     if (!wrap_pthread_mutex_lock_should_be_called)
     {
@@ -111,14 +111,14 @@ int __wrap_pthread_mutex_lock(pthread_mutex_t *mutex)
 
 int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-    wrap_pthread_mutex_unlock_was_called = TRUE;
+    wrap_pthread_mutex_unlock_was_called = true;
     
     if (!wrap_pthread_mutex_unlock_should_be_called)
     {
         UtAssert_Failed(
           "pthread_mutex_unlock called, but should not have been");
           
-        if (wrap_pthread_mutex_lock_was_called == TRUE)
+        if (wrap_pthread_mutex_lock_was_called == true)
         {
           UtAssert_Failed(
             "pthread_mutex_unlock called before calling pthread_mutex_lock");
@@ -131,7 +131,7 @@ int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
 
 int __wrap_pthread_cond_signal(pthread_cond_t *cond)
 {
-    wrap_pthread_cond_signal_was_called = TRUE;
+    wrap_pthread_cond_signal_was_called = true;
     
     if (!wrap_pthread_cond_signal_should_be_called)
     {
@@ -146,7 +146,7 @@ int __wrap_pthread_cond_wait(pthread_cond_t * cond, pthread_mutex_t * mutex)
 {
     int result;
     
-    wrap_pthread_cond_wait_was_called = TRUE;
+    wrap_pthread_cond_wait_was_called = true;
     
     if (!wrap_pthread_cond_wait_should_be_called)
     {
@@ -171,7 +171,7 @@ int __wrap_pthread_cond_timedwait(pthread_cond_t * cond,
 {
     int result;
     
-    wrap_pthread_cond_timedwait_was_called = TRUE;
+    wrap_pthread_cond_timedwait_was_called = true;
     
     if (!wrap_pthread_cond_timedwait_should_be_called)
     {
@@ -191,7 +191,7 @@ int __wrap_pthread_cond_timedwait(pthread_cond_t * cond,
     return result;
 }
 
-CFE_SB_MsgId_t __wrap_CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)
+CFE_SB_MsgId_t __wrap_CFE_SBN_Client_GetMsgId(CFE_MSG_Message_t * MsgPtr)
 {
     CFE_SB_MsgId_t result;
     
@@ -314,7 +314,7 @@ int __wrap_send_heartbeat(int sockfd)
         if (send_hearbeat_call_number == 
             send_heartbeat_discontinue_on_call_number)
         {
-            continue_heartbeat = FALSE;
+            continue_heartbeat = false;
         }
         
         return wrap_send_heartbeat_return_value;
@@ -340,7 +340,7 @@ int32 __wrap_recv_msg(int sockfd)
     {
         if (recv_msg_call_number == recv_msg_discontiue_on_call_number)
         {
-            continue_receive_check = FALSE;
+            continue_receive_check = false;
         }
         
         return wrap_recv_msg_return_value;
@@ -419,45 +419,45 @@ void SBN_CLient_Wrapped_Functions_Setup(void)
 void SBN_CLient_Wrapped_Functions_Teardown(void)
 {
     /* SBN_CLient_Wrapped_Functions_Teardown resets all variables */
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = FALSE;
+    use_wrap_CFE_SBN_CLIENT_ReadBytes = false;
     wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
-    wrap_pthread_mutex_lock_should_be_called = FALSE;
-    wrap_pthread_mutex_lock_was_called = FALSE;
+    wrap_pthread_mutex_lock_should_be_called = false;
+    wrap_pthread_mutex_lock_was_called = false;
     wrap_pthread_mutex_lock_return_value = 0;
-    wrap_pthread_mutex_unlock_should_be_called = FALSE;
-    wrap_pthread_mutex_unlock_was_called = FALSE;
+    wrap_pthread_mutex_unlock_should_be_called = false;
+    wrap_pthread_mutex_unlock_was_called = false;
     wrap_pthread_mutex_unlock_return_value = 0;
-    wrap_pthread_cond_wait_should_be_called = FALSE;
-    wrap_pthread_cond_wait_was_called = FALSE;
-    use_wrap_pthread_cond_wait = FALSE;
+    wrap_pthread_cond_wait_should_be_called = false;
+    wrap_pthread_cond_wait_was_called = false;
+    use_wrap_pthread_cond_wait = false;
     wrap_pthread_cond_wait_return_value = INT_MIN;
-    wrap_pthread_cond_signal_should_be_called = FALSE;
-    wrap_pthread_cond_signal_was_called = FALSE;
-    use_wrap_CFE_SBN_Client_GetMsgId = FALSE;
+    wrap_pthread_cond_signal_should_be_called = false;
+    wrap_pthread_cond_signal_was_called = false;
+    use_wrap_CFE_SBN_Client_GetMsgId = false;
     wrap_CFE_SBN_Client_GetMsgId_return_value = 0xFFFF;
-    wrap_pthread_cond_timedwait_should_be_called = FALSE;
-    use_wrap_pthread_cond_timedwait = FALSE;
-    wrap_pthread_cond_timedwait_was_called = FALSE;
+    wrap_pthread_cond_timedwait_should_be_called = false;
+    use_wrap_pthread_cond_timedwait = false;
+    wrap_pthread_cond_timedwait_was_called = false;
     wrap_pthread_cond_timedwait_return_value = 0;
-    use_wrap_CFE_SBN_Client_GetPipeIdx = FALSE;
+    use_wrap_CFE_SBN_Client_GetPipeIdx = false;
     wrap_CFE_SBN_Client_GetPipeIdx_return_value = UCHAR_MAX;
-    use_wrap_connect_to_server = FALSE;
+    use_wrap_connect_to_server = false;
     wrap_connect_to_server_return_value = INT_MIN;
     wrap_exit_expected_status = INT_MIN;
-    use_wrap_CFE_SBN_Client_InitPipeTbl = FALSE;
+    use_wrap_CFE_SBN_Client_InitPipeTbl = false;
     pthread_create_errors_on_call_number = INT_MIN;
     pthread_create_call_number = 0;
     pthread_create_error_value = INT_MIN;
-    use_wrap_check_pthread_create_status = FALSE;
-    wrap_check_pthread_create_status_fail_call = FALSE;
+    use_wrap_check_pthread_create_status = false;
+    wrap_check_pthread_create_status_fail_call = false;
     check_pthread_create_status_call_number = 0;
     check_pthread_create_status_errors_on_call_number = INT_MIN;
-    use_wrap_send_heartbeat = FALSE;
+    use_wrap_send_heartbeat = false;
     wrap_send_heartbeat_return_value = SBN_CLIENT_SUCCESS;
     send_hearbeat_call_number = 0;
     send_heartbeat_discontinue_on_call_number = 0;
-    use_wrap_recv_msg = FALSE;
+    use_wrap_recv_msg = false;
     wrap_recv_msg_return_value = SBN_CLIENT_SUCCESS;
     recv_msg_call_number = 0;
     recv_msg_discontiue_on_call_number = 0;
@@ -468,7 +468,7 @@ void SBN_CLient_Wrapped_Functions_Teardown(void)
     wrap_sleep_call_func = NULL;
     
     /* external resets */    
-    continue_heartbeat = TRUE;
-    continue_receive_check = TRUE;
+    continue_heartbeat = true;
+    continue_receive_check = true;
 }
 

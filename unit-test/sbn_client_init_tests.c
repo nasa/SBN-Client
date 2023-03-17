@@ -40,7 +40,7 @@ void Test_SBN_Client_Init_FailsBecause_connect_to_server_Fails(void)
     int32 result;
     int32 expected_result = SBN_CLIENT_BAD_SOCK_FD_EID;
     /* connect_to_server call control */
-    use_wrap_connect_to_server = TRUE;
+    use_wrap_connect_to_server = true;
     wrap_connect_to_server_return_value = Any_Negative_int();
 
     /* Act */ 
@@ -58,18 +58,18 @@ void Test_SBN_Client_Init_FailsBecauseCreateHeartThreadFails(void)
     int32 result;
     int32 expected_result = SBN_CLIENT_HEART_THREAD_CREATE_EID;
     /* connect_to_server call control */
-    use_wrap_connect_to_server = TRUE;
+    use_wrap_connect_to_server = true;
     wrap_connect_to_server_return_value = Any_Positive_int_Or_Zero();
     
-    use_wrap_CFE_SBN_Client_InitPipeTbl = TRUE;
+    use_wrap_CFE_SBN_Client_InitPipeTbl = true;
 
     /* set pthread_create error */
     pthread_create_errors_on_call_number = FIRST_CALL;
     pthread_create_error_value = Any_int_Except(0);
     
     /* set check_pthread_create_status return given error id */
-    use_wrap_check_pthread_create_status = TRUE;
-    wrap_check_pthread_create_status_fail_call = TRUE;
+    use_wrap_check_pthread_create_status = true;
+    wrap_check_pthread_create_status_fail_call = true;
     check_pthread_create_status_errors_on_call_number = FIRST_CALL;
 
     /* Act */ 
@@ -92,18 +92,18 @@ void Test_SBN_Client_Init_FailsBecauseCreateReceiveThreadFails(void)
     int32 result;
     int32 expected_result = SBN_CLIENT_RECEIVE_THREAD_CREATE_EID;
     /* connect_to_server call control */
-    use_wrap_connect_to_server = TRUE;
+    use_wrap_connect_to_server = true;
     wrap_connect_to_server_return_value = Any_Positive_int_Or_Zero();
     
-    use_wrap_CFE_SBN_Client_InitPipeTbl = TRUE;
+    use_wrap_CFE_SBN_Client_InitPipeTbl = true;
 
     /* set pthread_create error */
     pthread_create_errors_on_call_number = SECOND_CALL;
     pthread_create_error_value = Any_int_Except(0);
     
     /* set check_pthread_create_status return given error id */
-    use_wrap_check_pthread_create_status = TRUE;
-    wrap_check_pthread_create_status_fail_call = TRUE;
+    use_wrap_check_pthread_create_status = true;
+    wrap_check_pthread_create_status_fail_call = true;
     check_pthread_create_status_errors_on_call_number = SECOND_CALL;
 
     /* Act */ 
@@ -124,17 +124,17 @@ void Test_SBN_Client_Init_Success(void)
 {
     /* Arrange */
     /* connect_to_server call control */
-    use_wrap_connect_to_server = TRUE;
+    use_wrap_connect_to_server = true;
     wrap_connect_to_server_return_value = Any_Positive_int_Or_Zero();
     
-    use_wrap_CFE_SBN_Client_InitPipeTbl = TRUE;
+    use_wrap_CFE_SBN_Client_InitPipeTbl = true;
 
     /* set pthread_create to NOT error */
     pthread_create_errors_on_call_number = 0;
     
     /* set check_pthread_create_status return given error id */
-    use_wrap_check_pthread_create_status = TRUE;
-    wrap_check_pthread_create_status_fail_call = FALSE;
+    use_wrap_check_pthread_create_status = true;
+    wrap_check_pthread_create_status_fail_call = false;
     
     /* Act */ 
     int32 result = SBN_Client_Init();

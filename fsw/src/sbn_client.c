@@ -133,7 +133,7 @@ int32 recv_msg(int32 sockfd)
 
             default:
                 log_message("SBN_CLIENT: ERROR - recv_msg unrecognized type %d\n", MsgType);
-                status =  CFE_EVS_ERROR; //TODO: change error
+                status =  CFE_EVS_EventType_ERROR; //TODO: change error
         }
         
     }

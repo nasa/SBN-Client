@@ -46,10 +46,10 @@
 /* SBN_Client variable access */
 extern int sbn_client_sockfd;
 extern int sbn_client_cpuId;
-extern boolean continue_heartbeat;
-extern boolean continue_receive_check;
+extern bool continue_heartbeat;
+extern bool continue_receive_check;
 extern CFE_SBN_Client_PipeD_t PipeTbl[CFE_PLATFORM_SBN_CLIENT_MAX_PIPES];
 extern const char *log_message_expected_string;
-extern boolean log_message_was_called;
+extern bool log_message_was_called;
 
 #endif /* _sbn_client_tests_includes_h_ */

@@ -32,7 +32,7 @@ void SBN_Client_Minders_Tests_Teardown(void)
 
 void wrap_log_message_set_continue_recv_check_false(void)
 {
-    continue_receive_check = FALSE;
+    continue_receive_check = false;
 }
 
 void Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse(void)
@@ -40,7 +40,7 @@ void Test_SBN_Client_HeartbeatMinder_NoLoopContinueHeartbeatFalse(void)
     /* Arrange */
     void * result;
     
-    continue_heartbeat = FALSE;
+    continue_heartbeat = false;
     
     /* Act */
     result = SBN_Client_HeartbeatMinder(NULL);
@@ -73,7 +73,7 @@ void Test_SBN_Client_HeartbeatMinder_RunsUntilContinueHeartbeatIsFalse(void)
     /* call number becomes from 1 to 255 */
     send_heartbeat_discontinue_on_call_number = (rand() % UCHAR_MAX) + 1; 
     
-    use_wrap_send_heartbeat = TRUE;
+    use_wrap_send_heartbeat = true;
     wrap_send_heartbeat_return_value = Any_int();
 
     /* Act */
@@ -91,7 +91,7 @@ void Test_SBN_Client_ReceiveMinder_NoLoopContinueReceiveCheckFalse(void)
     /* Arrange */
     void * result;
     
-    continue_receive_check = FALSE;
+    continue_receive_check = false;
     
     /* Act */
     result = SBN_Client_ReceiveMinder(NULL);
@@ -107,7 +107,7 @@ void Test_SBN_Client_ReceiveMinder_Outlog_messageError(void)
     char err_msg[50];
     void * result;
     
-    use_wrap_recv_msg = TRUE;
+    use_wrap_recv_msg = true;
     
     wrap_recv_msg_return_value = Any_int32_Except(CFE_SUCCESS);
     snprintf(err_msg, 50, "Receive message returned error 0x%08X\n", 
@@ -132,7 +132,7 @@ void Test_SBN_Client_ReceiveMinder_RunsUntilContinueReceiveCheckIsFalse(void)
      /* call number becomes from 1 to 255 */
     recv_msg_discontiue_on_call_number = (rand() % UCHAR_MAX) + 1;
     
-    use_wrap_recv_msg = TRUE;
+    use_wrap_recv_msg = true;
     wrap_recv_msg_return_value = CFE_SUCCESS;
     
     /* Act */

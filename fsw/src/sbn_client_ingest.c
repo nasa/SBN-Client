@@ -27,7 +27,7 @@ pthread_cond_t  received_condition = PTHREAD_COND_INITIALIZER;
 void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
 {
     int            status, i;
-    boolean        at_least_1_pipe_is_in_use = FALSE;    
+    bool           at_least_1_pipe_is_in_use = false;
     unsigned char  msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
     CFE_SB_MsgId_t MsgId;
     
@@ -44,7 +44,8 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
         return;
     }
 
-    MsgId = CFE_SBN_Client_GetMsgId((CFE_SB_MsgPtr_t)msg_buffer);
+    // TODO: this will probably need to be fixed... I think GetMsgId needs a pointer to MsgId now
+    MsgId = CFE_SBN_Client_GetMsgId((CFE_MSG_Message_t *)msg_buffer);
     
     pthread_mutex_lock(&receive_mutex);
     
@@ -55,7 +56,7 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
         {
             int j;
             
-            at_least_1_pipe_is_in_use = TRUE;
+            at_least_1_pipe_is_in_use = true;
             
             for(j = 0; j < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; j++)
             {

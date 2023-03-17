@@ -190,7 +190,7 @@ int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId,
     return -1;
 } /* end __wrap_CFE_SB_UnsubscribeLocal */
 
-uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
+uint32 __wrap_CFE_SB_TransmitMsg(CFE_MSG_Message_t *msg, true)
 {
     char *buffer;
     uint16 msg_size = CFE_SBN_Client_GetTotalMsgLength(msg);
@@ -217,16 +217,16 @@ uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *msg)
 
     if (write_result != total_size)
     {
-        // TODO: This isn't an allocation error, but must return an error that CFE_SB_SendMsg would return, is there a better choice here?
+        // TODO: This isn't an allocation error, but must return an error that CFE_SB_TransmitMsg would return, is there a better choice here?
         return CFE_SB_BUF_ALOC_ERR;
     }
 
     free(buffer);
 
     return CFE_SUCCESS;
-} /* end __wrap_CFE_SB_SendMsg */
+} /* end __wrap_CFE_SB_TransmitMsg */
 
-int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId, 
+int32 __wrap_CFE_SB_ReceiveBuffer(CFE_MSG_Message_t * *BufPtr, CFE_SB_PipeId_t PipeId,
                            int32 TimeOut)
 {
     uint8           pipe_idx;
@@ -330,7 +330,7 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
                   CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
                 pipe->ReadMessage = next_msg;
         
-                *BufPtr = (CFE_SB_MsgPtr_t)(&(pipe->Messages[next_msg]));
+                *BufPtr = (CFE_MSG_Message_t *)(&(pipe->Messages[next_msg]));
         
                 pipe->NumberOfMessages -= 1;
                 status = CFE_SUCCESS;
@@ -357,9 +357,9 @@ int32 __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *BufPtr, CFE_SB_PipeId_t PipeId,
     } /* end if */
     
     return status;
-} /* end __wrap_CFE_SB_RcvMsg */
+} /* end __wrap_CFE_SB_ReceiveBuffer */
 
-int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *MsgPtr, 
+int32 __wrap_CFE_SB_ZeroCopySend(CFE_MSG_Message_t *MsgPtr,
                                  CFE_SB_ZeroCopyHandle_t BufferHandle)
 {
     printf ("SBN_CLIENT: ERROR CFE_SB_ZeroCopySend not yet implemented\n");

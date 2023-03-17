@@ -108,23 +108,23 @@ int32  __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
 
 /*****************************************************************************/
 /** 
-** \brief SBN_Client replacement for CFE_SB_SendMsg that 
+** \brief SBN_Client replacement for CFE_SB_TransmitMsg that
 **
 ** \par Description see \ref CFEAPISBMessage
-**          \copybrief CFE_SB_SendMsg
+**          \copybrief CFE_SB_TransmitMsg
 **
 **/
-uint32 __wrap_CFE_SB_SendMsg(CFE_SB_Msg_t *);
+uint32 __wrap_CFE_SB_TransmitMsg(CFE_MSG_Message_t *, true);
 
 /*****************************************************************************/
 /** 
-** \brief SBN_Client replacement for CFE_SB_RcvMsg that 
+** \brief SBN_Client replacement for CFE_SB_ReceiveBuffer that
 **
 ** \par Description see \ref CFEAPISBMessage
-**          \copybrief CFE_SB_RcvMsg
+**          \copybrief CFE_SB_ReceiveBuffer
 **
 **/
-int32  __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *, CFE_SB_PipeId_t, int32);
+int32  __wrap_CFE_SB_ReceiveBuffer((CFE_SB_Buffer_t **)CFE_MSG_Message_t * *,  CFE_SB_PipeId_t,  int32);
 
 /*****************************************************************************/
 /** 
@@ -134,7 +134,7 @@ int32  __wrap_CFE_SB_RcvMsg(CFE_SB_MsgPtr_t *, CFE_SB_PipeId_t, int32);
 **          CFE_SB_ZeroCopySend not yet implemented.
 **
 **/
-int32 __wrap_CFE_SB_ZeroCopySend(CFE_SB_Msg_t *, CFE_SB_ZeroCopyHandle_t);
+int32 __wrap_CFE_SB_ZeroCopySend(CFE_MSG_Message_t *, CFE_SB_ZeroCopyHandle_t);
 /**@}*/
 
 #endif /* _sbn_client_wrappers_h_ */

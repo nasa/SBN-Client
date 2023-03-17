@@ -179,12 +179,15 @@ uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
     return CFE_SBN_CLIENT_MAX_MSG_IDS_MET;
 }
 
-CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)
+// TODO: Could match the new CFE_MSG_GetMsgId semantics...
+CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_MSG_Message_t * MsgPtr)
 {
+    CFE_Status_t return_value = CFE_SUCCESS;
     CFE_SB_MsgId_t MsgId = 0;
 
+    // TODO: worth checking if this is still needed
 #ifndef MESSAGE_FORMAT_IS_CCSDS_VER_2
-    MsgId = CCSDS_RD_SID(MsgPtr->Hdr);
+    return_value = CFE_MSG_GetMsgId(MsgPtr, &MsgId);
 #else
 
     uint32            SubSystemId;
@@ -221,9 +224,14 @@ int send_heartbeat(int sockfd)
     return retval;
 }
 
-uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_SB_MsgPtr_t MsgPtr)
+uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_MSG_Message_t * MsgPtr)
 {
-    return CCSDS_RD_LEN(MsgPtr->Hdr);
+    CFE_Status_t return_value = CFE_SUCCESS;
+    CFE_MSG_Size_t MsgSize = 0;
+
+    return_value = CFE_MSG_GetSize(MsgPtr, &MsgSize);
+
+    return MsgSize;
 }/* end CFE_SBN_Client_GetTotalMsgLength */
 
 int connect_to_server(const char *server_ip, uint16_t server_port)
