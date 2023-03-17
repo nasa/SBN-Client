@@ -25,24 +25,6 @@
 ** Type Definitions
 *************************************************************************/
 
-/******************************************************************************
-**  Typedef:  CFE_SB_BufferD_t
-**
-**  Purpose:
-**     This structure defines a BUFFER DESCRIPTOR used to specify the MsgId
-**     and address of each packet buffer.
-**
-**     Note: Changing the size of this structure may require the memory pool
-**     block sizes to change.
-*/
-typedef struct {
-     CFE_SB_MsgId_t     MsgId;
-     uint16             UseCount;
-     uint32             Size;
-     void*              Buffer;
-     CFE_SB_SenderId_t  Sender;
-} CFE_SBN_Client_BufferD_t;
-
 /* TODO: Doxygen comments */
 typedef struct {
     uint8             InUse;

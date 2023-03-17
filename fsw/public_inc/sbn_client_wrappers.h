@@ -13,6 +13,7 @@
 #ifndef _sbn_client_wrappers_h_
 #define _sbn_client_wrappers_h_
 
+// #include <stdbool.h>
 #include <sbn_interfaces.h>
 
 
@@ -114,7 +115,7 @@ int32  __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t, CFE_SB_PipeId_t);
 **          \copybrief CFE_SB_TransmitMsg
 **
 **/
-uint32 __wrap_CFE_SB_TransmitMsg(CFE_MSG_Message_t *, true);
+uint32 __wrap_CFE_SB_TransmitMsg(const CFE_MSG_Message_t *MsgPtr, bool IncrementSequenceCount);
 
 /*****************************************************************************/
 /** 
@@ -124,17 +125,16 @@ uint32 __wrap_CFE_SB_TransmitMsg(CFE_MSG_Message_t *, true);
 **          \copybrief CFE_SB_ReceiveBuffer
 **
 **/
-int32  __wrap_CFE_SB_ReceiveBuffer((CFE_SB_Buffer_t **)CFE_MSG_Message_t * *,  CFE_SB_PipeId_t,  int32);
+int32  __wrap_CFE_SB_ReceiveBuffer(CFE_SB_Buffer_t **BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut);
 
 /*****************************************************************************/
 /** 
-** \brief SBN_Client replacement for CFE_SB_ZeroCopySend that 
-**
-** \par Description 
-**          CFE_SB_ZeroCopySend not yet implemented.
+** Zero Copy functions. Not implmented
 **
 **/
-int32 __wrap_CFE_SB_ZeroCopySend(CFE_MSG_Message_t *, CFE_SB_ZeroCopyHandle_t);
+CFE_SB_Buffer_t * __wrap_CFE_SB_AllocateMessageBuffer(size_t MsgSize);
+CFE_Status_t __wrap_CFE_SB_ReleaseMessageBuffer(CFE_SB_Buffer_t *BufPtr);
+CFE_Status_t __wrap_CFE_SB_TransmitBuffer(CFE_SB_Buffer_t *BufPtr, bool IncrementSequenceCount);
 /**@}*/
 
 #endif /* _sbn_client_wrappers_h_ */

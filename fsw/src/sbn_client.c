@@ -101,11 +101,11 @@ int32 recv_msg(int32 sockfd)
     }
     else
     {
-        Unpack_t Unpack;
-        Unpack_Init(&Unpack, sbn_hdr_buffer, SBN_PACKED_HDR_SZ);
-        Unpack_UInt16(&Unpack, &MsgSz);
-        Unpack_UInt8(&Unpack, &MsgType);
-        Unpack_UInt32(&Unpack, &CpuID);
+        Pack_t Pack;
+        Unpack_Init(&Pack, sbn_hdr_buffer, SBN_PACKED_HDR_SZ);
+        Unpack_UInt16(&Pack, &MsgSz);
+        Unpack_UInt8(&Pack, &MsgType);
+        Unpack_UInt32(&Pack, &CpuID);
 
         //TODO: check cpuID to see if it is correct for this location?
 
