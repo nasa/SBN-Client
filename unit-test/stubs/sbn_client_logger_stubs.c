@@ -12,9 +12,9 @@
 
 #include "sbn_client_logger_stubs.h"
 
-extern boolean continue_receive_check;
+extern bool continue_receive_check;
 extern const char *log_message_expected_string;
-extern boolean log_message_was_called;
+extern bool log_message_was_called;
 extern const char *perror_expected_string;
 
 extern void (*wrap_log_message_call_func)(void);
@@ -22,7 +22,7 @@ extern void (*wrap_log_message_call_func)(void);
 int32 log_message(const char *format, ...)
 {
 
-    log_message_was_called = TRUE;
+    log_message_was_called = true;
     // 
     // if (strlen(log_message_expected_string) > 0)
     // {

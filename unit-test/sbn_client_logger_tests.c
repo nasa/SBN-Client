@@ -14,7 +14,7 @@
 
 
 extern const char *log_message_expected_string;
-extern boolean log_message_was_called;
+extern bool log_message_was_called;
 extern const char *perror_expected_string;
 
 extern void (*wrap_log_message_call_func)(void);
@@ -35,7 +35,7 @@ void SBN_Client_Logger_Tests_Teardown(void)
     
 
     log_message_expected_string = "";
-    log_message_was_called = FALSE;
+    log_message_was_called = false;
     perror_expected_string = "";
         
 

@@ -20,7 +20,7 @@ char error_message[MAX_ERROR_MESSAGE_SIZE];
 unsigned char message[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
 
 const char *log_message_expected_string = "";
-boolean log_message_was_called = FALSE;
+bool log_message_was_called = false;
 void (*wrap_log_message_call_func)(void) = NULL;
 /*
  * Functions
@@ -141,7 +141,7 @@ int32 Any_int32_Except(int32 exception)
 int32 Any_int32_ExceptThese(int32 * exceptions, size_t length)
 {
     int32   random_value = 0;
-    boolean value_is_in_exceptions = TRUE;
+    bool value_is_in_exceptions = true;
     
     while (value_is_in_exceptions)
     {
@@ -149,14 +149,14 @@ int32 Any_int32_ExceptThese(int32 * exceptions, size_t length)
         
         random_value = Any_int();
         
-        value_is_in_exceptions = FALSE;
+        value_is_in_exceptions = false;
         
         for(index = 0; index < length; index++)
         {
             
             if (exceptions[index] == random_value)
             {
-                value_is_in_exceptions = TRUE;
+                value_is_in_exceptions = true;
             }
             
         }   

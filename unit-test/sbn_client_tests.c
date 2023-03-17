@@ -145,14 +145,14 @@ void Test_recv_msg_returns_status_WhenFirst_CFE_SBN_Client_ReadBytes_DoesNotRetu
     unsigned char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_fail;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 1,
       "CFE_SBN_Client_ReadBytes was called once");
@@ -177,14 +177,14 @@ void Test_recv_msg_returns_CFE_EVS_ERROR_When_MsgType_IsUnrecognized(void)
     sbn_hdr_buffer[idx++] = 0xFF;
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 1,
       "CFE_SBN_Client_ReadBytes was called once");
@@ -210,14 +210,14 @@ void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_
     sbn_hdr_buffer[idx++] = SBN_NO_MSG;
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
       "CFE_SBN_Client_ReadBytes was called twice");
@@ -242,14 +242,14 @@ void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_
     sbn_hdr_buffer[idx++] = SBN_SUB_MSG;
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
       "CFE_SBN_Client_ReadBytes was called twice");
@@ -274,14 +274,14 @@ void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_
     sbn_hdr_buffer[idx++] = SBN_UNSUB_MSG;
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
       "CFE_SBN_Client_ReadBytes was called twice");
@@ -306,14 +306,14 @@ void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_
     sbn_hdr_buffer[idx++] = SBN_PROTO_MSG;
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
       "CFE_SBN_Client_ReadBytes was called twice");
@@ -338,14 +338,14 @@ void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_
     sbn_hdr_buffer[idx++] = SBN_HEARTBEAT_MSG;
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
       "CFE_SBN_Client_ReadBytes was called twice");
@@ -370,19 +370,19 @@ void Test_recv_msg_returns_Calls_ingest_app_message_AndReturns_CFE_SUCCESS_When_
     sbn_hdr_buffer[idx++] = SBN_APP_MSG;
 
     wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
-    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    use_wrap_CFE_SBN_Client_ReadBytes = true;
     wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
-    use_wrap_ingest_app_message = TRUE;
+    use_wrap_ingest_app_message = true;
       
     /* Act */
     result = recv_msg(arg_sockfd);
     
     /* Assert */
-    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == true,
       "CFE_SBN_Client_ReadBytes was called");
     UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 1,
       "CFE_SBN_Client_ReadBytes was called once");
-    UtAssert_True(wrap_ingest_app_message_was_called == TRUE,
+    UtAssert_True(wrap_ingest_app_message_was_called == true,
       "ingest_app_messagewas called");
     UtAssert_True(wrap_ingest_app_message_call_count == 1,
       "ingest_app_message was called once");
