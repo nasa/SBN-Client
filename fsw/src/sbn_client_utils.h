@@ -44,14 +44,6 @@ typedef struct {
     CFE_SB_MsgId_t    SubscribedMsgIds[CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE];
 } CFE_SBN_Client_PipeD_t;
 
-/* SBN header TODO: Header is hardcoded here; what is a better way to bring this in from SB? */
-typedef struct
-{
-    uint16 SBN_MsgSz;
-    uint8  SBN_MsgType;
-    uint32 SBN_ProcessorID;
-} SBN_Hdr_t;
-
 /* TODO: Doxygen comments */
 typedef struct {
   int  msgId;
@@ -69,7 +61,7 @@ uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t);
 uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t);
 CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_MSG_Message_t *);
 int send_heartbeat(int);
-uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_MSG_Message_t *);
+CFE_MSG_Size_t CFE_SBN_Client_GetTotalMsgLength(const CFE_MSG_Message_t *);
 int connect_to_server(const char *, uint16_t);
 
 #endif /* _sbn_client_utils_h_ */

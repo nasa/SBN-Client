@@ -193,7 +193,7 @@ int32 __wrap_CFE_SB_UnsubscribeLocal(CFE_SB_MsgId_t  MsgId,
 uint32 __wrap_CFE_SB_TransmitMsg(const CFE_MSG_Message_t *MsgPtr, bool IncrementSequenceCount)
 {
     char *buffer;
-    uint16 msg_size = CFE_SBN_Client_GetTotalMsgLength(MsgPtr);
+    CFE_MSG_Size_t msg_size = CFE_SBN_Client_GetTotalMsgLength(MsgPtr);
 
     size_t write_result, total_size = msg_size + SBN_PACKED_HDR_SZ;
     Pack_t Pack;
@@ -329,7 +329,7 @@ int32 __wrap_CFE_SB_ReceiveBuffer(CFE_SB_Buffer_t **BufPtr, CFE_SB_PipeId_t Pipe
                   CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
                 pipe->ReadMessage = next_msg;
         
-                *BufPtr = (CFE_MSG_Message_t *)(&(pipe->Messages[next_msg]));
+                *BufPtr = (CFE_SB_Buffer_t *)(&(pipe->Messages[next_msg]));
         
                 pipe->NumberOfMessages -= 1;
                 status = CFE_SUCCESS;
@@ -361,7 +361,7 @@ int32 __wrap_CFE_SB_ReceiveBuffer(CFE_SB_Buffer_t **BufPtr, CFE_SB_PipeId_t Pipe
 // Zero copy is not implemented
 CFE_SB_Buffer_t * __wrap_CFE_SB_AllocateMessageBuffer(size_t MsgSize) {
     printf ("SBN_CLIENT: ERROR %s not implemented\n", __func__);
-    return -1;
+    return NULL;
 }
 
 CFE_Status_t __wrap_CFE_SB_ReleaseMessageBuffer(CFE_SB_Buffer_t *BufPtr) {

@@ -102,8 +102,8 @@ int32 recv_msg(int32 sockfd)
     else
     {
         Pack_t Pack;
-        Unpack_Init(&Pack, sbn_hdr_buffer, SBN_PACKED_HDR_SZ);
-        Unpack_UInt16(&Pack, &MsgSz);
+        Pack_Init(&Pack, sbn_hdr_buffer, SBN_PACKED_HDR_SZ, 0);
+        Unpack_Int16(&Pack, &MsgSz);
         Unpack_UInt8(&Pack, &MsgType);
         Unpack_UInt32(&Pack, &CpuID);
 

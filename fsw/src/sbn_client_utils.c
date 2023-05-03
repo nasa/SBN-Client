@@ -182,28 +182,21 @@ uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
 // TODO: Could match the new CFE_MSG_GetMsgId semantics...
 CFE_SB_MsgId_t CFE_SBN_Client_GetMsgId(CFE_MSG_Message_t * MsgPtr)
 {
-    CFE_Status_t return_value = CFE_SUCCESS;
     CFE_SB_MsgId_t MsgId = 0;
 
-    // TODO: worth checking if this is still needed
-#ifndef MESSAGE_FORMAT_IS_CCSDS_VER_2
-    return_value = CFE_MSG_GetMsgId(MsgPtr, &MsgId);
-#else
+    //uint32            SubSystemId;
 
-    uint32            SubSystemId;
+    CFE_MSG_GetMsgId(MsgPtr, &MsgId);
 
-    MsgId = CCSDS_RD_APID(MsgPtr->Hdr); /* Primary header APID  */
-     
-    if ( CCSDS_RD_TYPE(MsgPtr->Hdr) == CCSDS_CMD)
-      MsgId = MsgId | CFE_SB_CMD_MESSAGE_TYPE;  
+    // TODO: Not sure if the type and subsystem still need to be captured...
+    //if ( CCSDS_RD_TYPE(MsgPtr->Hdr) == CCSDS_CMD)
+    //  MsgId = MsgId | CFE_SB_CMD_MESSAGE_TYPE;
 
     /* Add in the SubSystem ID as needed */
-    SubSystemId = CCSDS_RD_SUBSYSTEM_ID(MsgPtr->SpacePacket.ApidQ);
-    MsgId = (MsgId | (SubSystemId << 8));
-#endif
+    //SubSystemId = CCSDS_RD_SUBSYSTEM_ID(MsgPtr->SpacePacket.ApidQ);
+    //MsgId = (MsgId | (SubSystemId << 8));
 
-return MsgId;
-
+    return MsgId;
 }/* end CFE_SBN_Client_GetMsgId */
 
 // TODO: return value?
@@ -224,12 +217,11 @@ int send_heartbeat(int sockfd)
     return retval;
 }
 
-uint16 CFE_SBN_Client_GetTotalMsgLength(CFE_MSG_Message_t * MsgPtr)
+CFE_MSG_Size_t CFE_SBN_Client_GetTotalMsgLength(const CFE_MSG_Message_t * MsgPtr)
 {
-    CFE_Status_t return_value = CFE_SUCCESS;
     CFE_MSG_Size_t MsgSize = 0;
 
-    return_value = CFE_MSG_GetSize(MsgPtr, &MsgSize);
+    CFE_MSG_GetSize(MsgPtr, &MsgSize);
 
     return MsgSize;
 }/* end CFE_SBN_Client_GetTotalMsgLength */

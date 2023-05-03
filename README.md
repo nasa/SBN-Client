@@ -34,7 +34,6 @@ The functions provided are exported in sbn_client.h and the redefined symbols ca
 
 The first thing to do is edit the `Makefile` and ensure that all of the included directories are set correctly.
 Headers from SBN, cFE, OSAL, and PSP are all required so that things like the message size matches between cFS and the standalone application.
-In addition, cFS has several generated headers in the mission defs folder that should be linked.
 Once done, running `make` should produce `sbn_client.so` which may be linked by your program.
 
 ## Process Application Library
