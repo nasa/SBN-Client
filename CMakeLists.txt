@@ -11,6 +11,7 @@ set(APP_NAME sbn_client)
 
 add_library(${APP_NAME} "SHARED" ${APP_SRC_FILES})
 target_link_libraries(${APP_NAME} core_api)
+target_sources(${APP_NAME} PRIVATE ${sbn_MISSION_DIR}/fsw/src/sbn_pack.c)
 
 # Override the default behavior of attaching a "lib" prefix
 set_target_properties(${APP_NAME} PROPERTIES PREFIX "")
