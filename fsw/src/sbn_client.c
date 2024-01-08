@@ -66,7 +66,8 @@ void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID,
     Pack_Init(&Pack, Buf, SBN_PACKED_SUB_SZ, 0);
     Pack_UInt16(&Pack, 54);
     Pack_UInt8(&Pack, SubType);
-    Pack_UInt32(&Pack, 2);
+    Pack_UInt32(&Pack, 2); // cpuID
+    Pack_UInt32(&Pack, 0x42); // spacecraft ID
     Pack_Data(&Pack, (void *)SBN_IDENT, (size_t)SBN_IDENT_LEN);
     Pack_UInt16(&Pack, 1);
 
@@ -90,6 +91,7 @@ int32 recv_msg(int32 sockfd)
     SBN_MsgSz_t MsgSz;
     SBN_MsgType_t MsgType;
     uint32 CpuID;
+    uint32 SpacecraftID;
     
     int status = CFE_SBN_CLIENT_ReadBytes(sockfd, sbn_hdr_buffer, 
                                           SBN_PACKED_HDR_SZ);
@@ -106,8 +108,9 @@ int32 recv_msg(int32 sockfd)
         Unpack_Int16(&Pack, &MsgSz);
         Unpack_UInt8(&Pack, &MsgType);
         Unpack_UInt32(&Pack, &CpuID);
+        Unpack_UInt32(&Pack, &SpacecraftID);
 
-        //TODO: check cpuID to see if it is correct for this location?
+        //TODO: check cpuID and SpacecraftID to see if it is correct for this location?
 
         switch(MsgType)
         {

@@ -210,7 +210,9 @@ int send_heartbeat(int sockfd)
     
     Pack_UInt16(&Pack, 0);
     Pack_UInt8(&Pack, SBN_HEARTBEAT_MSG);
+    // TODO: should not hardcode CpuID (2) and Spacecraft ID (0x42)
     Pack_UInt32(&Pack, 2);
+    Pack_UInt32(&Pack, 0x42);
     
     retval = write(sockfd, sbn_header, sizeof(sbn_header));
     
