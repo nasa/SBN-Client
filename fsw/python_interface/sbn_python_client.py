@@ -61,7 +61,8 @@ class Primary_Header_t(BigEndianStructure):
 class Secondary_Header_t(BigEndianStructure):
     _pack_ = 1
     _fields_ = [("Seconds", c_uint32),
-                ("Subseconds", c_uint16)]
+                ("Subseconds", c_uint16),
+                ("Spare", c_uint32)]
 
 # typedef struct {
 #    uint8 FunctionCode; /* Command Function Code */
@@ -130,9 +131,9 @@ def send_msg(send_msg_p):
 def recv_msg(recv_msg_p):
     global sbn_client
     global cmd_pipe
-
     status = sbn_client.__wrap_CFE_SB_ReceiveBuffer(byref(recv_msg_p), cmd_pipe, CFE_SB_PEND_FOREVER)
-    print("status of __wrap_CFE_SB_ReceiveBuffer = %X" % cfs_error_convert(status))
+    if (status != 0)
+        print("status of __wrap_CFE_SB_ReceiveBuffer = %X" % cfs_error_convert(status))
     #recv_msg = recv_msg_p.contents
     #print("Message: {} {} {}".format(hex(recv_msg.Hdr.StreamId), hex(recv_msg.Hdr.Sequence), hex(recv_msg.Hdr.Length)))
     #print_header(recv_msg_p)
