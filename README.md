@@ -13,6 +13,32 @@ It is not intended to be used in flight software.
 
 ## Compatible cFS and SBN Version
 
+### cFS 7.0
+
+Works with cFS Caelum (v7.0.0-rc4): [github.com/nasa/cFS](https://github.com/nasa/cFS/tree/caelum-rc4).
+NOTE: You may need to apply the following change to cfe to allow SBN to load modules:
+
+```
+diff --git a/modules/es/fsw/src/cfe_es_apps.c b/modules/es/fsw/src/cfe_es_apps.c
+index 8d583fcb..f0efb317 100644
+--- a/modules/es/fsw/src/cfe_es_apps.c
++++ b/modules/es/fsw/src/cfe_es_apps.c
+@@ -424,7 +424,7 @@ int32 CFE_ES_LoadModule(CFE_ResourceId_t ParentResourceId, const char *ModuleNam
+                  * Keeping symbols local/private may help ensure this module is unloadable
+                  * in the future, depending on underlying OS/loader implementation.
+                  */
+-                LoadFlags |= OS_MODULE_FLAG_LOCAL_SYMBOLS;
++                LoadFlags |= OS_MODULE_FLAG_GLOBAL_SYMBOLS;
+                 break;
+             case CFE_ES_LIBID_BASE:
+                 /*
+```
+
+Tested with SBN 1.18.0, Protocol 6, Filter 2.
+Specifically [github.com/nasa/SBN](https://github.com/nasa/SBN/tree/caaac922625173f362a1fed34d69e00f5232471c).
+
+### cFS 6.7
+
 Currently works with the cFS integration candidate from 2020-05-27: [github.com/nasa/cFS](https://github.com/nasa/cFS/tree/da695db7daaf3ca417662b81c5b9ea48c67be78f), which uses cFE 6.7.19 [github.com/nasa/cFE](https://github.com/nasa/cFE/tree/ad2190af9a2b40c9b9d0f3b88f601e931ad4059d).
 
 Tested with SBN 1.11.0, specifically: [github.com/nasa/SBN](https://github.com/nasa/SBN/tree/ea45ea4a075b1e28e0fd3413c63a3ad6ce57aba0).

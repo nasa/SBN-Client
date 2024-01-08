@@ -210,6 +210,7 @@ uint32 __wrap_CFE_SB_TransmitMsg(const CFE_MSG_Message_t *MsgPtr, bool Increment
     Pack_UInt16(&Pack, msg_size);
     Pack_UInt8(&Pack, SBN_APP_MSG);
     Pack_UInt32(&Pack, sbn_client_cpuId);
+    Pack_UInt32(&Pack, 0x42);
 
     memcpy(buffer + SBN_PACKED_HDR_SZ, MsgPtr, msg_size);
 
