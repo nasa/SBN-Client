@@ -34,22 +34,6 @@ void CFE_SBN_Client_InitPipeTbl(void)
     
 }
 
-CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void)
-{
-    uint8 i;
-
-    /* search for next available pipe entry */
-    for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
-    {
-        if(PipeTbl[i].InUse == CFE_SBN_CLIENT_NOT_IN_USE){
-            return i;
-        }/* end if */
-
-    }/* end for */
-
-    return CFE_SBN_CLIENT_INVALID_PIPE;
-}
-
 /**
  * \brief Sends a local subscription over the wire to a peer.
  *

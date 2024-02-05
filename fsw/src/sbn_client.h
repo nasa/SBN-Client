@@ -59,7 +59,6 @@
 *************************************************************************/
 
 void CFE_SBN_Client_InitPipeTbl(void);
-CFE_SB_PipeId_t CFE_SBN_Client_GetAvailPipeIdx(void);
 int32 recv_msg(int32);
 void SendSubToSbn(int, CFE_SB_MsgId_t, CFE_SB_Qos_t);
 
