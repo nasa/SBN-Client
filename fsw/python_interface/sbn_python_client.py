@@ -91,7 +91,7 @@ class sbn_data_generic_t(Structure):
                 ("byte_array", c_ubyte * 65536)]
 
 sbn_client = None
-cmd_pipe = c_ushort()
+cmd_pipe = c_uint()
 cmd_pipe_name = create_string_buffer(b'cmd_pipe')
 
 
