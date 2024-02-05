@@ -198,7 +198,7 @@ uint32 __wrap_CFE_SB_TransmitMsg(const CFE_MSG_Message_t *MsgPtr, bool Increment
     size_t write_result, total_size = msg_size + SBN_PACKED_HDR_SZ;
     Pack_t Pack;
 
-    if (total_size > CFE_SB_MAX_SB_MSG_SIZE)
+    if (total_size > CFE_SBN_CLIENT_MAX_MESSAGE_SIZE)
     {
         return CFE_SB_MSG_TOO_BIG;
     }

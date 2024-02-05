@@ -40,7 +40,7 @@ void Test_ingest_app_message_ReadBytesFails(void)
     /* Arrange */ 
     char err_msg[60];
     int sockfd = Any_int();
-    int msgSize = rand() % CFE_SB_MAX_SB_MSG_SIZE;
+    int msgSize = rand() % CFE_SBN_CLIENT_MAX_MESSAGE_SIZE;
     
     use_wrap_CFE_SBN_CLIENT_ReadBytes = true;
     wrap_CFE_SBN_CLIENT_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);

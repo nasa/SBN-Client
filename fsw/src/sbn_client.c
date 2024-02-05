@@ -87,7 +87,7 @@ void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID,
 int32 recv_msg(int32 sockfd)
 {
     unsigned char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
-    unsigned char msg[CFE_SB_MAX_SB_MSG_SIZE];
+    unsigned char msg[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
     SBN_MsgSz_t MsgSz;
     SBN_MsgType_t MsgType;
     uint32 CpuID;

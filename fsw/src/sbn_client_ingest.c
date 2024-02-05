@@ -28,7 +28,7 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
 {
     int            status, i;
     bool           at_least_1_pipe_is_in_use = false;
-    unsigned char  msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
+    unsigned char  msg_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
     CFE_SB_MsgId_t MsgId;
     
     status = CFE_SBN_CLIENT_ReadBytes(SockFd, msg_buffer, MsgSz);
