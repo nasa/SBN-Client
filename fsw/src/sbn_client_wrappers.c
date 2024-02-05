@@ -27,7 +27,7 @@ extern pthread_cond_t  received_condition;
 
 int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const char *PipeName)
 {
-    uint8 i;
+    uint32 i;
     int32 status = CFE_SBN_CLIENT_MAX_PIPES_MET;
     
     /* TODO:AppId is static for now */
@@ -36,8 +36,6 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
     /* caller name will not require NULL terminator */
     
     /* TODO: determine if semaphore is necessary */
-    
-    /* TODO: determine if taskId is necessary */
     
     /* sets user's pipe id value to 'invalid' for error cases */
     if(PipeIdPtr != NULL)
@@ -61,7 +59,7 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
                 // TODO:Initialize pipe
                 PipeTbl[i].InUse = CFE_SBN_CLIENT_IN_USE;
                 //PipeTbl[i].SysQueueId = ?
-                PipeTbl[i].PipeId = i;
+                PipeTbl[i].PipeId.id = CFE_ResourceId_FromInteger(i);
                 //PipeTbl[i].QueueDepth = ?
                 //PipeTbl[i].AppId = ?
                 PipeTbl[i].SendErrors = 0;
@@ -69,7 +67,7 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
                 strncpy(&PipeTbl[i].PipeName[0], PipeName, OS_MAX_API_NAME); //TODO: Use different value for size?
                 //TODO: init Messages to empty?
 
-                *PipeIdPtr = i;
+                PipeIdPtr->id = CFE_ResourceId_FromInteger(i);
 
                 status = SBN_CLIENT_SUCCESS;
                 break;
@@ -84,12 +82,11 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
 
 int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 {
-  
     uint8 i;
 
     for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
     {
-        if (PipeTbl[i].PipeId == PipeId)
+        if (CFE_RESOURCEID_TEST_EQUAL(PipeTbl[i].PipeId, PipeId))
         {
             if (PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
             {
@@ -113,7 +110,7 @@ int32 __wrap_CFE_SB_DeletePipe(CFE_SB_PipeId_t PipeId)
 
 int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
 {
-    uint8 PipeIdx;
+    uint32 PipeIdx;
     uint8 MsgIdIdx;
     CFE_SB_Qos_t QoS;
   
@@ -124,9 +121,8 @@ int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
     /* get the callers Application Id  NOTE: we already have this locally*/
   
     /* check that the pipe has been created */
-    PipeIdx = CFE_SBN_Client_GetPipeIdx(PipeId);
-  
-    if (PipeIdx == CFE_SBN_CLIENT_INVALID_PIPE)
+
+    if (CFE_RESOURCEID_TEST_EQUAL(PipeId, CFE_SBN_CLIENT_INVALID_PIPE))
     {
       //TODO:Error here
       return CFE_SBN_CLIENT_BAD_ARGUMENT;
@@ -152,6 +148,7 @@ int32 __wrap_CFE_SB_Subscribe(CFE_SB_MsgId_t  MsgId, CFE_SB_PipeId_t PipeId)
         return CFE_SBN_CLIENT_BAD_ARGUMENT;
     }
     
+    PipeIdx = CFE_SBN_Client_GetPipeIdx(PipeId);
     PipeTbl[PipeIdx].SubscribedMsgIds[MsgIdIdx] = MsgId;
     
     QoS.Priority = 0x00;
@@ -229,7 +226,7 @@ uint32 __wrap_CFE_SB_TransmitMsg(const CFE_MSG_Message_t *MsgPtr, bool Increment
 
 int32 __wrap_CFE_SB_ReceiveBuffer(CFE_SB_Buffer_t **BufPtr, CFE_SB_PipeId_t PipeId, int32 TimeOut)
 {
-    uint8           pipe_idx;
+    uint32          PipeIdx;
     int32           status = CFE_SUCCESS;
     struct timespec enter_time;
     
@@ -246,23 +243,21 @@ int32 __wrap_CFE_SB_ReceiveBuffer(CFE_SB_Buffer_t **BufPtr, CFE_SB_PipeId_t Pipe
         status = CFE_SB_BAD_ARGUMENT;
     }
     else
-    {          
-        pipe_idx = CFE_SBN_Client_GetPipeIdx(PipeId);
-        
-        if (pipe_idx == CFE_SBN_CLIENT_INVALID_PIPE)
+    {
+        if (CFE_RESOURCEID_TEST_EQUAL(PipeId, CFE_SBN_CLIENT_INVALID_PIPE))
         {
             log_message("SBN_CLIENT: ERROR INVALID PIPE ERROR!");
             status = CFE_SB_BAD_ARGUMENT;
         }
-        
     } /* end if */
     
     if (status == CFE_SUCCESS)
     {
+        PipeIdx = CFE_SBN_Client_GetPipeIdx(PipeId);
         int lock_mutex_status = 0;
         int wait_mutex_status = 0;
         int unlock_mutex_status = 0;
-        CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[pipe_idx];
+        CFE_SBN_Client_PipeD_t *pipe = &PipeTbl[PipeIdx];
     
         lock_mutex_status = pthread_mutex_lock(&receive_mutex);
         

@@ -136,12 +136,14 @@ size_t write_message(int sockfd, char *buffer, size_t size)
   return result;
 }
     
-uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
+uint32 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
 {
-  /* Quick check because PipeId should match PipeIdx */
-    if (PipeTbl[PipeId].PipeId == PipeId && PipeTbl[PipeId].InUse == CFE_SBN_CLIENT_IN_USE)
+    uint32 PipeIdx = (uint32) CFE_RESOURCEID_UNWRAP(PipeId.id);
+    /* Quick check because PipeId should match PipeIdx */
+    if (CFE_RESOURCEID_TEST_EQUAL(PipeTbl[PipeIdx].PipeId, PipeId)
+        && PipeTbl[PipeIdx].InUse == CFE_SBN_CLIENT_IN_USE)
     {
-        return PipeId;
+        return PipeIdx;
     }
     else
     {
@@ -150,8 +152,8 @@ uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
         for(i=0;i<CFE_PLATFORM_SBN_CLIENT_MAX_PIPES;i++)
         {
 
-            if(PipeTbl[i].PipeId == PipeId && PipeTbl[i].InUse == 
-                CFE_SBN_CLIENT_IN_USE)
+            if(CFE_RESOURCEID_TEST_EQUAL(PipeTbl[i].PipeId, PipeId)
+               && PipeTbl[i].InUse == CFE_SBN_CLIENT_IN_USE)
             {
                 return i;
             }/* end if */
@@ -159,18 +161,19 @@ uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t PipeId)
         } /* end for */
     
         /* Pipe ID not found */
-        return CFE_SBN_CLIENT_INVALID_PIPE;
+        return (uint32) CFE_RESOURCEID_UNWRAP(CFE_SBN_CLIENT_INVALID_PIPE.id);
     }/* end if */
   
 }/* end CFE_SBN_Client_GetPipeIdx */
 
 uint8 CFE_SBN_Client_GetMessageSubscribeIndex(CFE_SB_PipeId_t PipeId)
 {
+    uint32 PipeIdx = (uint32) CFE_RESOURCEID_UNWRAP(PipeId.id);
     int i;
     
     for (i = 0; i < CFE_SBN_CLIENT_MAX_MSG_IDS_PER_PIPE; i++)
     {
-        if (PipeTbl[PipeId].SubscribedMsgIds[i] == CFE_SBN_CLIENT_INVALID_MSG_ID)
+        if (PipeTbl[PipeIdx].SubscribedMsgIds[i] == CFE_SBN_CLIENT_INVALID_MSG_ID)
         {
             return i;
         }
