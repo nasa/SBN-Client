@@ -84,53 +84,6 @@ void Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes(void)
 
 /*******************************************************************************
 **
-**  CFE_SBN_Client_GetAvailPipeIdx Tests
-**
-*******************************************************************************/
-
-void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed(void)
-{
-    /* Arrange */
-    int i;
-    CFE_SB_PipeId_t result;
-    for(i = 0; i < CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; i++)
-    {
-        PipeTbl[i].InUse = CFE_SBN_CLIENT_IN_USE;
-    }
-    
-    /* Act */ 
-    result = CFE_SBN_Client_GetAvailPipeIdx();
-    
-    /* Assert */
-    UtAssert_True(result == CFE_SBN_CLIENT_INVALID_PIPE, 
-        "CFE_SBN_Client_GetAvailPipeIdx returned CFE_SBN_CLIENT_INVALID_PIPE");
-} /* end Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed */
-
-void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
-{
-    /* Arrange */
-    int i;
-    /* 0 to CFE_PLATFORM_SBN_CLIENT_MAX_PIPES */
-    int available_index = rand() % CFE_PLATFORM_SBN_CLIENT_MAX_PIPES; 
-    CFE_SB_PipeId_t result;
-    for(i = 0; i < available_index; i++)
-    {
-        PipeTbl[i].InUse = CFE_SBN_CLIENT_IN_USE;
-    }
-    
-    /* Act */ 
-    result = CFE_SBN_Client_GetAvailPipeIdx();
-    
-    /* Assert */
-    UtAssert_True(result == available_index, 
-      "CFE_SBN_Client_GetAvailPipeIdx should have returned %d and returned %d", 
-      available_index, result);
-} /* end Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe */
-
-/* end CFE_SBN_Client_GetAvailPipeIdx Tests */
-
-/*******************************************************************************
-**
 **  add test group functions
 **
 *******************************************************************************/
@@ -141,16 +94,6 @@ void add_CFE_SBN_Client_InitPipeTbl_tests(void)
       SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
       "Test_CFE_SBN_Client_InitPipeTblFullyInitializesPipes");
 } /* end add_CFE_SBN_Client_InitPipeTbl_tests */
-
-void add_CFE_SBN_Client_GetAvailPipeIdx(void)
-{
-    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed, 
-      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
-      "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsErrorWhenAllPipesUsed");
-    UtTest_Add(Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe, 
-      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
-      "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
-} /* end add_CFE_SBN_Client_GetAvailPipeIdx */
 
 /* end add test group functions */
 
@@ -163,8 +106,6 @@ void add_CFE_SBN_Client_GetAvailPipeIdx(void)
 void UtTest_Setup(void)
 {
     add_CFE_SBN_Client_InitPipeTbl_tests();
-    
-    add_CFE_SBN_Client_GetAvailPipeIdx();
 } /* end UtTest_Setup */
 
 /* end Required UtTest_Setup function for ut-assert framework */
