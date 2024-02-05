@@ -28,7 +28,8 @@
 #define CFE_SBN_CLIENT_IN_USE                   1
 #define CFE_SBN_CLIENT_UNUSED_QUEUE             0xFFFF
 #define CFE_SBN_CLIENT_BAD_ARGUMENT             CFE_SB_BAD_ARGUMENT
-#define CFE_SBN_CLIENT_INVALID_PIPE             CFE_SB_INVALID_PIPE
+// Do not use CFE_SB_INVALID_PIPE for an invalid pipe: SBN_Client maps the PipeId directly to an index
+#define CFE_SBN_CLIENT_INVALID_PIPE             CFE_SB_PIPEID_C(CFE_RESOURCEID_RESERVED)
 #define SBN_CLIENT_NO_STATUS_SET                0xFFFF
 #define SBN_CLIENT_BAD_SOCK_FD_EID              0x0100
 #define CFE_SBN_CLIENT_CR_PIPE_BAD_ARG_EID      1002
