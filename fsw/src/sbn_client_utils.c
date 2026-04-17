@@ -66,11 +66,21 @@ int message_entry_point(CFE_SBN_Client_PipeD_t pipe)
         CFE_PLATFORM_SBN_CLIENT_MAX_PIPE_DEPTH;
 }
 
-int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, 
+int CFE_SBN_Client_ReadBytes(int sockfd, unsigned char *msg_buffer, 
                              size_t MsgSz)
 {
     int bytes_received = 0;
     int total_bytes_recd = 0;
+
+    if (MsgSz > CFE_SBN_CLIENT_MAX_MESSAGE_SIZE)
+    {
+
+        log_message(
+            "CFE_SBN_Client_ReadBytes: MsgSz (%u) > CFE_SBN_CLIENT_MAX_MESSAGE_SIZE (%u)",
+            MsgSz, CFE_SBN_CLIENT_MAX_MESSAGE_SIZE
+        );
+        return CFE_SBN_CLIENT_BAD_ARGUMENT;
+    }
     
     /* TODO:Some kind of timeout on this? */
     while (total_bytes_recd != MsgSz)
@@ -94,7 +104,7 @@ int CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer,
         total_bytes_recd += bytes_received;
     }
     // 
-    // log_message("CFE_SBN_CLIENT_ReadBytes THIS MESSAGE:");
+    // log_message("CFE_SBN_Client_ReadBytes THIS MESSAGE:");
     // int i =0;
     // for (i = 0; i < MsgSz; i++)
     // {

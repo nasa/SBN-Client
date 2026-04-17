@@ -12,6 +12,13 @@
 
 #include "sbn_client_tests_includes.h"
 
+
+
+void OS_Application_Startup(void)
+{
+    UtTest_Setup();
+}
+
 CFE_SB_PipeId_t pipePtr;
 uint16 pipe_depth = 5;
 const char *pipeName = "TestPipe";

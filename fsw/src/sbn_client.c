@@ -86,17 +86,17 @@ void SendSubToSbn(int SubType, CFE_SB_MsgId_t MsgID,
 int32 recv_msg(int32 sockfd)
 {
     unsigned char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
-    unsigned char msg[CFE_SB_MAX_SB_MSG_SIZE];
+    unsigned char msg[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
     SBN_MsgSz_t MsgSz;
     SBN_MsgType_t MsgType;
     uint32 CpuID;
     
-    int status = CFE_SBN_CLIENT_ReadBytes(sockfd, sbn_hdr_buffer, 
+    int status = CFE_SBN_Client_ReadBytes(sockfd, sbn_hdr_buffer, 
                                           SBN_PACKED_HDR_SZ);
     
     if (status != CFE_SUCCESS)
     {
-        printf("SBN_CLIENT: recv_msg call to CFE_SBN_CLIENT_ReadBytes returned" 
+        printf("SBN_CLIENT: recv_msg call to CFE_SBN_Client_ReadBytes returned " 
                "status = %d\n", status);
     }
     else
@@ -112,23 +112,15 @@ int32 recv_msg(int32 sockfd)
         switch(MsgType)
         {
             case SBN_NO_MSG:
-                status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
-                break;
             case SBN_SUB_MSG:
-                status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
-                break;
             case SBN_UNSUB_MSG:
-                status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
+            case SBN_PROTO_MSG:
+            case SBN_HEARTBEAT_MSG:
+                status = CFE_SBN_Client_ReadBytes(sockfd, msg, MsgSz);
                 break;
             case SBN_APP_MSG:
                 ingest_app_message(sockfd, MsgSz);
                 status = CFE_SUCCESS;
-                break;
-            case SBN_PROTO_MSG:      
-                status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
-                break;
-            case SBN_HEARTBEAT_MSG:
-                status = CFE_SBN_CLIENT_ReadBytes(sockfd, msg, MsgSz);
                 break;
 
             default:

@@ -60,7 +60,7 @@ set(WRAPS "${WRAPS},-wrap,CFE_SBN_Client_InitPipeTbl")
 set(WRAPS "${WRAPS},-wrap,check_pthread_create_status")
 set(WRAPS "${WRAPS},-wrap,send_heartbeat")
 set(WRAPS "${WRAPS},-wrap,recv_msg")
-set(WRAPS "${WRAPS},-wrap,CFE_SBN_CLIENT_ReadBytes")
+set(WRAPS "${WRAPS},-wrap,CFE_SBN_Client_ReadBytes")
 set(WRAPS "${WRAPS},-wrap,pthread_mutex_lock")
 set(WRAPS "${WRAPS},-wrap,pthread_mutex_unlock")
 set(WRAPS "${WRAPS},-wrap,pthread_cond_signal")
@@ -68,6 +68,7 @@ set(WRAPS "${WRAPS},-wrap,CFE_SBN_Client_GetMsgId")
 set(WRAPS "${WRAPS},-wrap,CFE_SBN_Client_GetPipeIdx")
 set(WRAPS "${WRAPS},-wrap,pthread_cond_timedwait")
 set(WRAPS "${WRAPS},-wrap,pthread_cond_wait")
+set(WRAPS "${WRAPS},-wrap,ingest_app_message")
 
 
 # Get the files in the source subdirectory

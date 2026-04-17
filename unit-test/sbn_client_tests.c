@@ -12,6 +12,11 @@
 
 #include "sbn_client_tests_includes.h"
 
+
+void OS_Application_Startup(void)
+{
+    UtTest_Setup();
+}
 /*******************************************************************************
 **
 **  SBN_Client_Tests Setup and Teardown
@@ -129,6 +134,266 @@ void Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe(void)
 
 /* end CFE_SBN_Client_GetAvailPipeIdx Tests */
 
+
+/*******************************************************************************
+**
+**  recv_msg Tests
+**
+*******************************************************************************/
+
+void Test_recv_msg_returns_status_WhenFirst_CFE_SBN_Client_ReadBytes_DoesNotReturn_CFE_SUCCESS(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_fail = Any_int32_Except(CFE_SUCCESS);
+    unsigned char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_fail;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 1,
+      "CFE_SBN_Client_ReadBytes was called once");
+    UtAssert_True(result == forced_readbyte_fail,
+      "Fail result was received expectedly");
+}
+
+void Test_recv_msg_returns_CFE_EVS_ERROR_When_MsgType_IsUnrecognized(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_return = CFE_SUCCESS;
+    unsigned char sbn_hdr_buffer[SBN_PACKED_HDR_SZ];
+    int idx = 0;
+
+    /* Pack header oversize message to show never used */ 
+    sbn_hdr_buffer[idx++] = 0xFF;
+    sbn_hdr_buffer[idx++] = 0xFF;
+
+    // Pack invalid message type
+    sbn_hdr_buffer[idx++] = 0xFF;
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 1,
+      "CFE_SBN_Client_ReadBytes was called once");
+    UtAssert_True(result == CFE_EVS_ERROR,
+      "Fail MsgType result was received expectedly");
+}
+
+
+void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_NO_MSG(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_return = CFE_SUCCESS;
+    unsigned char sbn_hdr_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    int idx = 0;
+
+    /* Pack full size message */ 
+    sbn_hdr_buffer[idx++] = 0x80;
+    sbn_hdr_buffer[idx++] = 0x00;
+
+    // Pack valid message type
+    sbn_hdr_buffer[idx++] = SBN_NO_MSG;
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
+      "CFE_SBN_Client_ReadBytes was called twice");
+    UtAssert_True(result == CFE_SUCCESS,
+      "Success result was received expectedly");
+}
+
+void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_SUB_MSG(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_return = CFE_SUCCESS;
+    unsigned char sbn_hdr_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    int idx = 0;
+
+    /* Pack full size message */ 
+    sbn_hdr_buffer[idx++] = 0x80;
+    sbn_hdr_buffer[idx++] = 0x00;
+
+    // Pack valid message type
+    sbn_hdr_buffer[idx++] = SBN_SUB_MSG;
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
+      "CFE_SBN_Client_ReadBytes was called twice");
+    UtAssert_True(result == CFE_SUCCESS,
+      "Success result was received expectedly");
+}
+
+void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_UNSUB_MSG(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_return = CFE_SUCCESS;
+    unsigned char sbn_hdr_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    int idx = 0;
+
+    /* Pack full size message */ 
+    sbn_hdr_buffer[idx++] = 0x80;
+    sbn_hdr_buffer[idx++] = 0x00;
+
+    // Pack valid message type
+    sbn_hdr_buffer[idx++] = SBN_UNSUB_MSG;
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
+      "CFE_SBN_Client_ReadBytes was called twice");
+    UtAssert_True(result == CFE_SUCCESS,
+      "Success result was received expectedly");
+}
+
+void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_PROTO_MSG(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_return = CFE_SUCCESS;
+    unsigned char sbn_hdr_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    int idx = 0;
+
+    /* Pack full size message */ 
+    sbn_hdr_buffer[idx++] = 0x80;
+    sbn_hdr_buffer[idx++] = 0x00;
+
+    // Pack valid message type
+    sbn_hdr_buffer[idx++] = SBN_PROTO_MSG;
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
+      "CFE_SBN_Client_ReadBytes was called twice");
+    UtAssert_True(result == CFE_SUCCESS,
+      "Success result was received expectedly");
+}
+
+void Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_HEARTBEAT_MSG(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_return = CFE_SUCCESS;
+    unsigned char sbn_hdr_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    int idx = 0;
+
+    /* Pack full size message */ 
+    sbn_hdr_buffer[idx++] = 0x80;
+    sbn_hdr_buffer[idx++] = 0x00;
+
+    // Pack valid message type
+    sbn_hdr_buffer[idx++] = SBN_HEARTBEAT_MSG;
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 2,
+      "CFE_SBN_Client_ReadBytes was called twice");
+    UtAssert_True(result == CFE_SUCCESS,
+      "Success result was received expectedly");
+}
+
+void Test_recv_msg_returns_Calls_ingest_app_message_AndReturns_CFE_SUCCESS_When_MsgType_Is_SBN_APP_MSG(void)
+{
+    /* Arrange */
+    int32 arg_sockfd = 0;
+    int32 result;
+    int32 forced_readbyte_return = CFE_SUCCESS;
+    unsigned char sbn_hdr_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    int idx = 0;
+
+    /* Pack full size message */ 
+    sbn_hdr_buffer[idx++] = 0x80;
+    sbn_hdr_buffer[idx++] = 0x00;
+
+    // Pack valid message type
+    sbn_hdr_buffer[idx++] = SBN_APP_MSG;
+
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = sbn_hdr_buffer;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = forced_readbyte_return;
+    use_wrap_ingest_app_message = TRUE;
+      
+    /* Act */
+    result = recv_msg(arg_sockfd);
+    
+    /* Assert */
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_was_called == TRUE,
+      "CFE_SBN_Client_ReadBytes was called");
+    UtAssert_True(wrap_CFE_SBN_Client_ReadBytes_call_count == 1,
+      "CFE_SBN_Client_ReadBytes was called once");
+    UtAssert_True(wrap_ingest_app_message_was_called == TRUE,
+      "ingest_app_messagewas called");
+    UtAssert_True(wrap_ingest_app_message_call_count == 1,
+      "ingest_app_message was called once");
+    UtAssert_True(result == CFE_SUCCESS,
+      "Success result was received expectedly");
+}
 /*******************************************************************************
 **
 **  add test group functions
@@ -152,6 +417,34 @@ void add_CFE_SBN_Client_GetAvailPipeIdx(void)
       "Test_CFE_SBN_Client_GetAvailPipeIdx_ReturnsIndexForFirstOpenPipe");
 } /* end add_CFE_SBN_Client_GetAvailPipeIdx */
 
+void add_recv_msg(void)
+{
+    UtTest_Add(Test_recv_msg_returns_status_WhenFirst_CFE_SBN_Client_ReadBytes_DoesNotReturn_CFE_SUCCESS, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_status_WhenFirst_CFE_SBN_Client_ReadBytes_DoesNotReturn_CFE_SUCCESS");
+    UtTest_Add(Test_recv_msg_returns_CFE_EVS_ERROR_When_MsgType_IsUnrecognized, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_CFE_EVS_ERROR_When_MsgType_IsUnrecognized");
+    UtTest_Add(Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_NO_MSG, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_NO_MSG");
+    UtTest_Add(Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_SUB_MSG, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_SUB_MSG");
+    UtTest_Add(Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_UNSUB_MSG, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_UNSUB_MSG");
+    UtTest_Add(Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_PROTO_MSG, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_PROTO_MSG");
+    UtTest_Add(Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_HEARTBEAT_MSG, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_status_From_CFE_SBN_Client_ReadBytes_When_MsgType_Is_SBN_HEARTBEAT_MSG");
+    UtTest_Add(Test_recv_msg_returns_Calls_ingest_app_message_AndReturns_CFE_SUCCESS_When_MsgType_Is_SBN_APP_MSG, 
+      SBN_Client_Tests_Setup, SBN_Client_Tests_Teardown, 
+      "Test_recv_msg_returns_Calls_ingest_app_message_AndReturns_CFE_SUCCESS_When_MsgType_Is_SBN_APP_MSG");
+} /* end add_recv_msg */
+
 /* end add test group functions */
 
 /*******************************************************************************
@@ -165,6 +458,8 @@ void UtTest_Setup(void)
     add_CFE_SBN_Client_InitPipeTbl_tests();
     
     add_CFE_SBN_Client_GetAvailPipeIdx();
+
+    add_recv_msg();
 } /* end UtTest_Setup */
 
 /* end Required UtTest_Setup function for ut-assert framework */

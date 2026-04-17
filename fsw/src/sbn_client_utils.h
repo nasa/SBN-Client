@@ -80,7 +80,7 @@ typedef struct {
 
 int32 check_pthread_create_status(int, int32);
 int message_entry_point(CFE_SBN_Client_PipeD_t);
-int CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
+int CFE_SBN_Client_ReadBytes(int, unsigned char *, size_t);
 void invalidate_pipe(CFE_SBN_Client_PipeD_t *);
 size_t write_message(int, char *, size_t);
 uint8 CFE_SBN_Client_GetPipeIdx(CFE_SB_PipeId_t);

@@ -14,6 +14,12 @@
 
 
 
+
+void OS_Application_Startup(void)
+{
+    UtTest_Setup();
+}
+
 /*******************************************************************************
 **
 **  SBN_Client_Minders_Tests Setup and Teardown
