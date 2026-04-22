@@ -114,7 +114,7 @@ int __wrap_CFE_SBN_Client_ReadBytes(int sockfd, unsigned char *msg_buffer,
             }
             else
             {
-                printf("ERR: __wrap_CFE_SBN_Client_ReadBytes was given MsgSz too large: %u\n", MsgSz);
+                printf("ERR: __wrap_CFE_SBN_Client_ReadBytes was given MsgSz too large: %zu\n", MsgSz);
             }
             result = -999999996;
         }

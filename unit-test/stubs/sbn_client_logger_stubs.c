@@ -35,12 +35,12 @@ int32 log_message(const char *format, ...)
     // {
     //     (*wrap_log_message_call_func)();
     // }
-    int result;
+    int result = 0;
     int i = 0;
     int num_vars = 0;
     va_list vl;
     
-    UT_Stub_CopyToLocal(UT_KEY(log_message), format, sizeof(format));
+    UT_Stub_CopyToLocal(UT_KEY(log_message), (void *) format, sizeof(format));
     
     va_start(vl, format);
     while (format[i] && format[i+1])
