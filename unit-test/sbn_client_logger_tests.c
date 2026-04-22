@@ -13,12 +13,6 @@
 #include "sbn_client_tests_includes.h"
 
 
-
-void OS_Application_Startup(void)
-{
-    UtTest_Setup();
-}
-
 extern const char *log_message_expected_string;
 extern boolean log_message_was_called;
 extern const char *perror_expected_string;

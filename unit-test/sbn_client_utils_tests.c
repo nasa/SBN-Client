@@ -14,11 +14,6 @@
 
 void add_connect_to_server_tests(void);
 
-void OS_Application_Startup(void)
-{
-    UtTest_Setup();
-}
-
 /*******************************************************************************
 **
 **  SBN_Client_Utils_Tests Setup and Teardown

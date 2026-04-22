@@ -12,11 +12,6 @@
 
 #include "sbn_client_tests_includes.h"
 
-
-void OS_Application_Startup(void)
-{
-    UtTest_Setup();
-}
 /*******************************************************************************
 **
 **  SBN_Client_Tests Setup and Teardown
