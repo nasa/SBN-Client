@@ -15,10 +15,14 @@
 #define PTHREAD_MUTEX_UNLOCK_SUCCESS  0
 #define PTHREAD_MUTEX_UNLOCK_FAILURE  EPERM
 
-
-boolean use_wrap_CFE_SBN_CLIENT_ReadBytes = FALSE;
-unsigned char *wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
-int wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
+boolean use_wrap_ingest_app_message = FALSE;
+boolean wrap_ingest_app_message_was_called = FALSE;
+int wrap_ingest_app_message_call_count = 0;
+boolean use_wrap_CFE_SBN_Client_ReadBytes = FALSE;
+unsigned char *wrap_CFE_SBN_Client_ReadBytes_msg_buffer = NULL;
+int wrap_CFE_SBN_Client_ReadBytes_return_value = INT_MIN;
+boolean wrap_CFE_SBN_Client_ReadBytes_was_called = FALSE;
+int wrap_CFE_SBN_Client_ReadBytes_call_count = 0;
 boolean wrap_pthread_mutex_lock_should_be_called = FALSE;
 boolean wrap_pthread_mutex_lock_was_called = FALSE;
 int wrap_pthread_mutex_lock_return_value = 0;
@@ -75,23 +79,49 @@ void wrap_sleep_set_continue_heartbeat_false(void)
     continue_heartbeat = FALSE;
 }
 
+void __wrap_ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
+{
+    wrap_ingest_app_message_was_called = TRUE;
+    wrap_ingest_app_message_call_count++;
 
-int __wrap_CFE_SBN_CLIENT_ReadBytes(int sockfd, unsigned char *msg_buffer, 
+    if (!use_wrap_ingest_app_message)
+    {
+        __real_ingest_app_message(SockFd, MsgSz);
+    }
+}
+
+
+int __wrap_CFE_SBN_Client_ReadBytes(int sockfd, unsigned char *msg_buffer, 
                                     size_t MsgSz)
 {
     int result;
     
-    if (use_wrap_CFE_SBN_CLIENT_ReadBytes)
+    wrap_CFE_SBN_Client_ReadBytes_was_called = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_call_count++;
+    
+    if (use_wrap_CFE_SBN_Client_ReadBytes)
     {
-        if (wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer != NULL)
+        if (wrap_CFE_SBN_Client_ReadBytes_msg_buffer != NULL && MsgSz <= CFE_SBN_CLIENT_MAX_MESSAGE_SIZE)
         {
-            memcpy(msg_buffer, wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer, MsgSz);
+            memcpy(msg_buffer, wrap_CFE_SBN_Client_ReadBytes_msg_buffer, MsgSz);
+            result = wrap_CFE_SBN_Client_ReadBytes_return_value;
         }
-        result = wrap_CFE_SBN_CLIENT_ReadBytes_return_value;
+        else
+        {   
+            if (wrap_CFE_SBN_Client_ReadBytes_msg_buffer == NULL)
+            {
+                printf("ERR: __wrap_CFE_SBN_Client_ReadBytes was given NULL buffer\n");
+            }
+            else
+            {
+                printf("ERR: __wrap_CFE_SBN_Client_ReadBytes was given MsgSz too large: %zu\n", MsgSz);
+            }
+            result = -999999996;
+        }
     }
     else
     {
-        result = __real_CFE_SBN_CLIENT_ReadBytes(sockfd, msg_buffer, MsgSz);
+        result = __real_CFE_SBN_Client_ReadBytes(sockfd, msg_buffer, MsgSz);
     }
     
     return result;
@@ -419,9 +449,14 @@ void SBN_CLient_Wrapped_Functions_Setup(void)
 void SBN_CLient_Wrapped_Functions_Teardown(void)
 {
     /* SBN_CLient_Wrapped_Functions_Teardown resets all variables */
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = FALSE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = NULL;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = INT_MIN;
+    use_wrap_ingest_app_message = FALSE;
+    wrap_ingest_app_message_was_called = FALSE;
+    wrap_ingest_app_message_call_count = 0;
+    use_wrap_CFE_SBN_Client_ReadBytes = FALSE;
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = NULL;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = INT_MIN;
+    wrap_CFE_SBN_Client_ReadBytes_was_called = FALSE;
+    wrap_CFE_SBN_Client_ReadBytes_call_count = 0;
     wrap_pthread_mutex_lock_should_be_called = FALSE;
     wrap_pthread_mutex_lock_was_called = FALSE;
     wrap_pthread_mutex_lock_return_value = 0;

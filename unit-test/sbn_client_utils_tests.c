@@ -446,9 +446,29 @@ void Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx(void)
 /* end CFE_SBN_Client_GetPipeIdx Tests */
 
 
+/*******************************************************************************
+**
+**  CFE_SBN_Client_ReadBytes Tests
+**
+*******************************************************************************/
 
-/* CFE_SBN_CLIENT_ReadBytes Tests*/
-void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken(void)
+void Test_CFE_SBN_Client_ReadBytes_ReturnsFailWhen_MsgSz_IsLargerThan_CFE_SBN_CLIENT_MAX_MESSAGE_SIZE(void)
+{
+    /* Arrange */
+    int sock_fd = (rand() % 10) + 1; /* 1 to 10 */
+    size_t MsgSz = CFE_SBN_CLIENT_MAX_MESSAGE_SIZE + 1;
+    unsigned char msg_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
+    int result;
+    
+    /* Act */ 
+    result = CFE_SBN_Client_ReadBytes(sock_fd, msg_buffer, MsgSz);
+    
+    /* Assert */
+    UtAssert_True(result == CFE_SBN_CLIENT_BAD_ARGUMENT, 
+      "MsgSz given was larger than CFE_SBN_CLIENT_MAX_MESSAGE_SIZE");
+} /* end Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeBroken */
+
+void Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeBroken(void)
 {
     /* Arrange */
     int sock_fd = (rand() % 10) + 1; /* 1 to 10 */
@@ -458,14 +478,14 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken(void)
     int result;
     
     /* Act */ 
-    result = CFE_SBN_CLIENT_ReadBytes(sock_fd, msg_buffer, MsgSz);
+    result = CFE_SBN_Client_ReadBytes(sock_fd, msg_buffer, MsgSz);
     
     /* Assert */
     UtAssert_True(result == CFE_SBN_CLIENT_PIPE_BROKEN_ERR, 
-      "CFE_SBN_CLIENT_ReadBytes should return CFE_SBN_CLIENT_PIPE_BROKEN_ERR");
-} /* end Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken */
+      "CFE_SBN_Client_ReadBytes should return CFE_SBN_CLIENT_PIPE_BROKEN_ERR");
+} /* end Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeBroken */
 
-void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed(void)
+void Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeClosed(void)
 {
     /* Arrange */
     int sock_fd = (rand() % 10) + 1; /* 1 to 10 */
@@ -475,14 +495,14 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed(void)
     int result;
     
     /* Act */ 
-    result = CFE_SBN_CLIENT_ReadBytes(sock_fd, msg_buffer, MsgSz);
+    result = CFE_SBN_Client_ReadBytes(sock_fd, msg_buffer, MsgSz);
     
     /* Assert */
     UtAssert_True(result == CFE_SBN_CLIENT_PIPE_CLOSED_ERR, 
-        "CFE_SBN_CLIENT_ReadBytes returned CFE_SBN_CLIENT_PIPE_CLOSED_ERR");
+        "CFE_SBN_Client_ReadBytes returned CFE_SBN_CLIENT_PIPE_CLOSED_ERR");
 }
 
-void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
+void Test_CFE_SBN_Client_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
 {
     /* Arrange */
     int sock_fd = (rand() % 10) + 1; /* 1 to 10 */
@@ -492,13 +512,13 @@ void Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived(void)
     int result;
     
     /* Act */ 
-    result = CFE_SBN_CLIENT_ReadBytes(sock_fd, msg_buffer, MsgSz);
+    result = CFE_SBN_Client_ReadBytes(sock_fd, msg_buffer, MsgSz);
     
     /* Assert */
     UtAssert_True(result == CFE_SUCCESS, 
-        "CFE_SBN_CLIENT_ReadBytes returned CFE_SUCCESS");
+        "CFE_SBN_Client_ReadBytes returned CFE_SUCCESS");
 }
-/* end CFE_SBN_CLIENT_ReadBytes Tests*/
+/* end CFE_SBN_Client_ReadBytes Tests*/
 
 /*************************************************/
 
@@ -568,19 +588,23 @@ void UtTest_Setup(void)
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
       "Test_CFE_SBN_Client_GetPipeIdxSuccessPipeIdDoesNotEqualPipeIdx");
     
-    /* CFE_SBN_CLIENT_ReadBytes Tests*/
+    /* CFE_SBN_Client_ReadBytes Tests*/
     UtTest_Add(
-      Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken, 
+      Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeBroken, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
-      "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeBroken");
+      "Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeBroken");
     UtTest_Add(
-      Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed, 
+      Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeClosed, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
-      "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsErrorWhenPipeClosed");
+      "Test_CFE_SBN_Client_ReadBytes_ReturnsErrorWhenPipeClosed");
     UtTest_Add(
-      Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived, 
+      Test_CFE_SBN_Client_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived, 
       SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
-      "Test_CFE_SBN_CLIENT_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived");
+      "Test_CFE_SBN_Client_ReadBytes_ReturnsCfeSuccessWhenAllBytesReceived");
+    UtTest_Add(
+      Test_CFE_SBN_Client_ReadBytes_ReturnsFailWhen_MsgSz_IsLargerThan_CFE_SBN_CLIENT_MAX_MESSAGE_SIZE, 
+      SBN_Client_Utils_Tests_Setup, SBN_Client_Utils_Tests_Teardown, 
+      "Test_CFE_SBN_Client_ReadBytes_ReturnsFailWhen_MsgSz_IsLargerThan_CFE_SBN_CLIENT_MAX_MESSAGE_SIZE");
 
 }
 

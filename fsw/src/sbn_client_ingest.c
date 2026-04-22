@@ -28,17 +28,17 @@ void ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz)
 {
     int            status, i;
     boolean        at_least_1_pipe_is_in_use = FALSE;    
-    unsigned char  msg_buffer[CFE_SB_MAX_SB_MSG_SIZE];
+    unsigned char  msg_buffer[CFE_SBN_CLIENT_MAX_MESSAGE_SIZE];
     CFE_SB_MsgId_t MsgId;
     
-    status = CFE_SBN_CLIENT_ReadBytes(SockFd, msg_buffer, MsgSz);
+    status = CFE_SBN_Client_ReadBytes(SockFd, msg_buffer, MsgSz);
     
     if (status != CFE_SUCCESS)
     {
         char error_message[61];
         
         snprintf(error_message, sizeof(error_message), 
-          "CFE_SBN_CLIENT_ReadBytes returned a bad status = 0x%08X\n", status);
+          "CFE_SBN_Client_ReadBytes returned a bad status = 0x%08X\n", status);
         log_message(error_message);
         
         return;

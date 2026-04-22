@@ -12,6 +12,7 @@
 
 #include "sbn_client_tests_includes.h"
 
+
 /*******************************************************************************
 **
 **  SBN_Client_Ingest_Tests Setup and Teardown
@@ -40,14 +41,14 @@ void Test_ingest_app_message_ReadBytesFails(void)
     /* Arrange */ 
     char err_msg[60];
     int sockfd = Any_int();
-    int msgSize = rand() % CFE_SB_MAX_SB_MSG_SIZE;
+    int msgSize = rand() % CFE_SBN_CLIENT_MAX_MESSAGE_SIZE;
     
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);
     
     snprintf(err_msg, 60,
-      "CFE_SBN_CLIENT_ReadBytes returned a bad status = 0x%08X\n", 
-      wrap_CFE_SBN_CLIENT_ReadBytes_return_value);
+      "CFE_SBN_Client_ReadBytes returned a bad status = 0x%08X\n", 
+      wrap_CFE_SBN_Client_ReadBytes_return_value);
     
     log_message_expected_string = err_msg;
     
@@ -76,9 +77,9 @@ void Test_ingest_app_message_FailsWhenNoPipesInUse(void)
     wrap_pthread_cond_signal_should_be_called = FALSE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = CFE_SUCCESS;
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = msg;
 
     log_message_expected_string = err_msg;
 
@@ -111,9 +112,9 @@ void Test_ingest_app_message_FailsOverflowWhenNumberOfMessagesIsFull(void)
     wrap_pthread_cond_signal_should_be_called = FALSE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = CFE_SUCCESS;
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
@@ -157,8 +158,8 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     int sockfd = Any_int();
     char err_msg[60] = "SBN_CLIENT: ERROR no subscription for this msgid";
     
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = Any_int32_Except(CFE_SUCCESS);
     
     log_message_expected_string = err_msg;
     
@@ -167,9 +168,9 @@ void Test_ingest_app_message_FailsWhenNoPipeLookingForMessageId(void)
     wrap_pthread_cond_signal_should_be_called = FALSE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = CFE_SUCCESS;
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
@@ -218,9 +219,9 @@ void Test_ingest_app_message_SuccessAllSlotsAvailable(void)
     wrap_pthread_cond_signal_should_be_called = TRUE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = CFE_SUCCESS;
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
@@ -278,9 +279,9 @@ void Test_ingest_app_message_SuccessAnyNumberOfSlotsAvailable(void)
     wrap_pthread_cond_signal_should_be_called = TRUE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = CFE_SUCCESS;
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;
@@ -337,9 +338,9 @@ void Test_ingest_app_message_SuccessWhenOnlyOneSlotLeft(void)
     wrap_pthread_cond_signal_should_be_called = TRUE;
     use_wrap_CFE_SBN_Client_GetMsgId = TRUE;
     wrap_CFE_SBN_Client_GetMsgId_return_value = msg[0] << 8 | msg[1];
-    use_wrap_CFE_SBN_CLIENT_ReadBytes = TRUE;
-    wrap_CFE_SBN_CLIENT_ReadBytes_return_value = CFE_SUCCESS;
-    wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer = msg;
+    use_wrap_CFE_SBN_Client_ReadBytes = TRUE;
+    wrap_CFE_SBN_Client_ReadBytes_return_value = CFE_SUCCESS;
+    wrap_CFE_SBN_Client_ReadBytes_msg_buffer = msg;
     
     PipeTbl[pipe_assigned].InUse = CFE_SBN_CLIENT_IN_USE;
     PipeTbl[pipe_assigned].PipeId = pipe_assigned;

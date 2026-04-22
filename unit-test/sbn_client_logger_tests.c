@@ -12,6 +12,7 @@
 
 #include "sbn_client_tests_includes.h"
 
+
 extern const char *log_message_expected_string;
 extern boolean log_message_was_called;
 extern const char *perror_expected_string;

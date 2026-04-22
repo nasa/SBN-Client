@@ -15,7 +15,7 @@
 
 #include "sbn_client_tests_includes.h"
 
-int __real_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
+int __real_CFE_SBN_Client_ReadBytes(int, unsigned char *, size_t);
 int __real_pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
 int __real_pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, 
   const struct timespec *);
@@ -30,8 +30,9 @@ int   __real_send_heartbeat(int);
 int32 __real_recv_msg(int32);
 void   __real_perror(const char *s);
 size_t __real_read(int fd, void* buf, size_t cnt);
+void __real_ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz);
 
-int __wrap_CFE_SBN_CLIENT_ReadBytes(int, unsigned char *, size_t);
+int __wrap_CFE_SBN_Client_ReadBytes(int, unsigned char *, size_t);
 int __wrap_pthread_mutex_lock(pthread_mutex_t *);
 int __wrap_pthread_mutex_unlock(pthread_mutex_t *);
 int __wrap_pthread_cond_signal(pthread_cond_t *);
@@ -54,14 +55,20 @@ int __wrap_connect(int, const struct sockaddr *, socklen_t);
 int __wrap_connect_to_server(const char *, uint16_t);
 size_t __wrap_read(int fd, void* buf, size_t cnt); 
 unsigned int __wrap_sleep(unsigned int seconds);
+void __wrap_ingest_app_message(int SockFd, SBN_MsgSz_t MsgSz);
 
 /* functions called by function pointer */
 void wrap_sleep_set_continue_heartbeat_false(void);
 void wrap_log_message_set_continue_recv_check_false(void);
 
-extern boolean use_wrap_CFE_SBN_CLIENT_ReadBytes;
-extern unsigned char *wrap_CFE_SBN_CLIENT_ReadBytes_msg_buffer;
-extern int wrap_CFE_SBN_CLIENT_ReadBytes_return_value;
+extern boolean use_wrap_ingest_app_message;
+extern boolean wrap_ingest_app_message_was_called;
+extern int wrap_ingest_app_message_call_count;
+extern boolean use_wrap_CFE_SBN_Client_ReadBytes;
+extern unsigned char *wrap_CFE_SBN_Client_ReadBytes_msg_buffer;
+extern int wrap_CFE_SBN_Client_ReadBytes_return_value;
+extern boolean wrap_CFE_SBN_Client_ReadBytes_was_called;
+extern int wrap_CFE_SBN_Client_ReadBytes_call_count;
 extern boolean wrap_pthread_mutex_lock_should_be_called;
 extern boolean wrap_pthread_mutex_lock_was_called;
 extern int wrap_pthread_mutex_lock_return_value;
