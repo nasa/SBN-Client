@@ -25,9 +25,11 @@
 #include <unistd.h>
 
 /* UT includes */
-#include "uttest.h"
-#include "utassert.h"
-#include "utstubs.h"
+#include <utassert.h>
+#include <uttest.h>
+#include <utstubs.h>
+
+#include <cfe.h>
 
 /* SBN_Client includes */
 #include "sbn_client_ingest.h"
