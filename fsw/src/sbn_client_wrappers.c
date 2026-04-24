@@ -59,7 +59,7 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
                 // TODO:Initialize pipe
                 PipeTbl[i].InUse = CFE_SBN_CLIENT_IN_USE;
                 //PipeTbl[i].SysQueueId = ?
-                PipeTbl[i].PipeId.id = CFE_ResourceId_FromInteger(i);
+                CFE_SB_GetPipeIdByName(&(PipeTbl[i].PipeId), PipeName);
                 //PipeTbl[i].QueueDepth = ?
                 //PipeTbl[i].AppId = ?
                 PipeTbl[i].SendErrors = 0;
@@ -67,7 +67,7 @@ int32 __wrap_CFE_SB_CreatePipe(CFE_SB_PipeId_t *PipeIdPtr, uint16 Depth, const c
                 strncpy(&PipeTbl[i].PipeName[0], PipeName, OS_MAX_API_NAME); //TODO: Use different value for size?
                 //TODO: init Messages to empty?
 
-                PipeIdPtr->id = CFE_ResourceId_FromInteger(i);
+                PipeIdPtr = &(PipeTbl[i].PipeId);
 
                 status = SBN_CLIENT_SUCCESS;
                 break;
