@@ -1024,20 +1024,21 @@ void Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails(void)
         "__wrap_CFE_SB_UnsubscribeLocal failed and returned -1");
 } /* end Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails */
 
-void Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails(void)
-{
+// TODO: I think zerocopysend went away...
+//void Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails(void)
+//{
     /* Arrange */
-    int32 expectedResult = -1;
-    CFE_MSG_Message_t *dummyMsg = NULL;
-    CFE_SB_ZeroCopyHandle_t dummyHandle = NULL;
+//    int32 expectedResult = -1;
+//    CFE_MSG_Message_t *dummyMsg = NULL;
+//    CFE_SB_ZeroCopyHandle_t dummyHandle = NULL;
     
     /* Act */ 
-    int32 result = CFE_SB_ZeroCopySend(dummyMsg, dummyHandle);
+//    int32 result = CFE_SB_ZeroCopySend(dummyMsg, dummyHandle);
     
     /* Assert */
-    UtAssert_True(result == expectedResult, 
-        "__wrap_CFE_SB_ZeroCopySend failed and returned -1");
-} /* end Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails */
+//    UtAssert_True(result == expectedResult,
+//        "__wrap_CFE_SB_ZeroCopySend failed and returned -1");
+//} /* end Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails */
 
 /* end __wrap_CFE_SB_ReceiveBuffer Tests */
 
@@ -1193,13 +1194,13 @@ void add__wrap_CFE_SB_UnsubscribeLocal_tests(void)
       "Test__wrap_CFE_SB_UnsubscribeLocal_AlwaysFails");
 } /* end add__wrap_CFE_SB_UnsubscribeLocal_tests */
 
-void add__wrap_CFE_SB_ZeroCopySend_tests(void)
-{
-    UtTest_Add(
-      Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails, 
-      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown, 
-      "Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails");
-} /* end add__wrap_CFE_SB_ZeroCopySend_tests */
+//void add__wrap_CFE_SB_ZeroCopySend_tests(void)
+//{
+//    UtTest_Add(
+//      Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails,
+//      SBN_Client_Wrappers_Tests_Setup, SBN_Client_Wrappers_Tests_Teardown,
+//      "Test__wrap_CFE_SB_ZeroCopySend_AlwaysFails");
+//} /* end add__wrap_CFE_SB_ZeroCopySend_tests */
 
 /* end add test group functions */
 
@@ -1227,7 +1228,7 @@ void UtTest_Setup(void)
     
     add__wrap_CFE_SB_UnsubscribeLocal_tests();
     
-    add__wrap_CFE_SB_ZeroCopySend_tests();
+    //add__wrap_CFE_SB_ZeroCopySend_tests();
 } /* end UtTest_Setup */
 
 /* end Required UtTest_Setup function for ut-assert framework */
